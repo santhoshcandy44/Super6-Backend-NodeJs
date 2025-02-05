@@ -20,7 +20,7 @@ module.exports = {
 
     S3_BUCKET_REGION: process.env.S3_BUCKET_REGION,
     S3_BUCKET_ACCESS_KEY: process.env.S3_BUCKET_ACCESS_KEY,
-    S3_BUCKET_SECRET_kEY:  process.env.S3_BUCKET_SECRET_KEY,
+    S3_BUCKET_SECRET_KEY:  process.env.S3_BUCKET_SECRET_KEY,
 
 
     APP_NAME: process.env.APP_NAME
