@@ -448,7 +448,7 @@ exports.googleSignin = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.sendErrorResponse(res, 500, "Internal server error")
+    return sendErrorResponse(res, 500, "Internal server error")
   }
 
 };

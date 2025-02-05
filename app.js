@@ -16,6 +16,7 @@ const { MEDIA_ROOT_PATH, S3_BUCKET_NAME } = require('./config/config');
 const { verifyShortEncryptedUrl } = require('./utils/authUtils')
 
 const axios = require('axios');
+const authenticateToken = require('./middlewares/authMiddleware'); // Import the auth middleware
 
 
 // Set up session middleware
@@ -68,7 +69,6 @@ app.get('/open-graph-scraper', async (req, res) => {
 });
 
 
-// app.use('/media/:folder/services', express.static(path.join(__dirname, 'media')));
 
 //Handling dynamic file request for a folder
 app.get('/media/:folder/services/*', (req, res) => {
@@ -95,7 +95,7 @@ app.get('/media/:folder/services/*', (req, res) => {
         const contentType = metadata.ContentType;
         const contentLength = metadata.ContentLength;
 
-        
+
         // Set the correct headers before streaming the file
         res.setHeader('Content-Type', contentType); // Set the content type
         res.setHeader('Content-Length', contentLength); // Set the content length
@@ -108,7 +108,9 @@ app.get('/media/:folder/services/*', (req, res) => {
 
         // Handle any errors in the stream
         s3Stream.on('error', (streamError) => {
-
+            if (res.headersSent) {
+                return; // Headers already sent, so don't send anything further
+            }
             res.status(500).send('Error fetching file');
         });
     });
@@ -117,102 +119,68 @@ app.get('/media/:folder/services/*', (req, res) => {
 });
 
 
-
-// app.get('/media/:folderName/*', (req, res, next) => {
-
-//     const { folderName } = req.params; // Get the folder name dynamically
-//     const filePath = path.join(MEDIA_ROOT_PATH, 'media', folderName, req.params[0]); // Get the file path
-
-
-//     // Check if the file exists and get file stats (like size)
-//     fs.stat(filePath, (err, stats) => {
-//         if (err) {
-//             if (err.code === 'ENOENT') { // 'ENOENT' error code means "file not found"
-//                 return res.status(404).send('File not found'); // Return 404 if file doesn't exist
-//             }
-//             return next(err);  // Pass other errors (e.g., permission errors) to the error handler
-//         }
-
-//         // Use sendFile to send the file with appropriate headers automatically
-//         res.sendFile(filePath, {
-//             headers: {
-//                 'Content-Type': 'application/octet-stream', // Set MIME type for binary files
-//                 'Content-Disposition': `attachment; filename="${path.basename(filePath)}"`, // Force download with the correct filename
-//                 'Content-Length': stats.size, // Send the content length header
-//                 'Cache-Control': 'no-store', // Prevent caching of the file
-//                 'Pragma': 'no-cache',
-//                 'Expires': '0'
-//             }
-//         }, (err) => {
-//             if (err) {
-//                 console.error('Error sending the file: ' + err);
-//                 // Don't send a response if the connection is already closed
-//                 if (res.headersSent) {
-//                     return; // Headers already sent, so don't send anything further
-//                 }
-//                 res.status(500).send('Server error');
-//             } else {
-
-//             }
-//         });
-
-//         // Handle the case where the client cancels the request (or connection is closed)
-//         req.on('close', () => {
-//             // If the client cancels or closes the connection, we should stop streaming the file
-//             res.end(); // End the response to clean up
-//         });
-//     });
-// });
-
-
-
-app.get('/uploads/:folder/*', (req, res, next) => {
-
+app.get('/uploads/:folder/*', authenticateToken, (req, res, next) => {
     try {
         const { folder } = req.params; // Get the folder name dynamically
 
-        const s3Key = `uploads/${folder}/${req.params[0]}`;
-
-
+        const paths = path.join('uploads', folder, req.params[0]);
+        const filePath = path.join(MEDIA_ROOT_PATH, paths); // Get the file path
         
-        // Get the file from S3
-        const s3Params = {
-            Bucket: S3_BUCKET_NAME, // Your S3 bucket name
-            Key: s3Key,
-        };
-
-        // Get the metadata of the object (including Content-Type and Content-Length)
-        awsS3Bucket.headObject(s3Params, (err, metadata) => {
+        // Check if the file exists and get file stats (like size)
+        fs.stat(filePath, (err, stats) => {
             if (err) {
-
-                return res.status(500).send('Error fetching file');
+                if (err.code === 'ENOENT') { // 'ENOENT' error code means "file not found"
+                    return res.status(404).send('File not found'); // Return 404 if file doesn't exist
+                }
+                return next(err);  // Pass other errors (e.g., permission errors) to the error handler
             }
 
-            // Extract Content-Type and Content-Length from metadata
-            const contentType = metadata.ContentType;
-            const contentLength = metadata.ContentLength;
 
+            // Stream the file to the user
+            const readStream = fs.createReadStream(filePath);
 
-            // Set the correct headers before streaming the file
-            res.setHeader('Content-Type', contentType); // Set the content type
-            res.setHeader('Content-Length', contentLength); // Set the content length
+            // Use pipe to send the file data to the response
+            readStream.pipe(res);
 
-            // Create a stream and pipe the S3 file directly to the response
-            const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-
-            // Pipe the S3 file stream directly to the response
-            s3Stream.pipe(res);
-
-            // Handle any errors in the stream
-            s3Stream.on('error', (streamError) => {
-                res.status(500).send('Error fetching file');
+            // Set appropriate headers
+            res.set({
+                'Content-Type': 'application/octet-stream',
+                'Content-Disposition': `attachment; filename="${path.basename(filePath)}"`,
+                'Content-Length': stats.size,
+                'Cache-Control': 'no-store',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             });
+
+            // When the file stream finishes, delete the file
+            readStream.on('end', () => {
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Error deleting the file: ' + err);
+                    } 
+                });
+            });
+
+            // Handle any errors during streaming
+            readStream.on('error', (err) => {
+                if (res.headersSent) {
+                    return; // Headers already sent, so don't send anything further
+                }
+                res.status(500).send('Server error');
+            });
+
+            // Handle the case where the client cancels the request
+            req.on('close', () => {
+                readStream.destroy(); // Stop reading the file if the client cancels the download
+                res.end(); // End the response
+            });
+
         });
     } catch (error) {
         res.status(500).send('Error fetching file');
     }
-
 });
+
 
 
 app.get('/images', async (req, res) => {
@@ -272,6 +240,9 @@ app.get('/images', async (req, res) => {
 
             // Handle any errors in the stream
             s3Stream.on('error', (streamError) => {
+                if (res.headersSent) {
+                    return; // Headers already sent, so don't send anything further
+                }
                 res.status(500).send('Error fetching file');
             });
         });
