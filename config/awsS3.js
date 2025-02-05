@@ -3,7 +3,7 @@ const { S3_BUCKET_NAME, S3_BUCKET_REGION, S3_BUCKET_ACCESS_KEY, S3_BUCKET_SECRET
 
 // Set the region and credentials if not using AWS CLI
 AWS.config.update({
-  region: S3_BUCKET_REION, // Your region
+  region: S3_BUCKET_REGION, // Your region
   accessKeyId: S3_BUCKET_ACCESS_KEY, // Optional if set via environment variables
   secretAccessKey: S3_BUCKET_SECRET_KEY // Optional if set via environment variables
 });
