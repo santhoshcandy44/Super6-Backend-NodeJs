@@ -1,5 +1,6 @@
 // db.js
 const mysql = require('mysql2');
+const { DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_NAME } = require('./config');
 
 // const pool = mysql.createPool({
 //     host: 'localhost', // your database host
@@ -10,10 +11,10 @@ const mysql = require('mysql2');
 
 
 const pool = mysql.createPool({
-    host: 'app-database-mariadb.cp0aumiwgnc1.ap-south-1.rds.amazonaws.com', // your database host
-    user: 'admin', // default XAMPP MySQL username
-    password: 'a*58cSG%x5Y4*Tn62e&zp7pT', // default XAMPP MySQL password (usually empty)
-    database: 'super6_test', // replace with your actual database name
+    host: DATABASE_URL, // your database host
+    user: DATABASE_USERNAME, // default XAMPP MySQL username
+    password: DATABASE_PASSWORD, // default XAMPP MySQL password (usually empty)
+    database: DATABASE_NAME, // replace with your actual database name
 });   
 
 

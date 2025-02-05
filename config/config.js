@@ -1,16 +1,28 @@
 require('dotenv').config(); // Load environment variables from .env file
 
 module.exports = {
-    BASE_URL:process.env.BASE_URL,
-    FCM_TOKEN_SECRET:process.env.FCM_TOKEN_SECRET,
-    PROFILE_PIC_MEDIA_ENCRYPTION:process.env.PROFILE_PIC_MEDIA_ENCRYPTION,
+    BASE_URL: process.env.BASE_URL,
+
+    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_USERNAME: process.env.DATABASE_USERNAME,
+    DATABASE_PASSWORD: process.env.DATABASE_PASSWORD,
+    DATABASE_NAME: process.env.DATABASE_NAME,
+
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
-    DB_CONNECTION: process.env.DB_CONNECTION, // Add other configurations as needed
+    FCM_TOKEN_SECRET: process.env.FCM_TOKEN_SECRET,
+    PROFILE_PIC_MEDIA_ENCRYPTION: process.env.PROFILE_PIC_MEDIA_ENCRYPTION,
+
     MEDIA_ROOT_PATH: process.env.MEDIA_ROOT_PATH,
-    PROFILE_BASE_URL: process.env.PROFILE_BASE_URL,
     MEDIA_BASE_URL: process.env.MEDIA_BASE_URL,
-    S3_BUCKET_NAME:process.env.S3_BUCKET_NAME,
-    APP_NAME:process.env.APP_NAME
+    S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+    PROFILE_BASE_URL: process.env.PROFILE_BASE_URL,
+
+    S3_BUCKET_REGION: process.env.S3_BUCKET_REGION,
+    S3_BUCKET_ACCESS_KEY: process.env.S3_BUCKET_ACCESS_KEY,
+    S3_BUCKET_SECRET_kEY:  process.env.S3_BUCKET_SECRET_KEY,
+
+
+    APP_NAME: process.env.APP_NAME
 
 };
