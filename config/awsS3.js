@@ -13,7 +13,7 @@ const awsS3Bucket = new AWS.S3();
 // Enable versioning on the bucket
 const enableVersioning = async (bucketName) => {
   const params = {
-    Bucket: bucketame,
+    Bucket: bucketName,
     VersioningConfiguration: {
       Status: 'Enabled' // Enable versioning
     }
