@@ -19,6 +19,17 @@ const axios = require('axios');
 const authenticateToken = require('./middlewares/authMiddleware'); // Import the auth middleware
 
 
+const filePath = path.join('/mnt/ebs', 'example.txt');
+
+fs.writeFile(filePath, 'Hello from Node.js!', (err) => {
+  if (err) {
+    console.error('Error writing file:', err);
+  } else {
+    console.log('File written successfully');
+  }
+});
+
+
 // Set up session middleware
 app.use(session({
     secret: 'your-secret-key', // Change this to a strong secret
@@ -67,6 +78,8 @@ app.get('/open-graph-scraper', async (req, res) => {
 
 
 });
+
+
 
 
 
