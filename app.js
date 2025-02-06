@@ -122,91 +122,43 @@ app.get('/media/:folder/services/*', (req, res) => {
 });
 
 
-app.get('/uploads/:folder/*', authenticateToken, (req, res, next) => {
-    try {
-        const { folder } = req.params; // Get the folder name dynamically
-
-        const paths = path.join('uploads', folder, req.params[0]);
-        const filePath = path.join(MEDIA_ROOT_PATH, paths); // Get the file path
-
-        let bytesRead = 0;  // To track the bytes read by the client
-
-        // Check if the file exists and get file stats (like size)
-        fs.stat(filePath, (err, stats) => {
-
-
-            if (err) {
-                if (err.code === 'ENOENT') { // 'ENOENT' error code means "file not found"
-                    return res.status(404).send('File not found'); // Return 404 if file doesn't exist
-                }
-                return next(err);  // Pass other errors (e.g., permission errors) to the error handler
+app.get('/uploads/:folder/*', (req, res, next) => {
+    const { folder } = req.params; // Get the folder name dynamically
+    const filePath = path.join(MEDIA_ROOT_PATH, 'uploads', folder, req.params[0]); // Get the file path
+    // Check if the file exists and get file stats (like size)
+    fs.stat(filePath, (err, stats) => {
+        if (err) {
+            if (err.code === 'ENOENT') { // 'ENOENT' error code means "file not found"
+                return res.status(404).send('File not found'); // Return 404 if file doesn't exist
             }
-
-
-            // Stream the file to the user
-            const readStream = fs.createReadStream(filePath);
-
-            // Use pipe to send the file data to the response
-            readStream.pipe(res);
-
-            // Set appropriate headers
-            res.set({
-                'Content-Type': 'application/octet-stream',
-                'Content-Disposition': `attachment; filename="${path.basename(filePath)}"`,
-                'Content-Length': stats.size,
-                'Cache-Control': 'no-store',
+            return next(err);  // Pass other errors (e.g., permission errors) to the error handler
+        }
+        // Use sendFile to send the file with appropriate headers automatically
+        res.sendFile(filePath, {
+            headers: {
+                'Content-Type': 'application/octet-stream', // Set MIME type for binary files
+                'Content-Disposition': `attachment; filename="${path.basename(filePath)}"`, // Force download with the correct filename
+                'Content-Length': stats.size, // Send the content length header
+                'Cache-Control': 'no-store', // Prevent caching of the file
                 'Pragma': 'no-cache',
                 'Expires': '0'
-            });
-
-
-
-            // Event listener for when data is read from the stream
-            readStream.on('data', (chunk) => {
-                bytesRead += chunk.length;  // Increment the bytes read by the client
-
-                console.log('Bytes read so far:', bytesRead);
-
-                // Check if the entire file has been read
-                if (bytesRead === stats.size) {
-                    console.log('All data has been read by the client, deleting file...');
-
-                    // Delete the file once all data has been read
-                    fs.unlink(filePath, (err) => {
-                        if (err) {
-                            console.error('Error deleting the file: ' + err);
-                        } else {
-                            console.log('File deleted successfully');
-                        }
-                    });
-                }
-            });
-
-
-
-            // Handle the case where the client cancels the request
-            req.on('close', () => {
-                console.log("close");
-                readStream.destroy(); // Stop reading the file if the client cancels the download
-                res.end(); // End the response
-            });
-
-
-
-            // Handle any errors during streaming
-            readStream.on('error', (err) => {
+            }
+        }, (err) => {
+            if (err) {
+                // Don't send a response if the connection is already closed
                 if (res.headersSent) {
                     return; // Headers already sent, so don't send anything further
                 }
                 res.status(500).send('Server error');
-            });
-
-
-
+            } else {
+            }
         });
-    } catch (error) {
-        res.status(500).send('Error fetching file');
-    }
+        // Handle the case where the client cancels the request (or connection is closed)
+        req.on('close', () => {
+            // If the client cancels or closes the connection, we should stop streaming the file
+            res.end(); // End the response to clean up
+        });
+    });
 });
 
 

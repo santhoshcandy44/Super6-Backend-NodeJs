@@ -21,7 +21,6 @@ const enableVersioning = async (bucketName) => {
 
   try {
     const data = await awsS3Bucket.putBucketVersioning(params).promise();
-    console.log("Versioning enabled:", data);
   } catch (error) {
     console.error("Error enabling versioning:", error);
   }

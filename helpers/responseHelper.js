@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid'); // CommonJS syntax
+const { API_DOC_BASE_URL } = require('../config/config');
 // Utility function to send a common JSON response
 function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true) {
 
@@ -25,7 +26,7 @@ function sendErrorResponse(res, statusCode, message, errorDetails = null) {
             path: res.req.originalUrl // Current request URI
         },
         requestId: uuidv4(), // Unique ID for tracking the request
-        documentation_url: 'https://api.example.com/docs/errors' // Link to API documentation
+        documentation_url: `${API_DOC_BASE_URL}/docs/errors` // Link to API documentation
     };
 
   

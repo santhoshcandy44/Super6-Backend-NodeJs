@@ -310,8 +310,6 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                 // Decode the URL-encoded string and parse it as JSON
                 const decodedPlans = decodeURIComponent(req.body.plans);
                 req.body.plans = JSON.parse(decodedPlans);  // Parse the decoded string into an object
-
-                console.log(req.body.plans[0]);
                 next();  // Proceed to the validation middleware
             } catch (error) {
                 return res.status(400).json({ message: 'Invalid plans format' });
