@@ -128,9 +128,13 @@ app.get('/uploads/:folder/*', authenticateToken, (req, res, next) => {
 
         const paths = path.join('uploads', folder, req.params[0]);
         const filePath = path.join(MEDIA_ROOT_PATH, paths); // Get the file path
-        
+
+        let bytesRead = 0;  // To track the bytes read by the client
+
         // Check if the file exists and get file stats (like size)
         fs.stat(filePath, (err, stats) => {
+
+
             if (err) {
                 if (err.code === 'ENOENT') { // 'ENOENT' error code means "file not found"
                     return res.status(404).send('File not found'); // Return 404 if file doesn't exist
@@ -155,14 +159,39 @@ app.get('/uploads/:folder/*', authenticateToken, (req, res, next) => {
                 'Expires': '0'
             });
 
-            // When the file stream finishes, delete the file
-            readStream.on('end', () => {
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error('Error deleting the file: ' + err);
-                    } 
-                });
+
+
+            // Event listener for when data is read from the stream
+            readStream.on('data', (chunk) => {
+                bytesRead += chunk.length;  // Increment the bytes read by the client
+
+                console.log('Bytes read so far:', bytesRead);
+
+                // Check if the entire file has been read
+                if (bytesRead === stats.size) {
+                    console.log('All data has been read by the client, deleting file...');
+
+                    // Delete the file once all data has been read
+                    fs.unlink(filePath, (err) => {
+                        if (err) {
+                            console.error('Error deleting the file: ' + err);
+                        } else {
+                            console.log('File deleted successfully');
+                        }
+                    });
+                }
             });
+
+
+
+            // Handle the case where the client cancels the request
+            req.on('close', () => {
+                console.log("close");
+                readStream.destroy(); // Stop reading the file if the client cancels the download
+                res.end(); // End the response
+            });
+
+
 
             // Handle any errors during streaming
             readStream.on('error', (err) => {
@@ -172,11 +201,7 @@ app.get('/uploads/:folder/*', authenticateToken, (req, res, next) => {
                 res.status(500).send('Server error');
             });
 
-            // Handle the case where the client cancels the request
-            req.on('close', () => {
-                readStream.destroy(); // Stop reading the file if the client cancels the download
-                res.end(); // End the response
-            });
+
 
         });
     } catch (error) {

@@ -820,7 +820,7 @@ END AS thumbnail,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [], plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? JSON.parse(plan.plan_features) : [] })) : [],
+                            })) : [], plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? plan.plan_features : [] })) : [],
                             short_code: BASE_URL + "/service/" + row.short_code,
 
                             thumbnail: row.thumbnail ? {
@@ -1683,7 +1683,7 @@ END AS thumbnail,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [], plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? JSON.parse(plan.plan_features) : [] })) : [],
+                            })) : [], plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? plan.plan_features : [] })) : [],
                             short_code: BASE_URL + "/service/" + row.short_code,
                             thumbnail: row.thumbnail ? {
                                 ...JSON.parse(row.thumbnail),
@@ -1918,7 +1918,7 @@ END AS thumbnail,
                             plans: row.plans
                                 ? JSON.parse(row.plans).map(plan => ({
                                     ...plan,
-                                    plan_features: plan.plan_features ? JSON.parse(plan.plan_features) : []
+                                    plan_features: plan.plan_features ? plan.plan_features : []
                                 }))
                                 : [],
                             is_bookmarked: Boolean(row.is_bookmarked),
@@ -2136,7 +2136,7 @@ END AS thumbnail,
                         ...image,
                         image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
                     })) : [],
-                    plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? JSON.parse(plan.plan_features) : [] })) : [],
+                    plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? plan.plan_features : [] })) : [],
                     location: row.longitude && row.latitude && row.geo && row.location_type
                         ? {
                             longitude: row.longitude,
@@ -2323,7 +2323,7 @@ END AS thumbnail,
                         ...image,
                         image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
                     })) : [],
-                    plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? JSON.parse(plan.plan_features) : [] })) : [],
+                    plans: row.plans ? JSON.parse(row.plans).map(plan => ({ ...plan, plan_features: plan.plan_features ? plan.plan_features : [] })) : [],
                     location: row.longitude && row.latitude && row.geo && row.location_type
                         ? {
                             longitude: row.longitude,
