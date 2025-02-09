@@ -88,8 +88,8 @@ function generateTokens(userId, email, signUpMethod, lastSignInTimestamp, role =
         role: role              // User's role (e.g., 'user', 'admin')
     };
 
-    const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '15s' });
-    const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '1m' });
+    const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '10s' });
+    const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '15m' });
     return { accessToken, refreshToken };
 };
 
