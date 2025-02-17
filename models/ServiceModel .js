@@ -776,6 +776,10 @@ END AS thumbnail,
 
             for (const row of results) {
                 const serviceId = row.service_id;
+
+
+
+
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
@@ -790,6 +794,26 @@ END AS thumbnail,
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
+
+
+                        // Query to get the total comments and replies for the service_id
+                        const [commentsResult] = await db.query(`
+                    SELECT 
+                        (SELECT COUNT(*) FROM service_reviews WHERE service_id = ?) AS comment_count,
+                        (SELECT COUNT(*) FROM service_reviews_replies srp 
+                         JOIN service_reviews sr ON srp.service_review_id = sr.id 
+                         WHERE sr.service_id = ?) AS reply_count
+                `, [serviceId, serviceId]);
+
+                        let total_count;
+                        if (commentsResult.length > 0) {
+                            const { comment_count, reply_count } = commentsResult[0];
+                            total_count = comment_count + reply_count
+
+                        } else {
+                            total_count = 0;
+                        }
+
 
                         services[serviceId] = {
                             user: {
@@ -840,7 +864,8 @@ END AS thumbnail,
                                     geo: row.geo,
                                     location_type: row.location_type
                                 }
-                                : null
+                                : null,
+                            comments_count: total_count
                         };
                     } catch (error) {
                         // Handle the error if the async operation fails
@@ -2969,10 +2994,10 @@ END AS thumbnail,
             };
 
 
-    
+
             if (imageId === -1) {
                 // Insert or update the image in the service_images table
-               const [result] = await connection.execute(
+                const [result] = await connection.execute(
                     `INSERT INTO service_images (image_url, width, height, size, format) 
                     VALUES (?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE 
@@ -2984,7 +3009,7 @@ END AS thumbnail,
                     [newImage.url, newImage.width, newImage.height, newImage.size, newImage.format]
                 );
 
-                
+
 
                 // Commit transaction after all operations are successful
                 await connection.commit();
@@ -3045,8 +3070,8 @@ END AS thumbnail,
                     }
                 }
 
-                 // Retrieve the inserted data
-                 const [output] = await connection.execute(
+                // Retrieve the inserted data
+                const [output] = await connection.execute(
                     `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
                     [service_id, imageId]
                 );
@@ -3056,7 +3081,7 @@ END AS thumbnail,
 
             }
 
-           
+
         } catch (error) {
             console.log(error);
             if (connection) {

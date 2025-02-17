@@ -452,33 +452,6 @@ app.post("/insert-review-reply", async (req, res) => {
 
 
 
-app.get("/comment-count/:serviceId", async (req, res) => {
-    try {
-        const { serviceId } = req.params;
-
-        // Query to get the total comments and replies for the service_id
-        const [result] = await db.query(`
-            SELECT 
-                (SELECT COUNT(*) FROM service_reviews WHERE service_id = ?) AS comment_count,
-                (SELECT COUNT(*) FROM service_reviews_replies srp 
-                 JOIN service_reviews sr ON srp.service_review_id = sr.id 
-                 WHERE sr.service_id = ?) AS reply_count
-        `, [serviceId, serviceId]);
-
-        let total_count;
-        if (result.length > 0) {
-            const { comment_count, reply_count } = result[0];
-            total_count = comment_count + reply_count
-
-        } else {
-            total_count=0;
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({ error: "An error occurred while fetching the comment counts." });
-    }
-});
-
 
 
 
