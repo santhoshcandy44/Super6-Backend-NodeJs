@@ -355,14 +355,15 @@ app.post("/insert-review", async (req, res) => {
 
         const insertedId = result.insertId;
 
-        // Fetch the inserted comment along with user details
         const [rows] = await db.query(`
             SELECT sr.id AS comment_id, sr.text AS comment_text, sr.timestamp AS comment_timestamp,
-                   u.full_name, u.profile_pic_url, u.id AS comment_user_id
+                   CONCAT(u.first_name, ' ', u.last_name) AS full_name, 
+                   u.profile_pic_url, u.id AS comment_user_id
             FROM service_reviews sr
             JOIN users u ON sr.user_id = u.id
             WHERE sr.id = ?;
         `, [insertedId]);
+        
 
         if (rows.length > 0) {
             const row = rows[0];
