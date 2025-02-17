@@ -433,7 +433,7 @@ app.post("/insert-review-reply", async (req, res) => {
                 timestamp: replyData.reply_timestamp,
                 user: {
                     full_name: replyData.full_name,
-                    profile_pic_url: replyData.profile_pic_url,
+                    profile_pic_url: `${MEDIA_BASE_URL}/${replyData.profile_pic_url}`,
                     user_id: replyData.reply_user_id
                 },
                 reply_to_full_name: replyData.reply_to_user_name || null
