@@ -271,7 +271,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
             timestamp: row.comment_timestamp,
             user: {
                 full_name: row.full_name,
-                profile_pic_url: MEDIA_BASE_URL+"/"+row.profile_pic_url,
+                profile_pic_url: MEDIA_BASE_URL + "/" + row.profile_pic_url,
                 user_id: row.comment_user_id  // Added comment author user_id
             },
         }));
@@ -288,7 +288,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
 
 app.get("/display-replies/:commentId", async (req, res) => {
     const commentId = req.params.commentId;
-    
+
     try {
         // Query to get replies for the specific comment, including user info
         const [replies] = await db.query(`
@@ -318,7 +318,7 @@ app.get("/display-replies/:commentId", async (req, res) => {
             timestamp: row.reply_timestamp,
             user: {
                 full_name: row.reply_full_name,
-                profile_pic_url: MEDIA_BASE_URL +"/"+row.reply_user_profile_pic_url,
+                profile_pic_url: MEDIA_BASE_URL + "/" + row.reply_user_profile_pic_url,
                 user_id: row.reply_user_id  // Added reply author user_id
             },
             reply_to_full_name: row.reply_to_full_name || null
@@ -363,7 +363,7 @@ app.post("/insert-review", async (req, res) => {
             JOIN users u ON sr.user_id = u.user_id
             WHERE sr.id = ?;
         `, [insertedId]);
-        
+
 
         if (rows.length > 0) {
             const row = rows[0];
@@ -393,6 +393,7 @@ app.post("/insert-review", async (req, res) => {
 });
 
 
+
 app.post("/insert-review-reply", async (req, res) => {
     try {
         const { commentId, userId, text, replyToUserId } = req.body;
@@ -409,8 +410,39 @@ app.post("/insert-review-reply", async (req, res) => {
             VALUES (?, ?, ?, ?, ?);
         `, [commentId, userId, text, timestamp, replyToUserId || null]);
 
-        // Send success response with the inserted reply ID
-        return sendJsonResponse(res, 200, "Reply inserted successfully.", { replyId: result.insertId });
+        const insertedId = result.insertId;
+
+        // Fetch the inserted reply with user details
+        const [reply] = await db.query(`
+            SELECT srr.id AS reply_id, srr.text AS reply_text, srr.timestamp AS reply_timestamp,
+                   CONCAT(u.first_name, ' ', u.last_name) AS full_name, u.profile_pic_url, u.user_id AS reply_user_id,
+                   (SELECT CONCAT(u2.first_name, ' ', u2.last_name) 
+                    FROM users u2 WHERE u2.user_id = srr.reply_to_user_id) AS reply_to_user_name
+            FROM service_reviews_replies srr
+            JOIN users u ON srr.user_id = u.user_id
+            WHERE srr.id = ?;
+        `, [insertedId]);
+
+        if (reply.length > 0) {
+            const replyData = reply[0]; // Assuming the result returns a single object
+
+            // Return the response in the structure of the ServiceReviewReply data class
+            const response = {
+                id: replyData.reply_id,
+                text: replyData.reply_text,
+                timestamp: replyData.reply_timestamp,
+                user: {
+                    full_name: replyData.full_name,
+                    profile_pic_url: replyData.profile_pic_url,
+                    user_id: replyData.reply_user_id
+                },
+                reply_to_full_name: replyData.reply_to_user_name || null
+            };
+
+            return sendJsonResponse(res, 200, "Review reply inserted successfully.", response);
+        } else {
+            return res.status(404).send({ error: "Review reply not found." });
+        }
 
     } catch (error) {
         console.error(error);
