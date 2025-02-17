@@ -17,6 +17,7 @@ const { verifyShortEncryptedUrl } = require('./utils/authUtils')
 
 const axios = require('axios');
 const authenticateToken = require('./middlewares/authMiddleware'); // Import the auth middleware
+const db = require('./config/database')
 
 
 
@@ -236,6 +237,100 @@ app.get('/images', async (req, res) => {
 
 
 });
+
+
+
+
+app.get("/display-reviews/:serviceId", async (req, res) => {
+    try {
+        const serviceId = req.params.serviceId;
+
+
+        // Query to get only the comment data and user info
+        const [comments] = await db.query(`
+            SELECT 
+                sr.id AS comment_id,
+                sr.text AS comment_text,
+                sr.timestamp AS comment_timestamp,
+                CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+                u.profile_pic_url AS profile_pic_url,
+                u.user_id AS comment_user_id  -- Added user_id for the comment author
+            FROM 
+                service_reviews sr
+            JOIN 
+                users u ON sr.user_id = u.user_id
+            WHERE 
+                sr.id = ?;  -- Replace with the specific comment ID
+        `, [serviceId]);
+
+        // Initialize the comment structure
+        const result = comments.map((row) => ({
+            id: row.comment_id,
+            text: row.comment_text,
+            timestamp: row.comment_timestamp,
+            user: {
+                user_name: row.user_name,
+                profile_pic_url: row.profile_pic_url,
+                user_id: row.comment_user_id  // Added comment author user_id
+            },
+        }));
+
+
+        return sendJsonResponse(res, 200, "Service reviews fetched successfully.", result);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "An error occurred while fetching comments." });
+    }
+});
+
+
+app.get("/display-replies/:commentId", async (req, res) => {
+    const commentId = req.params.commentId;
+    
+    try {
+        // Query to get replies for the specific comment, including user info
+        const [replies] = await db.query(`
+            SELECT 
+                r.id AS reply_id,
+                r.text AS reply_text,
+                r.timestamp AS reply_timestamp,
+                CONCAT(u_reply.first_name, ' ', u_reply.last_name) AS reply_user_name,
+                u_reply.profile_pic_url AS reply_user_profile_pic_url,
+                u_reply.user_id AS reply_user_id,  -- Added reply author user_id
+                r.reply_to_user_id,
+                CONCAT(reply_to_user.first_name, ' ', reply_to_user.last_name) AS reply_to_user_name
+            FROM 
+                service_reviews_replies r
+            LEFT JOIN 
+                users u_reply ON r.user_id = u_reply.user_id
+            LEFT JOIN 
+                users reply_to_user ON r.reply_to_user_id = reply_to_user.user_id
+            WHERE 
+                r.service_review_id = ?;  -- Replace with the specific comment ID
+        `, [commentId]);
+
+        // Initialize replies structure
+        const repliesResult = replies.map((row) => ({
+            id: row.reply_id,
+            text: row.reply_text,
+            timestamp: row.reply_timestamp,
+            user: {
+                user_name: row.reply_user_name,
+                profile_pic_url: row.reply_user_profile_pic_url,
+                user_id: row.reply_user_id  // Added reply author user_id
+            },
+            reply_to_user_name: row.reply_to_user_name || null
+        }));
+
+        // Send the response as JSON
+        res.json(repliesResult);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "An error occurred while fetching replies." });
+    }
+});
+
 
 
 
