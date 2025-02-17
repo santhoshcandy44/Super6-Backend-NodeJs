@@ -296,11 +296,11 @@ app.get("/display-replies/:commentId", async (req, res) => {
                 r.id AS reply_id,
                 r.text AS reply_text,
                 r.timestamp AS reply_timestamp,
-                CONCAT(u_reply.first_name, ' ', u_reply.last_name) AS reply_user_name,
+                CONCAT(u_reply.first_name, ' ', u_reply.last_name) AS reply_full_name,
                 u_reply.profile_pic_url AS reply_user_profile_pic_url,
                 u_reply.user_id AS reply_user_id,  -- Added reply author user_id
                 r.reply_to_user_id,
-                CONCAT(reply_to_user.first_name, ' ', reply_to_user.last_name) AS reply_to_user_name
+                CONCAT(reply_to_user.first_name, ' ', reply_to_user.last_name) AS reply_to_full_name
             FROM 
                 service_reviews_replies r
             LEFT JOIN 
@@ -317,11 +317,11 @@ app.get("/display-replies/:commentId", async (req, res) => {
             text: row.reply_text,
             timestamp: row.reply_timestamp,
             user: {
-                user_name: row.reply_user_name,
+                user_name: row.reply_full_name,
                 profile_pic_url: row.reply_user_profile_pic_url,
                 user_id: row.reply_user_id  // Added reply author user_id
             },
-            reply_to_user_name: row.reply_to_user_name || null
+            reply_to_full_name: row.reply_to_full_name || null
         }));
 
         // Send the response as JSON
