@@ -461,7 +461,7 @@ app.get("/comment-count/:serviceId", async (req, res) => {
             SELECT 
                 (SELECT COUNT(*) FROM service_reviews WHERE service_id = ?) AS comment_count,
                 (SELECT COUNT(*) FROM service_reviews_replies srp 
-                 JOIN service_reviews sr ON srp.comment_id = sr.id 
+                 JOIN service_reviews sr ON srp.service_review_id = sr.id 
                  WHERE sr.service_id = ?) AS reply_count
         `, [serviceId, serviceId]);
 
