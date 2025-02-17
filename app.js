@@ -318,7 +318,7 @@ app.get("/display-replies/:commentId", async (req, res) => {
             timestamp: row.reply_timestamp,
             user: {
                 full_name: row.reply_full_name,
-                profile_pic_url: row.reply_user_profile_pic_url,
+                profile_pic_url: MEDIA_BASE_URL+"/"+row.reply_user_profile_pic_url,
                 user_id: row.reply_user_id  // Added reply author user_id
             },
             reply_to_full_name: row.reply_to_full_name || null
