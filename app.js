@@ -12,7 +12,7 @@ const serviceProtectedAppRoutes = require('./routes/serviceProtectedAppRoutes');
 const accountSettingsProtectedRoutes = require('./routes/accountSettingsProtectedAppRoutes');
 const IndustriesSettingsProtectedRoutes = require('./routes/industriesSettingsProtectedAppRoutes');
 const chatProtectedAppRoutes = require('./routes/chatProtectedAppRoutes');
-const { MEDIA_ROOT_PATH, S3_BUCKET_NAME } = require('./config/config');
+const { MEDIA_ROOT_PATH, S3_BUCKET_NAME, MEDIA_BASE_URL } = require('./config/config');
 const { verifyShortEncryptedUrl } = require('./utils/authUtils')
 
 const axios = require('axios');
@@ -271,7 +271,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
             timestamp: row.comment_timestamp,
             user: {
                 full_name: row.full_name,
-                profile_pic_url: row.profile_pic_url,
+                profile_pic_url: MEDIA_BASE_URL+"/"+row.profile_pic_url,
                 user_id: row.comment_user_id  // Added comment author user_id
             },
         }));
