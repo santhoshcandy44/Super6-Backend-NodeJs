@@ -253,7 +253,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
                 sr.id AS comment_id,
                 sr.text AS comment_text,
                 sr.timestamp AS comment_timestamp,
-                CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+                CONCAT(u.first_name, ' ', u.last_name) AS full_name,
                 u.profile_pic_url AS profile_pic_url,
                 u.user_id AS comment_user_id  -- Added user_id for the comment author
             FROM 
@@ -270,7 +270,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
             text: row.comment_text,
             timestamp: row.comment_timestamp,
             user: {
-                user_name: row.user_name,
+                full_name: row.full_name,
                 profile_pic_url: row.profile_pic_url,
                 user_id: row.comment_user_id  // Added comment author user_id
             },
