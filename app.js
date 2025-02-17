@@ -261,7 +261,7 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
             JOIN 
                 users u ON sr.user_id = u.user_id
             WHERE 
-                sr.id = ?;  -- Replace with the specific comment ID
+                sr.service_id = ?;  -- Replace with the specific comment ID
         `, [serviceId]);
 
         // Initialize the comment structure
