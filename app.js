@@ -358,9 +358,9 @@ app.post("/insert-review", async (req, res) => {
         const [rows] = await db.query(`
             SELECT sr.id AS comment_id, sr.text AS comment_text, sr.timestamp AS comment_timestamp,
                    CONCAT(u.first_name, ' ', u.last_name) AS full_name, 
-                   u.profile_pic_url, u.id AS comment_user_id
+                   u.profile_pic_url, u.user_id AS comment_user_id
             FROM service_reviews sr
-            JOIN users u ON sr.user_id = u.id
+            JOIN users u ON sr.user_id = u.user_id
             WHERE sr.id = ?;
         `, [insertedId]);
         
