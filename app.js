@@ -318,7 +318,7 @@ app.get("/display-replies/:commentId", async (req, res) => {
             timestamp: row.reply_timestamp,
             user: {
                 full_name: row.reply_full_name,
-                profile_pic_url: MEDIA_BASE_URL+"/"+row.reply_user_profile_pic_url,
+                profile_pic_url: MEDIA_BASE_URL +"/"+row.reply_user_profile_pic_url,
                 user_id: row.reply_user_id  // Added reply author user_id
             },
             reply_to_full_name: row.reply_to_full_name || null
@@ -350,8 +350,40 @@ app.post("/insert-review", async (req, res) => {
             VALUES (?, ?, ?, ?);
         `, [serviceId, userId, text, timestamp]);
 
-        // Send success response with the inserted comment ID
-        return sendJsonResponse(res, 200, "Comment inserted successfully.", { commentId: result.insertId });
+
+
+
+        const insertedId = result.insertId;
+
+        // Fetch the inserted comment along with user details
+        const [rows] = await db.query(`
+            SELECT sr.id AS comment_id, sr.text AS comment_text, sr.timestamp AS comment_timestamp,
+                   u.full_name, u.profile_pic_url, u.id AS comment_user_id
+            FROM service_reviews sr
+            JOIN users u ON sr.user_id = u.id
+            WHERE sr.id = ?;
+        `, [insertedId]);
+
+        if (rows.length > 0) {
+            const row = rows[0];
+
+            const formattedResult = {
+                id: row.comment_id,
+                text: row.comment_text,
+                timestamp: row.comment_timestamp,
+                user: {
+                    full_name: row.full_name,
+                    profile_pic_url: `${MEDIA_BASE_URL}/${row.profile_pic_url}`,
+                    user_id: row.comment_user_id
+                },
+            };
+
+            return sendJsonResponse(res, 200, "Comment inserted successfully.", formattedResult);
+        } else {
+            return res.status(404).send({ error: "Inserted comment not found." });
+        }
+
+
 
     } catch (error) {
         console.error(error);
