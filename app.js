@@ -465,15 +465,13 @@ app.get("/comment-count/:serviceId", async (req, res) => {
                  WHERE sr.service_id = ?) AS reply_count
         `, [serviceId, serviceId]);
 
+        let total_count;
         if (result.length > 0) {
             const { comment_count, reply_count } = result[0];
-            return sendJsonResponse(res, 200, "Comment and reply counts retrieved successfully.", {
-                total_comments: comment_count,
-                total_replies: reply_count,
-                total_count: comment_count + reply_count
-            });
+            total_count = comment_count + reply_count
+
         } else {
-            return res.status(404).send({ error: "Service not found." });
+            total_count=0;
         }
     } catch (error) {
         console.error(error);
