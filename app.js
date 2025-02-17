@@ -452,6 +452,37 @@ app.post("/insert-review-reply", async (req, res) => {
 
 
 
+app.get("/comment-count/:serviceId", async (req, res) => {
+    try {
+        const { serviceId } = req.params;
+
+        // Query to get the total comments and replies for the service_id
+        const [result] = await db.query(`
+            SELECT 
+                (SELECT COUNT(*) FROM service_reviews WHERE service_id = ?) AS comment_count,
+                (SELECT COUNT(*) FROM service_reviews_reply srp 
+                 JOIN service_reviews sr ON srp.comment_id = sr.id 
+                 WHERE sr.service_id = ?) AS reply_count
+        `, [serviceId, serviceId]);
+
+        if (result.length > 0) {
+            const { comment_count, reply_count } = result[0];
+            return sendJsonResponse(res, 200, "Comment and reply counts retrieved successfully.", {
+                total_comments: comment_count,
+                total_replies: reply_count,
+                total_count: comment_count + reply_count
+            });
+        } else {
+            return res.status(404).send({ error: "Service not found." });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "An error occurred while fetching the comment counts." });
+    }
+});
+
+
+
 
 app.get('/', (req, res) => {
     res.send('Super6!');
