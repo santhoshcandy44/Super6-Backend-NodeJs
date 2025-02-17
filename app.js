@@ -334,6 +334,59 @@ app.get("/display-replies/:commentId", async (req, res) => {
 
 
 
+app.post("/insert-review", async (req, res) => {
+    try {
+        const { serviceId, userId, text } = req.body;
+
+        if (!serviceId || !userId || !text) {
+            return res.status(400).send({ error: "Service ID, User ID, and Comment Text are required." });
+        }
+
+        const timestamp = new Date().getTime(); // Get current timestamp
+
+        // Insert comment into service_reviews table
+        const [result] = await db.query(`
+            INSERT INTO service_reviews (service_id, user_id, text, timestamp)
+            VALUES (?, ?, ?, ?);
+        `, [serviceId, userId, text, timestamp]);
+
+        // Send success response with the inserted comment ID
+        return sendJsonResponse(res, 200, "Comment inserted successfully.", { commentId: result.insertId });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "An error occurred while inserting the comment." });
+    }
+});
+
+
+app.post("/insert-review-reply", async (req, res) => {
+    try {
+        const { commentId, userId, text, replyToUserId } = req.body;
+
+        if (!commentId || !userId || !text) {
+            return res.status(400).send({ error: "Comment ID, User ID, and Reply Text are required." });
+        }
+
+        const timestamp = new Date().getTime(); // Get current timestamp
+
+        // Insert the reply into the service_reviews_replies table
+        const [result] = await db.query(`
+            INSERT INTO service_reviews_replies (service_review_id, user_id, text, timestamp, reply_to_user_id)
+            VALUES (?, ?, ?, ?, ?);
+        `, [commentId, userId, text, timestamp, replyToUserId || null]);
+
+        // Send success response with the inserted reply ID
+        return sendJsonResponse(res, 200, "Reply inserted successfully.", { replyId: result.insertId });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "An error occurred while inserting the reply." });
+    }
+});
+
+
+
 
 app.get('/', (req, res) => {
     res.send('Super6!');
