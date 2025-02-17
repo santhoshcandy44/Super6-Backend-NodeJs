@@ -53,6 +53,7 @@ app.use('/api/app/serve/chat', chatProtectedAppRoutes); // All protected routes 
 const { awsS3Bucket } = require('./config/awsS3.js')
 
 const ogs = require('open-graph-scraper');
+const { sendJsonResponse } = require('./helpers/responseHelper.js');
 
 app.get('/open-graph-scraper', async (req, res) => {
 
@@ -324,7 +325,7 @@ app.get("/display-replies/:commentId", async (req, res) => {
         }));
 
         // Send the response as JSON
-        res.json(repliesResult);
+        return sendJsonResponse(res, 200, "Service reviews fetched successfully.", repliesResult);
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: "An error occurred while fetching replies." });
