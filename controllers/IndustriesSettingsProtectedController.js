@@ -44,9 +44,7 @@ exports.getGuestIndustries = async (req, res) => {
         }
 
         const { user_id } = req.query; // Extract user_id from query parameters
-
-
-    
+        
         // Update user industries
         const industries = await IndustriesModel.getGuestIndustries();
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
