@@ -797,7 +797,7 @@ router.post(
 
 
 // Update Service Route
-router.get('/search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
+router.get('/search-services-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
     authenticateToken, // Ensure the user is authenticated
     [
         // Validate and sanitize the user_id parameter
@@ -809,13 +809,13 @@ router.get('/search-suggestions/:user_id(\\d+)', // This ensures that user_id is
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
-    servicesProtectedController.SearchSuggestions // Controller function to load user profile
+    servicesProtectedController.searchSuggestions // Controller function to load user profile
 );
 
 
 
 // Update Service Route
-router.get('/guest-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
+router.get('/guest-services-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
     [
         // Validate and sanitize the user_id parameter
         param('user_id')
@@ -826,7 +826,7 @@ router.get('/guest-search-suggestions/:user_id(\\d+)', // This ensures that user
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
-    servicesProtectedController.SearchSuggestions // Controller function to load user profile
+    servicesProtectedController.searchSuggestions // Controller function to load user profile
 );
 
 

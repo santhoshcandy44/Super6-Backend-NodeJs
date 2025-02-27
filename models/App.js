@@ -470,7 +470,7 @@ class App{
  
                          const publisher_id = row.publisher_id;
                          // Await the async operation
-                         const result = await UsedProductListingModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                         const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
  
                          if (!result) {
                              throw new Error("Failed to retrieve published services of the user");

@@ -282,7 +282,7 @@ exports.removeBookmarkUsedProductListing = async (req, res) => {
 
 };
 
-exports.SearchSuggestions = async (req, res) => {
+exports.usedProductListingsSearchQueries = async (req, res) => {
 
 
     try {
@@ -298,13 +298,13 @@ exports.SearchSuggestions = async (req, res) => {
         const query = req.query.query; // This will contain the uploaded images
 
         
-        const result = await ServiceModel.searchQueries(query)
+        const result = await UsedProductListingModel.usedProductListingsSearchQueries(query)
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
 
-        return sendJsonResponse(res, 200, "Suggestions retrieve successfully", result);
+        return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());

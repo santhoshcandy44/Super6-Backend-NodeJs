@@ -614,7 +614,7 @@ exports.removeBookmarkService = async (req, res) => {
 
 };
 
-exports.SearchSuggestions = async (req, res) => {
+exports.searchSuggestions = async (req, res) => {
 
 
     try {
@@ -636,7 +636,7 @@ exports.SearchSuggestions = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
 
-        return sendJsonResponse(res, 200, "Suggestions retrieve successfully", result);
+        return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());

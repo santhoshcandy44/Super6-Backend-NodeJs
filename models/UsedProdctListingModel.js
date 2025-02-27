@@ -5,7 +5,6 @@ const he = require('he');
 const moment = require('moment');
 const { awsS3Bucket } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');  // For unique file names
-const ServiceModel = require('./ServiceModel .js');
 
 
 class UsedProductListingModel {
@@ -339,7 +338,7 @@ class UsedProductListingModel {
 
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
                         ON DUPLICATE KEY UPDATE
                             popularity = popularity + 1,
@@ -611,7 +610,7 @@ distance LIMIT ? OFFSET ?`;
 
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
                         ON DUPLICATE KEY UPDATE
                             popularity = popularity + 1,
@@ -908,7 +907,7 @@ distance LIMIT ? OFFSET ?`;
                     const publisher_id = row.publisher_id;
                     try {
                         // Await the async operation
-                        const result = await UsedProductListingModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -983,7 +982,7 @@ distance LIMIT ? OFFSET ?`;
         return Object.values(services);
     }
 
-    static async getUserPublishedServicesFeedUser(userId, serviceOwnerId) {
+    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId) {
 
 
         // Create a connection to the database
@@ -1291,7 +1290,7 @@ distance LIMIT ? OFFSET ?`;
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                     VALUES (?, 1, NOW(), ?)
                     ON DUPLICATE KEY UPDATE
                         popularity = popularity + 1,
@@ -1547,7 +1546,7 @@ distance LIMIT ? OFFSET ?`;
 
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
                         ON DUPLICATE KEY UPDATE
                             popularity = popularity + 1,
@@ -1827,7 +1826,7 @@ distance LIMIT ? OFFSET ?`;
                     const publisher_id = row.publisher_id;
                     try {
                         // Await the async operation
-                        const result = await UsedProductListingModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1853,11 +1852,11 @@ distance LIMIT ? OFFSET ?`;
                                 created_at: createdAtYear,
                             },
 
-                            created_services: result,
+                            created_used_product_listings: result,
 
                             product_id: productId,
                             name: row.name,
-                            description: row.short_description,
+                            description: row.description,
                             price:row.price,
                             price_unit:row.price_unit,
                             country: row.country,
@@ -1907,8 +1906,6 @@ distance LIMIT ? OFFSET ?`;
         return Object.values(products);
     }
 
-
-    
 
 
     static async bookmarkUsedProductListing(userId, productId) {
@@ -2069,7 +2066,7 @@ distance LIMIT ? OFFSET ?`;
     }
 
 
-    static async searchQueries(query) {
+    static async usedProductListingsSearchQueries(query) {
 
 
 
@@ -2136,44 +2133,44 @@ distance LIMIT ? OFFSET ?`;
             const sql = `
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
-                    FROM search_queries
+                    FROM used_product_listing_search_queries 
                     WHERE search_term LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
 
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 1 AS relevance_score
-                    FROM search_queries
+                    FROM used_product_listing_search_queries 
                     WHERE ${likeConditions} -- Partial match (contains all words)
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 2 AS relevance_score
-                    FROM search_queries
+                    FROM used_product_listing_search_queries 
                     WHERE search_term_concatenated LIKE CONCAT(${concatenatedQuery}, '%') -- Concatenated match
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from concatenated results
                     AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, (${matchCountSql}) AS match_count, 3 AS relevance_score
-                    FROM search_queries
+                    FROM used_product_listing_search_queries 
                     WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 4 AS relevance_score
-                    FROM search_queries
+                    FROM used_product_listing_search_queries 
                     WHERE ${concatenatedLikeConditions} -- Match each word in the concatenated form
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches
                     AND NOT (${likeConditions}) -- Exclude partial matches containing all words

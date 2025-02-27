@@ -1128,6 +1128,7 @@ END AS thumbnail,
 
             } else {
 
+
                 query = `
                     SELECT
     s.service_id AS service_id,

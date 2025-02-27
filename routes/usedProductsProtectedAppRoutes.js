@@ -397,38 +397,37 @@ router.post(
 );
 
 
-// // Update Service Route
-// router.get('/search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
-//     authenticateToken, // Ensure the user is authenticated
-//     [
-//         // Validate and sanitize the user_id parameter
-//         param('user_id')
-//             .isInt().withMessage('Invalid user id format'),
+router.get('/search-used-product-listing-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
+    authenticateToken, // Ensure the user is authenticated
+    [
+        // Validate and sanitize the user_id parameter
+        param('user_id')
+            .isInt().withMessage('Invalid user id format'),
 
-//         // Validate and sanitize the query parameter
-//         query('query')
-//             .isString().withMessage('Invalid user query format')
-//             .notEmpty().withMessage('Query cannot be empty'),
-//     ],
-//     servicesProtectedController.SearchSuggestions // Controller function to load user profile
-// );
-
+        // Validate and sanitize the query parameter
+        query('query')
+            .isString().withMessage('Invalid user query format')
+            .notEmpty().withMessage('Query cannot be empty'),
+    ],
+    usedProductsProtectedController.usedProductListingsSearchQueries // Controller function to load user profile
+);
 
 
-// // Update Service Route
-// router.get('/guest-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
-//     [
-//         // Validate and sanitize the user_id parameter
-//         param('user_id')
-//             .isInt().withMessage('Invalid user id format'),
 
-//         // Validate and sanitize the query parameter
-//         query('query')
-//             .isString().withMessage('Invalid user query format')
-//             .notEmpty().withMessage('Query cannot be empty'),
-//     ],
-//     servicesProtectedController.SearchSuggestions // Controller function to load user profile
-// );
+// Update Service Route
+router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
+    [
+        // Validate and sanitize the user_id parameter
+        param('user_id')
+            .isInt().withMessage('Invalid user id format'),
+
+        // Validate and sanitize the query parameter
+        query('query')
+            .isString().withMessage('Invalid user query format')
+            .notEmpty().withMessage('Query cannot be empty'),
+    ],
+    usedProductsProtectedController.usedProductListingsSearchQueries // Controller function to load user profile
+);
 
 
 
