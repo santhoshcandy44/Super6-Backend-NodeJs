@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const ServiceModel = require('../models/ServiceModel '); // Assuming this is the user model
-const { MEDIA_BASE_URL } = require('../config/config');
 const UsedProductListingModel = require('../models/UsedProdctListingModel');
 
 
@@ -96,7 +95,7 @@ exports.guestGetUsedProductListings = async (req, res) => {
 
 
 
-exports.getUserPublishedServicesFeedGuest = async (req, res) => {
+exports.getUserPublishedUsedProductListingsFeedGuest = async (req, res) => {
 
     try {
         // Validate the request body
@@ -125,7 +124,7 @@ exports.getUserPublishedServicesFeedGuest = async (req, res) => {
 
 };
 
-exports.getPublishedServicesFeedUser = async (req, res) => {
+exports.getPublishedUsedProductListingsFeedUser = async (req, res) => {
 
     try {
         // Validate the request body
@@ -173,8 +172,10 @@ exports.getPublishedUsedProductListings = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve products");
         }
+       
         return sendJsonResponse(res, 200, "Published products retrieved successfully", result);
 
+      
     } catch (error) {
 
         console.log(error);

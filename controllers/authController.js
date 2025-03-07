@@ -7,7 +7,7 @@ const { generateTokens, generateSalt, sendOtpEmail, verifyIdToken, hashPassword,
 
 const { sendErrorResponse, sendJsonResponse } = require('../helpers/responseHelper')
 
-const { REFRESH_TOKEN_SECRET } = require('../config/config');
+const { REFRESH_TOKEN_SECRET, PROFILE_BASE_URL } = require('../config/config');
 const App = require('../models/App');
 
 
@@ -141,7 +141,7 @@ exports.verifyOTP = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
@@ -230,7 +230,7 @@ exports.googleSignUp = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
@@ -318,7 +318,7 @@ exports.legacyEmailLogIn = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL +"/"+  result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
             result.latitude != null &&
@@ -422,7 +422,7 @@ exports.googleSignin = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
             result.latitude != null &&
