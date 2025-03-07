@@ -6,7 +6,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User'); // Assuming this is the user model
 const UserLocation = require('../models/UserLocation');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_ROOT_PATH } = require('../config/config');
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_ROOT_PATH, S3_BUCKET_NAME } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
 const App = require('../models/App');
 
@@ -160,7 +160,7 @@ exports.updateAbout = async (req, res) => {
 
 async function uploadToS3(buffer, key, contentType) {
     const params = {
-        Bucket: "super6bucket",
+        Bucket: S3_BUCKET_NAME,
         Key: key,  // The S3 path (folder + filename)
         Body: buffer,
         ContentType: contentType, // MIME type of the file
