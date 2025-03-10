@@ -244,8 +244,7 @@ class UsedProductListingModel {
             }
 
 
-            console.log(productData[0].price);
-            console.log(productData[0].price_unit)
+      
 
             // Construct response object
             const product = {
@@ -266,6 +265,8 @@ class UsedProductListingModel {
                 product_id: productData[0].product_id,
                 name: productData[0].name,
                 description: productData[0].description,
+                price: productData[0].price,
+                price_unit: productData[0].price_unit,
                 country: productData[0].country,
                 state: productData[0].state,
                 status: productData[0].status,
