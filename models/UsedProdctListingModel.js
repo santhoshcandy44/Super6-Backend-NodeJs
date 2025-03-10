@@ -195,6 +195,8 @@ class UsedProductListingModel {
                     upl.state,
                     upl.status,
                     upl.short_code,
+                    upl.price,
+                    upl.price_unit,
             
                     -- User details (publisher)
                     u.user_id AS publisher_id,
@@ -240,6 +242,10 @@ class UsedProductListingModel {
             if (productData.length === 0) {
                 throw new Error("Failed to fetch product details after creation/update.");
             }
+
+
+            console.log(productData[0].price);
+            console.log(productData[0].price_unit)
 
             // Construct response object
             const product = {
