@@ -4,15 +4,16 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FCM_TOKEN_SECRET, PROFILE_PIC_MEDIA_ENCRYPTION, APP_NAME } = require('../config/config')
+const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FCM_TOKEN_SECRET, PROFILE_PIC_MEDIA_ENCRYPTION, APP_NAME, 
+    OAUTH_GOOGLE_WEB_CLIENT_ID, OAUTH_GOOGLE_ANDROID_CLIENT_ID} = require('../config/config')
 
 
 const { OAuth2Client } = require('google-auth-library');
 
 
 // Initialize the OAuth2 client with your web client ID
-const webClientId = '841124425720-of6bpub4q0evdncg3ttfob98r9jtg8n6.apps.googleusercontent.com'; // Replace with your Web Client ID
-const androidClientId = '841124425720-rjg4aigj21dfgahidi53ujp6bcsjl679.apps.googleusercontent.com'; // Replace with your Android Client ID
+const webClientId = OAUTH_GOOGLE_WEB_CLIENT_ID; // Replace with your Web Client ID
+const androidClientId = OAUTH_GOOGLE_ANDROID_CLIENT_ID; // Replace with your Android Client ID
 
 const client = new OAuth2Client(webClientId);
 
