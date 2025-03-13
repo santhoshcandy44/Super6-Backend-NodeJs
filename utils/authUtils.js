@@ -91,7 +91,7 @@ function generateTokens(userId, email, signUpMethod, lastSignInTimestamp, role =
     };
 
     const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '10s' });
-    const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
     return { accessToken, refreshToken };
 };
 
