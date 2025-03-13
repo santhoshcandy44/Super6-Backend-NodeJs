@@ -3524,8 +3524,7 @@ END AS thumbnail,
     static async searchQueries(query) {
 
 
-
-        let connection;
+  let connection;
 
         try {
             connection = await db.getConnection();
@@ -3588,44 +3587,44 @@ END AS thumbnail,
             const sql = `
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
-                    FROM search_queries
+                    FROM search_queries 
                     WHERE search_term LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
 
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 1 AS relevance_score
-                    FROM search_queries
+                    FROM search_queries 
                     WHERE ${likeConditions} -- Partial match (contains all words)
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 2 AS relevance_score
-                    FROM search_queries
+                    FROM search_queries 
                     WHERE search_term_concatenated LIKE CONCAT(${concatenatedQuery}, '%') -- Concatenated match
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from concatenated results
                     AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, (${matchCountSql}) AS match_count, 3 AS relevance_score
-                    FROM search_queries
+                    FROM search_queries 
                     WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    AND popularity > 10  -- Ensure popularity is greater than 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 4 AS relevance_score
-                    FROM search_queries
+                    FROM search_queries 
                     WHERE ${concatenatedLikeConditions} -- Match each word in the concatenated form
                     AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches
                     AND NOT (${likeConditions}) -- Exclude partial matches containing all words
@@ -3653,6 +3652,7 @@ END AS thumbnail,
                 (await connection).release();
             }
         }
+     
 
     }
 

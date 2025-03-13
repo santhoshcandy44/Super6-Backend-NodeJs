@@ -31,6 +31,7 @@ async function verifyIdToken(idToken) {
 
         return payload;
     } catch (error) {
+        console.log(error);
         throw new Error('Failed to verify ID Token');
     }
 }

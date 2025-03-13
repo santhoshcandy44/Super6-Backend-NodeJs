@@ -369,6 +369,7 @@ exports.googleSignin = async (req, res) => {
     // Extract the required fields
     const payloadEmail = payload.email;
 
+
     // const firstName = payload.given_name; // First name
     // const lastName = payload.family_name; // Last name
     // const profilePicUrl = payload.picture; // Profile picture URL
