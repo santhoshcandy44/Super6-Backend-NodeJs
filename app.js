@@ -142,7 +142,6 @@ app.get('/media/:folder/used-product-listings/*', (req, res) => {
         Key: s3Key,
     };
 
-    console.log(s3Key);
 
     // Get the metadata of the object (including Content-Type and Content-Length)
     awsS3Bucket.headObject(s3Params, (err, metadata) => {
