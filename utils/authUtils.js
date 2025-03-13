@@ -15,10 +15,10 @@ const { OAuth2Client } = require('google-auth-library');
 const webClientId = OAUTH_GOOGLE_WEB_CLIENT_ID; // Replace with your Web Client ID
 const androidClientId = OAUTH_GOOGLE_ANDROID_CLIENT_ID; // Replace with your Android Client ID
 
-const client = new OAuth2Client(webClientId);
 
 
 async function verifyIdToken(idToken) {
+    const client = new OAuth2Client(webClientId);
     try {
         const ticket = await client.verifyIdToken({
             idToken: idToken,

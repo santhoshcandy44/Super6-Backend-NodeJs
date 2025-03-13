@@ -141,7 +141,7 @@ exports.verifyOTP = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
@@ -188,6 +188,7 @@ exports.googleSignUp = async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findUserByEmail(payloadEmail);
+
     if (existingUser) {
       return sendErrorResponse(res, 409, 'Email is in use with another account'); // 409 Conflict
     }
@@ -230,7 +231,7 @@ exports.googleSignUp = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
@@ -318,7 +319,7 @@ exports.legacyEmailLogIn = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: PROFILE_BASE_URL +"/"+  result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
             result.latitude != null &&
@@ -364,11 +365,15 @@ exports.googleSignin = async (req, res) => {
     }
     const { id_token } = req.body;
 
+
     const payload = await verifyIdToken(id_token);
 
     // Extract the required fields
     const payloadEmail = payload.email;
 
+    if (!payloadEmail) {
+      return sendErrorResponse(res, 404, 'Something went wrong'); // 404 not found
+    }
 
     // const firstName = payload.given_name; // First name
     // const lastName = payload.family_name; // Last name
@@ -423,7 +428,7 @@ exports.googleSignin = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
-          profile_pic_url: PROFILE_BASE_URL +"/"+ result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
             result.latitude != null &&
@@ -677,7 +682,7 @@ exports.refreshToken = async (req, res) => {
 
 
             if (decoded) {
-              
+
               const userId = decoded.userId
 
               // Check if the user exists
