@@ -5,7 +5,10 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
 const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FCM_TOKEN_SECRET, PROFILE_PIC_MEDIA_ENCRYPTION, APP_NAME, 
-    OAUTH_GOOGLE_WEB_CLIENT_ID, OAUTH_GOOGLE_ANDROID_CLIENT_ID} = require('../config/config')
+    OAUTH_GOOGLE_WEB_CLIENT_ID, OAUTH_GOOGLE_ANDROID_CLIENT_ID,
+    SMTP_HOST,
+    SMTP_USER,
+    SMTP_PASSWORD} = require('../config/config')
 
 
 const { OAuth2Client } = require('google-auth-library');
@@ -130,18 +133,17 @@ function decrypt(text) {
 
 // Create a transporter using SMTP configuration
 const transporter = nodemailer.createTransport({
-    host: 'email-smtp.ap-south-1.amazonaws.com', // Specify your SMTP server
+    host: SMTP_HOST, // Specify your SMTP server
     port: 465, // Specify the SMTP port
     secure: true, // Enable SSL
     auth: {
-        user: 'AKIAXTORPPCDN5VE7PXR', // SMTP username
-        pass: 'BLFDhZxR/E+ZNoY7MnEolu5uQj+2/IIblbaAi8UXgJSM' // SMTP password
+        user: SMTP_USER, // SMTP username
+        pass: SMTP_PASSWORD// SMTP password
     },
     tls: {
         ciphers: 'TLSv1.2' // Specify the cipher you want to use
     },
-    debug: true
-
+    debug: false
 });
 
 // Function to send OTP verification email
@@ -151,7 +153,7 @@ async function sendOtpEmail(email, otp) {
     const currentYear = new Date().getFullYear();  // Get the current year
 
     const mailOptions = {
-        from: 'noreply-verification@pocketfmpromocode.net',
+        from: 'noreply-verification@lts360.com',
         to: email,
         subject: 'OTP Verification',
         html: `
