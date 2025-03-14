@@ -372,7 +372,7 @@ exports.googleSignin = async (req, res) => {
     const payloadEmail = payload.email;
 
     if (!payloadEmail) {
-      return sendErrorResponse(res, 404, 'Something went wrong'); // 404 not found
+      return sendErrorResponse(res, 503, 'Something went wrong'); // 404 not found
     }
 
     // const firstName = payload.given_name; // First name

@@ -15,7 +15,7 @@ const accountSettingsProtectedRoutes = require('./routes/accountSettingsProtecte
 const IndustriesSettingsProtectedRoutes = require('./routes/industriesSettingsProtectedAppRoutes');
 const chatProtectedAppRoutes = require('./routes/chatProtectedAppRoutes');
 const { MEDIA_ROOT_PATH, S3_BUCKET_NAME, MEDIA_BASE_URL } = require('./config/config');
-const { verifyShortEncryptedUrl } = require('./utils/authUtils')
+const { verifyShortEncryptedUrl, verifyIdToken, sendOtpEmail } = require('./utils/authUtils')
 
 const axios = require('axios');
 const authenticateToken = require('./middlewares/authMiddleware'); // Import the auth middleware
@@ -512,6 +512,9 @@ app.get('/', (req, res) => {
     res.send('Lts360!');
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {   
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+
+

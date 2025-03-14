@@ -23,11 +23,14 @@ const androidClientId = OAUTH_GOOGLE_ANDROID_CLIENT_ID; // Replace with your And
 async function verifyIdToken(idToken) {
     const client = new OAuth2Client(webClientId);
     try {
+
+
         const ticket = await client.verifyIdToken({
             idToken: idToken,
             audience: [webClientId, androidClientId], // Specify both CLIENT_IDs
         });
         const payload = ticket.getPayload();
+
         if (!payload) {
             throw new Error('Invalid token payload');
         }
@@ -134,16 +137,16 @@ function decrypt(text) {
 // Create a transporter using SMTP configuration
 const transporter = nodemailer.createTransport({
     host: SMTP_HOST, // Specify your SMTP server
-    port: 465, // Specify the SMTP port
-    secure: true, // Enable SSL
+    port: 587, // Specify the SMTP port
+    secure: false, // Enable SSL
     auth: {
         user: SMTP_USER, // SMTP username
         pass: SMTP_PASSWORD// SMTP password
     },
     tls: {
-        ciphers: 'TLSv1.2' // Specify the cipher you want to use
+        ciphers: 'SSLv3' // Specify the cipher you want to use
     },
-    debug: false
+    debug: true
 });
 
 // Function to send OTP verification email
@@ -187,9 +190,10 @@ async function sendOtpEmail(email, otp) {
                     .content {
                         padding: 30px;
                         text-align: center;
-                        font-size: 16px;
+                        font-size: 14px;
                         color: #555;
                     }
+                
                     .otp-code {
                         font-size: 32px;
                         font-weight: bold;
@@ -224,11 +228,11 @@ async function sendOtpEmail(email, otp) {
 
                         <p>We received a request to verify your account. Please use the following OTP code to complete your verification:</p>
                         <div class="otp-code">${otp}</div>
-                        <p>Note: The OTP will expire in 15 minutes.</p>
+                        <p>The OTP will expire in 15 minutes.</p>
                         <p>If you did not request this, please ignore this email.</p>
                     </div>
-                    <div class="footer">
-                        <p>For any issues, please contact us at <a href="mailto:support@pocketfmpromocode.net">support@pocketfmpromocode.net</a></p>
+                    <div class="footer" style="padding:8px">
+                        <p>For any issues, please contact us at <a href="mailto:support@lts360.com">support@lts360.com</a></p>
                         <p>&copy; ${currentYear} ${APP_NAME}. All Rights Reserved.</p>
                     </div>
                 </div>
@@ -239,6 +243,7 @@ async function sendOtpEmail(email, otp) {
 
     try {
         const info = await transporter.sendMail(mailOptions);
+        console.log(info);
         return { success: true, message: 'OTP sent successfully', info };
     } catch (error) {
         console.log(error);
