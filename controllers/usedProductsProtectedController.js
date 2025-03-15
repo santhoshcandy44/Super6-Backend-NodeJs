@@ -36,7 +36,7 @@ exports.getUsedProductListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
 
-        return sendJsonResponse(res, 200, "Services retrieved successfully", result);
+        return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
 
     } catch (error) {
         console.log(error);
@@ -84,7 +84,7 @@ exports.guestGetUsedProductListings = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
 
-        return sendJsonResponse(res, 200, "Services retrieved successfully", result);
+        return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
 
     } catch (error) {
         console.log(error);
@@ -243,7 +243,7 @@ exports.bookmarkUsedProductListing = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to bookmark service");
         }
 
-        return sendJsonResponse(res, 200, "Service bookmarked successfully");
+        return sendJsonResponse(res, 200, "Seconds bookmarked successfully");
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
 
