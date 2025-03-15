@@ -15,6 +15,8 @@ const pool = mysql.createPool({
     user: DATABASE_USERNAME, // default XAMPP MySQL username
     password: DATABASE_PASSWORD, // default XAMPP MySQL password (usually empty)
     database: DATABASE_NAME, // replace with your actual database name
+    charset: 'utf8mb4' // This sets the character set to utf8mb4
+
 });   
 
 
