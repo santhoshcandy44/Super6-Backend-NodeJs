@@ -263,6 +263,9 @@ exports.legacyEmailLogIn = async (req, res) => {
     const bodyEmail = req.body.email;
     const { password } = req.body;
 
+
+    console.log(bodyEmail);
+
     // Find the user by email
     const existingUser = await User.findUserByEmail(bodyEmail);
     if (!existingUser) {
@@ -383,7 +386,7 @@ exports.googleSignin = async (req, res) => {
     const existingUser = await User.findUserByEmail(payloadEmail);
 
     if (!existingUser) {
-      return sendErrorResponse(res, 404, 'No account associated with this email'); // 404 not found
+      return sendErrorResponse(res, 404, 'No account found'); // 404 not found
     }
 
     const { user_id, email, sign_up_method } = existingUser;
@@ -484,7 +487,7 @@ exports.forgotPassword = async (req, res) => {
     }
 
     if (existingUser.sign_up_method !== 'legacy_email') {
-      return sendErrorResponse(res, 409, 'Email is associated with different sign in metho'); // 409 Conflict
+      return sendErrorResponse(res, 409, 'Email is associated with different sign in method'); // 409 Conflict
     }
 
     // Generate a random 6-digit OTP

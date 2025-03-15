@@ -9,7 +9,8 @@ router.post('/register', [
   // Validate and sanitize the email and password fields
   body('email')
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('A a valid email is required').normalizeEmail(),
+    .isEmail().withMessage('A a valid email is required'),
+    // .normalizeEmail(),
 ], authController.register);
 
 // Verify OTP route
@@ -94,8 +95,8 @@ router.post('/legacy-email-login', [
   // Validate and sanitize the email and password fields
   body('email')
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Email must be a valid email address')
-    .normalizeEmail(),
+    .isEmail().withMessage('Email must be a valid email address'),
+    // .normalizeEmail(),
 
   body('password')
     .notEmpty().withMessage('Password is required')
