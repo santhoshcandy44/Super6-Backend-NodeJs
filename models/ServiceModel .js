@@ -2508,7 +2508,7 @@ END AS thumbnail,
                 ACL: 'public-read',
             };
 
-            const thumbnailUploadResult = await s3.upload(thumbnailUploadParams).promise();
+            const thumbnailUploadResult = await awsS3Bucket.upload(thumbnailUploadParams).promise();
 
             // Track the uploaded thumbnail file for rollback
             uploadedFiles.push(thumbnailUploadResult.Key);
