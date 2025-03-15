@@ -243,7 +243,6 @@ async function sendOtpEmail(email, otp) {
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log(info);
         return { success: true, message: 'OTP sent successfully', info };
     } catch (error) {
         console.log(error);
