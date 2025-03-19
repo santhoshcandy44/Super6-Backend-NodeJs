@@ -6,7 +6,6 @@ AWS.config.update({
   region: S3_BUCKET_REGION, // Your region
   accessKeyId: S3_BUCKET_ACCESS_KEY, // Optional if set via environment variables
   secretAccessKey: S3_BUCKET_SECRET_KEY, // Optional if set via environment variables
-  endpoint: `https://s3.dualstack.${S3_BUCKET_REGION}.amazonaws.com` // Use dual-stack endpoint dynamically based on region
 
 });
 
