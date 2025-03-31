@@ -263,9 +263,6 @@ exports.legacyEmailLogIn = async (req, res) => {
     const bodyEmail = req.body.email;
     const { password } = req.body;
 
-
-    console.log(bodyEmail);
-
     // Find the user by email
     const existingUser = await User.findUserByEmail(bodyEmail);
     if (!existingUser) {
@@ -283,10 +280,6 @@ exports.legacyEmailLogIn = async (req, res) => {
     }
 
     const { user_id, email } = existingUser;
-
-
-
-
 
     const result = await User.getUserProfile(user_id);
 
@@ -676,8 +669,7 @@ exports.refreshToken = async (req, res) => {
 
       // Here you might want to verify if the user exists in the database
       try {
-
-
+        l̥
         if (err) {
           if (err.name === 'TokenExpiredError') {
             // Decode the expired token payload without verification
@@ -706,19 +698,13 @@ exports.refreshToken = async (req, res) => {
 
         }
 
-
-
-
         const existingUser = await User.findUserById(user.userId); // Implement this method in User model
 
         if (!existingUser) return sendErrorResponse(res, 403, "User not exist"); // User not found, forbidden
 
-
-
         // Generate access and refresh tokens
         const { accessToken, refreshToken } = generateTokens(user.userId, user.email, user.signUpMethod, user.lastSignIn);
-
-
+        
         sendJsonResponse(res, 201, 'Authorized',
           {
             user_id: existingUser.userId,
@@ -728,7 +714,6 @@ exports.refreshToken = async (req, res) => {
 
       } catch (error) {
         console.log(error);
-
         return sendErrorResponse(res, 500, "Internal server error", error.toString());
       }
 

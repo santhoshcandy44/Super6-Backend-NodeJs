@@ -5,8 +5,7 @@ const { S3_BUCKET_NAME, S3_BUCKET_REGION, S3_BUCKET_ACCESS_KEY, S3_BUCKET_SECRET
 AWS.config.update({
   region: S3_BUCKET_REGION, // Your region
   accessKeyId: S3_BUCKET_ACCESS_KEY, // Optional if set via environment variables
-  secretAccessKey: S3_BUCKET_SECRET_KEY, // Optional if set via environment variables
-
+  secretAccessKey: S3_BUCKET_SECRET_KEY // Optional if set via environment variables
 });
 
 const awsS3Bucket = new AWS.S3();
