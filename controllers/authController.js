@@ -669,7 +669,7 @@ exports.refreshToken = async (req, res) => {
 
       // Here you might want to verify if the user exists in the database
       try {
-        l̥
+        
         if (err) {
           if (err.name === 'TokenExpiredError') {
             // Decode the expired token payload without verification
