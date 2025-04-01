@@ -377,7 +377,7 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     }
 
                     // Check if the duration_unit is one of the allowed values: 'd', 'w', or 'm'
-                    const validDurationUnits = ['D', 'W', 'M'];
+                    const validDurationUnits = ['HR', 'D', 'W', 'M'];
                     if (!validDurationUnits.includes(plan.duration_unit)) {  // Assuming 'duration_type' holds the unit ('d', 'w', 'm')
                         throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
                     }
@@ -687,7 +687,7 @@ router.post('/create-service',
                     }
 
                     // Check if the duration_unit is one of the allowed values: 'd', 'w', or 'm'
-                    const validDurationUnits = ['D', 'W', 'M'];
+                    const validDurationUnits = ['HR', 'D', 'W', 'M'];
                     if (!validDurationUnits.includes(plan.duration_unit)) {  // Assuming 'duration_type' holds the unit ('d', 'w', 'm')
                         throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
                     }
