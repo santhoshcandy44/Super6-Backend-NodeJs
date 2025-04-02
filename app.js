@@ -12,13 +12,12 @@ const serviceProtectedAppRoutes = require('./routes/serviceProtectedAppRoutes');
 const usedProtectProtectedAppRoutes = require('./routes/usedProductsProtectedAppRoutes');
 
 const accountSettingsProtectedRoutes = require('./routes/accountSettingsProtectedAppRoutes');
-const IndustriesSettingsProtectedRoutes = require('./routes/industriesSettingsProtectedAppRoutes');
+const industriesSettingsProtectedRoutes = require('./routes/industriesSettingsProtectedAppRoutes');
+const boardsSettingsProtectedRoutes = require('./routes/boardsSettingsProtectedAppRoutes');
 const chatProtectedAppRoutes = require('./routes/chatProtectedAppRoutes');
 const { MEDIA_ROOT_PATH, S3_BUCKET_NAME, MEDIA_BASE_URL } = require('./config/config');
-const { verifyShortEncryptedUrl, verifyIdToken, sendOtpEmail } = require('./utils/authUtils')
+const { verifyShortEncryptedUrl } = require('./utils/authUtils')
 
-const axios = require('axios');
-const authenticateToken = require('./middlewares/authMiddleware'); // Import the auth middleware
 const db = require('./config/database')
 
 
@@ -51,7 +50,8 @@ app.use('/api/serve/profile', profileProtectedAppRoutes); // All protected route
 // Use the routes
 app.use('/api/app/serve', protectedAppRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/account-settings', accountSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
-app.use('/api/app/serve/industries-settings', IndustriesSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
+app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
+app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes); 
 app.use('/api/app/serve/chat', chatProtectedAppRoutes); // All protected routes prefixed with /api/protected
 
 const { awsS3Bucket } = require('./config/awsS3.js')
@@ -74,9 +74,6 @@ app.get('/open-graph-scraper', async (req, res) => {
 
 
 });
-
-
-
 
 
 //Handling dynamic file request for a folder

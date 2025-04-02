@@ -26,7 +26,6 @@ router.get('/user-bookmark-services/:user_id(\\d+)', // This ensures that user_i
 
 
 
-
 // Update Service Route
 router.get('/get-services', // This ensures that user_id is a number
     authenticateToken, // Ensure the user is authenticated

@@ -9,6 +9,7 @@ const { sendErrorResponse, sendJsonResponse } = require('../helpers/responseHelp
 
 const { REFRESH_TOKEN_SECRET, PROFILE_BASE_URL } = require('../config/config');
 const App = require('../models/App');
+const Boards = require('../models/Boards');
 
 
 // Register a new user
@@ -129,6 +130,8 @@ exports.verifyOTP = async (req, res) => {
     // Extract the year
     const createdAtYear = new Date(result.created_at).getFullYear().toString();
 
+    const boards = await Boards.getBoards(user_id)
+
     sendJsonResponse(res, 201, 'User registered successfully',
       {
         user_id: user_id, // Unique identifier for the user
@@ -146,7 +149,9 @@ exports.verifyOTP = async (req, res) => {
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
-        }
+        },
+        boards:boards
+
       });
 
     // Optionally clear the OTP from the session once it’s successfully verified
@@ -219,6 +224,8 @@ exports.googleSignUp = async (req, res) => {
     // Extract the year
     const createdAtYear = new Date(result.created_at).getFullYear().toString();
 
+    const boards = await Boards.getBoards(user_id)
+
     sendJsonResponse(res, 201, 'User registered successfully',
       {
         user_id: user_id, // Unique identifier for the user
@@ -236,7 +243,8 @@ exports.googleSignUp = async (req, res) => {
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
-        }
+        },
+        boards:boards
       }
     );
 
@@ -302,6 +310,8 @@ exports.legacyEmailLogIn = async (req, res) => {
     // Extract the year
     const createdAtYear = new Date(result.created_at).getFullYear().toString();
 
+    const boards = await Boards.getBoards(user_id)
+
     sendJsonResponse(res, 201, 'User login successfully',
 
       {
@@ -333,7 +343,8 @@ exports.legacyEmailLogIn = async (req, res) => {
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
-        }
+        },
+        boards: boards
       }
 
     );
@@ -411,6 +422,11 @@ exports.googleSignin = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user_id, email, 'google', updateResult.last_sign_in);
 
 
+    // Extract the year
+    const createdAtYear = new Date(result.created_at).getFullYear().toString();
+
+    const boards = await Boards.getBoards(user_id)
+
     sendJsonResponse(res, 200, 'User sign in successfully',
 
       {
@@ -439,10 +455,11 @@ exports.googleSignin = async (req, res) => {
             location_type: result.location_type,
             updated_at: result.updated_at,
           } : null,
-          created_at: result.created_at, // Date when the user was created
+          created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
-        }
+        },
+        boards:boards
       }
 
     );
