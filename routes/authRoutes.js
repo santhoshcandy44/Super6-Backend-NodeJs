@@ -109,7 +109,7 @@ router.post('/legacy-email-login', [
 
 
 // Login route
-router.post('partner/legacy-email-login', [
+router.post('/partner/legacy-email-login', [
   // Validate and sanitize the email and password fields
   body('email')
     .notEmpty().withMessage('Email is required')
@@ -147,7 +147,7 @@ router.post('/google-sign-in', [
 
 
 // Google sign up route
-router.post('partner/google-sign-in', [
+router.post('/partner/google-sign-in', [
   // Validate and sanitize the method field (expecting a string)
   body('sign_in_method')
     .notEmpty().withMessage('Sign up method is required')
