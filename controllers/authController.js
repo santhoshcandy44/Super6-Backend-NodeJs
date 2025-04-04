@@ -295,7 +295,7 @@ exports.legacyEmailLogIn = async (req, res) => {
       return sendErrorResponse(res, 400, "User not exist");
     }
 
-
+  
     const updateResult = await User.updateLastSignedIn(user_id);
 
     if (!updateResult) {
@@ -350,6 +350,97 @@ exports.legacyEmailLogIn = async (req, res) => {
     );
   } catch (error) {
 
+    console.log(error);
+    return sendErrorResponse(res, 500, "Internal Server Error", error.message)
+  }
+};
+
+
+exports.partnerLegacyEmailLogIn = async (req, res) => {
+
+  try {
+
+    // Validate the request body
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // Return the first error
+      const firstError = errors.array()[0]; // Get the first error
+      return sendErrorResponse(res, 400, firstError.msg, JSON.stringify(errors.array()))
+    }
+
+    const bodyEmail = req.body.email;
+    const { password } = req.body;
+
+    // Find the user by email
+    const existingUser = await User.findUserByEmail(bodyEmail);
+    if (!existingUser) {
+      return sendErrorResponse(res, 404, "Invalid user account")
+    }
+
+    // Combine the stored pepper with the input password and hash it
+    const hashedPasswordAttempt = await hashPassword(existingUser.pepper + password, existingUser.salt);
+
+    // Compare the hashed password with the stored hashed password
+    const isPasswordValid = hashedPasswordAttempt === existingUser.hashed_password;
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    const { user_id, email } = existingUser;
+
+    const result = await User.getUserProfile(user_id);
+
+    if (!result) {
+      return sendErrorResponse(res, 400, "User not exist");
+    }
+
+  
+    // Generate access and refresh tokens
+    // const { accessToken, refreshToken } = generateTokens(user_id, email, 'legacy_email', updateResult.last_sign_in);
+
+    // Extract the year
+    const createdAtYear = new Date(result.created_at).getFullYear().toString();
+
+    // const boards = await Boards.getBoards(user_id)
+
+    sendJsonResponse(res, 201, 'User login successfully',
+
+      {
+        user_id: user_id, // Unique identifier for the user
+        // access_token: accessToken, // Token for accessing secured resources
+        // refresh_token: refreshToken, // Token for refreshing the access token
+        user_details: {
+          user_id: user_id,
+          first_name: result.first_name, // User's first name
+          last_name: result.last_name, // User's last name (corrected to access from the first result)
+          about: result.about,
+          email: result.email, // User's email address
+          is_email_verified: Boolean(result.is_email_verified),
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          account_type: result.account_type,
+          location: (
+            result.latitude != null &&
+            result.longitude != null &&
+            result.geo != null &&
+            result.location_type != null &&
+            result.updated_at != null
+          ) ? {
+            latitude: result.latitude,
+            longitude: result.longitude,
+            geo: result.geo,
+            location_type: result.location_type,
+            updated_at: result.updated_at,
+          } : null,
+          created_at: createdAtYear, // Date when the user was created
+          updated_at: result.updated_at, // Date when the user details were last updated
+          // Add any other relevant fields here
+        },
+        // boards: boards
+      }
+
+    );
+  } catch (error) {
     console.log(error);
     return sendErrorResponse(res, 500, "Internal Server Error", error.message)
   }
@@ -460,6 +551,115 @@ exports.googleSignin = async (req, res) => {
           // Add any other relevant fields here
         },
         boards:boards
+      }
+
+    );
+
+
+  } catch (error) {
+    console.error(error);
+    return sendErrorResponse(res, 500, "Internal server error")
+  }
+
+};
+
+
+// Register a new user
+exports.partnerGoogleSignin = async (req, res) => {
+
+
+  try {
+    // Validate the request body
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      // Return the first error
+      const firstError = errors.array()[0]; // Get the first error
+      return sendErrorResponse(res, 400, firstError.msg, errors.array())
+
+    }
+    const { id_token } = req.body;
+
+
+    const payload = await verifyIdToken(id_token);
+
+    // Extract the required fields
+    const payloadEmail = payload.email;
+
+    if (!payloadEmail) {
+      return sendErrorResponse(res, 503, 'Something went wrong'); // 404 not found
+    }
+
+    // const firstName = payload.given_name; // First name
+    // const lastName = payload.family_name; // Last name
+    // const profilePicUrl = payload.picture; // Profile picture URL
+
+    // Check if user already exists
+    const existingUser = await User.findUserByEmail(payloadEmail);
+
+    if (!existingUser) {
+      return sendErrorResponse(res, 404, 'No account found'); // 404 not found
+    }
+
+    const { user_id, email, sign_up_method } = existingUser;
+
+    if (sign_up_method !== "google") {
+      return sendErrorResponse(res, 400, 'This email is signed up with a different method'); // 400 Bad Request
+    }
+
+
+
+    const result = await User.getUserProfile(user_id);
+
+    if (!result) {
+      return sendErrorResponse(res, 400, "User not exist");
+    }
+
+
+
+    // Generate access and refresh tokens
+    // const { accessToken, refreshToken } = generateTokens(user_id, email, 'google', updateResult.last_sign_in);
+
+
+    // Extract the year
+    const createdAtYear = new Date(result.created_at).getFullYear().toString();
+
+    // const boards = await Boards.getBoards(user_id)
+
+    sendJsonResponse(res, 200, 'User sign in successfully',
+
+      {
+        user_id: user_id, // Unique identifier for the user
+        // access_token: accessToken, // Token for accessing secured resources
+        // refresh_token: refreshToken, // Token for refreshing the access token
+        user_details: {
+          user_id: user_id,
+          first_name: result.first_name, // User's first name
+          last_name: result.last_name, // User's last name (corrected to access from the first result)
+          about: result.about,
+          email: result.email, // User's email address
+          is_email_verified: Boolean(result.is_email_verified),
+          profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
+          account_type: result.account_type,
+          location: (
+            result.latitude != null &&
+            result.longitude != null &&
+            result.geo != null &&
+            result.location_type != null &&
+            result.updated_at != null
+          ) ? {
+            latitude: result.latitude,
+            longitude: result.longitude,
+            geo: result.geo,
+            location_type: result.location_type,
+            updated_at: result.updated_at,
+          } : null,
+          created_at: createdAtYear, // Date when the user was created
+          updated_at: result.updated_at, // Date when the user details were last updated
+          // Add any other relevant fields here
+        },
+        // boards:boards
       }
 
     );
@@ -700,8 +900,8 @@ exports.refreshToken = async (req, res) => {
               // Check if the user exists
               const userExists = await User.findUserById(userId);
               if (userExists) {
-                const deactivatedResult = await User.userAsDeactivated(userId);
-                const result = await App.invalidateUserFCMToken(userId, null);
+                await User.userAsDeactivated(userId);
+                await App.invalidateUserFCMToken(userId, null);
               }
 
             }

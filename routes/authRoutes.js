@@ -107,6 +107,25 @@ router.post('/legacy-email-login', [
 ], authController.legacyEmailLogIn);
 
 
+
+// Login route
+router.post('partner/legacy-email-login', [
+  // Validate and sanitize the email and password fields
+  body('email')
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Email must be a valid email address'),
+    // .normalizeEmail(),
+
+  body('password')
+    .notEmpty().withMessage('Password is required')
+    .isString().withMessage('Password must be a string')
+    .trim()
+    .escape()
+    .isLength({ min: 8, max: 16 }).withMessage('Password must be between 8 and 16 characters long'),
+], authController.partnerLegacyEmailLogIn);
+
+
+
 // Google sign up route
 router.post('/google-sign-in', [
   // Validate and sanitize the method field (expecting a string)
@@ -125,6 +144,26 @@ router.post('/google-sign-in', [
     .escape(),
 
 ], authController.googleSignin);
+
+
+// Google sign up route
+router.post('partner/google-sign-in', [
+  // Validate and sanitize the method field (expecting a string)
+  body('sign_in_method')
+    .notEmpty().withMessage('Sign up method is required')
+    .isString().withMessage('Sign up method must be a string')
+    .trim()
+    .escape()
+    .isIn(['google']).withMessage('Invalid sign up method'),
+  // Validate and sanitize the id_token field (expecting a string)
+  
+  body('id_token')
+    .notEmpty().withMessage('ID Token is required')
+    .isString().withMessage('ID Token must be a string')
+    .trim()
+    .escape(),
+
+], authController.partnerGoogleSignin);
 
 
 
