@@ -28,7 +28,7 @@ exports.getServices = async (req, res) => {
 
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
 
-        const PAGE_SIZE = 1;
+        const PAGE_SIZE = 30;
 
         const result = await ServiceModel.getServicesForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
 
@@ -77,7 +77,7 @@ exports.guestGetServices = async (req, res) => {
 
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
 
-        const PAGE_SIZE = 1;
+        const PAGE_SIZE = 30;
 
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
 
