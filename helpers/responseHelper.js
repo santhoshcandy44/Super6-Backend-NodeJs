@@ -14,12 +14,12 @@ function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true)
   
   
   // Error response function
-function sendErrorResponse(res, statusCode, message, errorDetails = null) {
+function sendErrorResponse(res, statusCode, message,  error_code='AUTH_ERROR', errorDetails = null,) {
     const errorResponse = {
         status: 'error',
         statusCode: statusCode,
         error: {
-            code: 'AUTH_ERROR', // Customize error code as needed
+            code: error_code, // Customize error code as needed
             message: message,
             details: JSON.stringify(errorDetails), // Additional error details if available
             timestamp: new Date().toISOString(), // Current timestamp in ISO 8601 format

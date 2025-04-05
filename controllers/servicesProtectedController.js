@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const ServiceModel = require('../models/ServiceModel '); // Assuming this is the user model
 const { MEDIA_BASE_URL } = require('../config/config');
+const Industries = require('../models/Industries');
 
 
 
@@ -17,6 +18,18 @@ exports.getServices = async (req, res) => {
         }
         const user_id = req.user.user_id; // This will contain the uploaded images
         const { s, page, last_timestamp, last_total_relevance } = req.query;
+
+
+        const industries = await Industries.getIndustries(user_id);
+
+        if (!industries || industries.length === 0) {
+            return sendErrorResponse(
+                res,
+                400,
+                'Industries cannot be empty',
+                'EMPTY_SERVICE_INDUSTRIES');
+        }
+        
 
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
@@ -59,6 +72,7 @@ exports.guestGetServices = async (req, res) => {
 
 
         
+
         const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
 
         const querySearch = !s ? '' : s;
@@ -67,12 +81,21 @@ exports.guestGetServices = async (req, res) => {
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
 
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
-
-
-
-
         const queryIndustries = !industries ? [] :industries;
 
+
+    
+
+        if (!querySearch && (!queryIndustries || queryIndustries.length === 0)) {
+
+            return sendErrorResponse(
+                res,
+                400,
+                'Industries cannot be empty',
+                'EMPTY_SERVICE_INDUSTRIES');
+        }
+        
+       
 
 
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
