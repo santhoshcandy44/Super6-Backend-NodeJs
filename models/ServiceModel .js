@@ -778,8 +778,6 @@ END AS thumbnail,
                 const serviceId = row.service_id;
 
 
-
-
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');

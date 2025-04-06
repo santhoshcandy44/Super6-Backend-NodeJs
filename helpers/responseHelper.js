@@ -14,7 +14,7 @@ function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true)
   
   
   // Error response function
-function sendErrorResponse(res, statusCode, message, errorDetails = null,  error_code='AUTH_ERROR') {
+function sendErrorResponse(res, statusCode, message, errorDetails = null,  error_code='ERROR') {
     const errorResponse = {
         status: 'error',
         statusCode: statusCode,
