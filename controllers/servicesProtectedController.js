@@ -27,6 +27,7 @@ exports.getServices = async (req, res) => {
                 res,
                 400,
                 'Industries cannot be empty',
+                null,
                 'EMPTY_SERVICE_INDUSTRIES');
         }
         
@@ -83,15 +84,13 @@ exports.guestGetServices = async (req, res) => {
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const queryIndustries = !industries ? [] :industries;
 
-
-    
-
         if (!querySearch && (!queryIndustries || queryIndustries.length === 0)) {
 
             return sendErrorResponse(
                 res,
                 400,
                 'Industries cannot be empty',
+                null,
                 'EMPTY_SERVICE_INDUSTRIES');
         }
         
