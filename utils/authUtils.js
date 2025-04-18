@@ -253,14 +253,14 @@ async function sendOtpEmail(email, otp) {
 
 
 // Function to generate short encrypted token
-function generateShortEncryptedUrl(mediaId, filename) {
+function generateShortEncryptedUrl(path) {
     try {
         // Ensure the key length is 32 bytes (pad if needed and slice to exactly 32 bytes)
         const key = Buffer.from(PROFILE_PIC_MEDIA_ENCRYPTION.padEnd(32, '0').slice(0, 32));
 
 
         const timestamp = Date.now(); // Current timestamp
-        const data = JSON.stringify({ mediaId, filename, timestamp });
+        const data = JSON.stringify({ path, timestamp });
 
         // Generate a random initialization vector (IV) for AES encryption (16 bytes for AES)
         const iv = crypto.randomBytes(16);

@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const profileProtectedAppRoutes = require('./routes/profileProtectedAppRoutes');
 const protectedAppRoutes = require('./routes/appProtectedRoutes');
 const serviceProtectedAppRoutes = require('./routes/serviceProtectedAppRoutes');
+const jobProtectedAppRoutes = require('./routes/jobProtectedAppRoutes');
 const usedProtectProtectedAppRoutes = require('./routes/usedProductsProtectedAppRoutes');
 
 const accountSettingsProtectedRoutes = require('./routes/accountSettingsProtectedAppRoutes');
@@ -19,7 +20,12 @@ const { MEDIA_ROOT_PATH, S3_BUCKET_NAME, MEDIA_BASE_URL } = require('./config/co
 const { verifyShortEncryptedUrl } = require('./utils/authUtils')
 
 const db = require('./config/database')
+const { awsS3Bucket } = require('./config/awsS3.js')
 
+const ogs = require('open-graph-scraper');
+const { sendJsonResponse } = require('./helpers/responseHelper.js');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
 
 // Set up session middleware
@@ -41,23 +47,55 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware for parsing JSON
 app.use(express.json());
 
+
+// Define a rate limiter
+const limiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10, // Limit each IP to 5 requests per `windowMs` (1 minute)
+    message: 'Too many requests from this IP, please try again after a minute',
+    headers: true, // Include rate limit info in the response headers
+});
+
+
+// Define a whitelist of allowed origins
+const allowedOrigins = [
+    'https://api.lts360.com',
+    'https://ucontent.lts360.com',
+    'http://localhost:3000',
+];
+
+
+// CORS Configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+// Apply the rate limiter to the specific route
+app.use('/api/auth-app/ip-country', limiter);
+
 // Use the routes
 app.use('/api/auth', authRoutes); // Add authentication routes
 app.use('/api/app/serve/used-product-listings', usedProtectProtectedAppRoutes); // All protected routes prefixed with /api/protected
-
 app.use('/api/app/serve/services', serviceProtectedAppRoutes); // All protected routes prefixed with /api/protected
+app.use('/api/app/serve/jobs', jobProtectedAppRoutes); // All protected routes prefixed with /api/protected
+
 app.use('/api/serve/profile', profileProtectedAppRoutes); // All protected routes prefixed with /api/protected
 // Use the routes
 app.use('/api/app/serve', protectedAppRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/account-settings', accountSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
-app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes); 
+app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes);
 app.use('/api/app/serve/chat', chatProtectedAppRoutes); // All protected routes prefixed with /api/protected
 
-const { awsS3Bucket } = require('./config/awsS3.js')
-
-const ogs = require('open-graph-scraper');
-const { sendJsonResponse } = require('./helpers/responseHelper.js');
 
 app.get('/open-graph-scraper', async (req, res) => {
 
@@ -72,8 +110,38 @@ app.get('/open-graph-scraper', async (req, res) => {
         res.json({ error: true, data: null, errorDetails: error });
     }
 
-
 });
+
+
+
+app.get('/api/auth-app/ip-country', async (req, res) => {
+    try {
+        const ip =
+        req.headers['cf-connecting-ip'] || // Cloudflare proxy header
+        req.headers['x-forwarded-for']?.split(',')[0]?.trim() || // Behind proxy/load balancer
+        req.headers['x-real-ip'] || // Some proxies use this instead
+        req.socket?.remoteAddress || // Fallback to direct connection
+        '';
+
+        console.log(ip);
+      
+        const response = await fetch(`https://ipwho.is/${ip}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const result = {
+                code: data.country_code,
+                name: data.country
+            };
+            return sendJsonResponse(res, 200, "Country retrieved successfully", result);
+        } else {
+            return sendErrorResponse(res, 500, "Failed to get country info from IP");
+        }
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+});
+
 
 
 //Handling dynamic file request for a folder
@@ -124,8 +192,6 @@ app.get('/media/:folder/services/*', (req, res) => {
 
 });
 
-
-
 //Handling dynamic file request for a folder
 app.get('/media/:folder/used-product-listings/*', (req, res) => {
     const { folder } = req.params; // Capture the folder parameter
@@ -175,8 +241,6 @@ app.get('/media/:folder/used-product-listings/*', (req, res) => {
 
 });
 
-
-
 app.get('/uploads/:folder/*', (req, res, next) => {
     const { folder } = req.params; // Get the folder name dynamically
     const filePath = path.join(MEDIA_ROOT_PATH, 'uploads', folder, req.params[0]); // Get the file path
@@ -216,14 +280,57 @@ app.get('/uploads/:folder/*', (req, res, next) => {
     });
 });
 
+//Handling dynamic file request for a folder
+app.get('/media/:folder/careers/*', (req, res) => {
+    const { folder } = req.params; // Capture the folder parameter
 
+    const s3Key = `media/${folder}/careers/${req.params[0]}`;
+
+
+    // Get the file from S3
+    const s3Params = {
+        Bucket: S3_BUCKET_NAME, // Your S3 bucket name
+        Key: s3Key,
+    };
+
+
+    // Get the metadata of the object (including Content-Type and Content-Length)
+    awsS3Bucket.headObject(s3Params, (err, metadata) => {
+        if (err) {
+
+            return res.status(500).send('Error fetching file');
+        }
+
+        // Extract Content-Type and Content-Length from metadata
+        const contentType = metadata.ContentType;
+        const contentLength = metadata.ContentLength;
+
+
+        // Set the correct headers before streaming the file
+        res.setHeader('Content-Type', contentType); // Set the content type
+        res.setHeader('Content-Length', contentLength); // Set the content length
+
+        // Create a stream and pipe the S3 file directly to the response
+        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
+
+        // Pipe the S3 file stream directly to the response
+        s3Stream.pipe(res);
+
+        // Handle any errors in the stream
+        s3Stream.on('error', (streamError) => {
+            if (res.headersSent) {
+                return; // Headers already sent, so don't send anything further
+            }
+            res.status(500).send('Error fetching file');
+        });
+    });
+
+
+});
 
 app.get('/images', async (req, res) => {
 
-
-
     try {
-
         const { q: token } = req.query;
 
         if (!token) {
@@ -238,12 +345,12 @@ app.get('/images', async (req, res) => {
             return res.status(403).send('Forbidden: Invalid token');
         }
 
-        const { mediaId, filename } = extractedData;
+        const { path } = extractedData;
 
 
 
         // Construct the S3 URL
-        const s3Key = `media/${mediaId}/profile-pic/${filename}`;
+        const s3Key = path;
 
 
         // Get the file from S3
@@ -284,16 +391,9 @@ app.get('/images', async (req, res) => {
 
     } catch (error) {
         console.log(err);
-
         res.status(500).send('Error fetching file');
     }
-
-
-
 });
-
-
-
 
 app.get("/display-reviews/:serviceId", async (req, res) => {
     try {
@@ -337,7 +437,6 @@ app.get("/display-reviews/:serviceId", async (req, res) => {
         res.status(500).send({ error: "An error occurred while fetching comments." });
     }
 });
-
 
 app.get("/display-replies/:commentId", async (req, res) => {
     const commentId = req.params.commentId;
@@ -384,8 +483,6 @@ app.get("/display-replies/:commentId", async (req, res) => {
         res.status(500).send({ error: "An error occurred while fetching replies." });
     }
 });
-
-
 
 app.post("/insert-review", async (req, res) => {
     try {
@@ -445,8 +542,6 @@ app.post("/insert-review", async (req, res) => {
     }
 });
 
-
-
 app.post("/insert-review-reply", async (req, res) => {
     try {
         const { commentId, userId, text, replyToUserId } = req.body;
@@ -503,13 +598,11 @@ app.post("/insert-review-reply", async (req, res) => {
     }
 });
 
-
-
 app.get('/', (req, res) => {
     res.send('Lts360!');
 });
 
-app.listen(port, async () => {   
+app.listen(port, async () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 

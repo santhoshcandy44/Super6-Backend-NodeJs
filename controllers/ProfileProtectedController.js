@@ -1,12 +1,11 @@
-const path = require('path');
-const fs = require('fs');
+
 const sharp = require('sharp'); // Import sharp for image processing
 
 const { validationResult } = require('express-validator');
 const User = require('../models/User'); // Assuming this is the user model
 const UserLocation = require('../models/UserLocation');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_ROOT_PATH, S3_BUCKET_NAME } = require('../config/config');
+const { PROFILE_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
 const App = require('../models/App');
 
@@ -205,8 +204,6 @@ exports.updateProfilePic = async (req, res) => {
             .jpeg({ quality: 100 }) // Adjust quality as needed
             .toBuffer();
 
-        // Analyze the image to get stats (if needed)
-        const stats = await sharp(req.file.buffer).stats();
 
         // Get user ID from the request
         const userId = req.user.user_id;
@@ -223,27 +220,26 @@ exports.updateProfilePic = async (req, res) => {
         const filenameOriginal = `profile-pic-${userId}.jpeg`;
         const filename96by96 = `profile-pic-${userId}-96x96.jpeg`;
 
-        // Upload images to S3
-        await uploadToS3(compressedImageBuffer, `media/${mediaId}/profile-pic/${filenameOriginal}`, 'image/jpeg');
-        await uploadToS3(image96by96, `media/${mediaId}/profile-pic/${filename96by96}`, 'image/jpeg');
+       const filenameOriginalS3Key = `media/${mediaId}/profile-pic/${filenameOriginal}`;
+       const filename96by96S3Key = `media/${mediaId}/profile-pic/${filename96by96}`;
 
+        // Upload images to S3
+        await uploadToS3(compressedImageBuffer, filenameOriginalS3Key, 'image/jpeg');
+        await uploadToS3(image96by96, filename96by96S3Key, 'image/jpeg');
 
 
         // Build the URLs
-        const profilePicUrl = generateShortEncryptedUrl(mediaId, filenameOriginal);
-        const profilePicUrl96by96 = generateShortEncryptedUrl(mediaId, filename96by96);
-
+        const profilePicUrl = generateShortEncryptedUrl(filenameOriginalS3Key);
+        const profilePicUrl96by96 = generateShortEncryptedUrl(filename96by96S3Key);
 
         // Update profile pic URLs in the database
         const updatedProfilePicResult = await User.updateProfilePic(userId, profilePicUrl, profilePicUrl96by96);
-
 
       
         if (!updatedProfilePicResult) {
             return sendErrorResponse(res, 400, 'Failed to update profile pic');
         }
 
-    
         // Respond with success
         return sendJsonResponse(res, 200, 'Profile pic uploaded successfully', {
             profile_pic_url: PROFILE_BASE_URL + "/" + updatedProfilePicResult.profile_pic_url,
