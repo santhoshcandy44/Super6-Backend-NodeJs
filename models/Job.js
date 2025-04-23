@@ -6,7 +6,8 @@ const moment = require('moment');
 
 class JobModel {
 
-  static async getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, filterWorkModes, initialRadius = 50) {
+  static async getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, filterWorkModes, 
+    salaryMin, salaryMax, initialRadius = 50) {
 
 
     const rootDbconnection = await rootDb.getConnection();
@@ -255,6 +256,14 @@ class JobModel {
 
         if (filterWorkModes.length > 0) {
           query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+        }
+
+        if (salaryMin !== -1 && salaryMax !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+        } else if (salaryMin !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin}`;
+        } else if (salaryMax !== -1) {
+          query += ` AND j.salary_max <= ${salaryMax}`;
         }
 
         if (!lastTimeStamp) {
@@ -537,7 +546,7 @@ class JobModel {
           console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
           await connection.release();
           await rootDbconnection.release();
-          return await this.getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, radius)
+          return await this.getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
 
         } else {
           console.log("Reached maximum distance limit. Returning available results.");

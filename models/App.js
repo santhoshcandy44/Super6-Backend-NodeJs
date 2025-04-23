@@ -111,10 +111,6 @@ class App{
             // Start a transaction
             await connection.beginTransaction();
 
-
-
-            console.log(publicKey);
-
             // Prepare the SQL statement
             const sql = `
                 INSERT INTO e2ee_public_keys (user_id, encrypted_public_key, key_version)

@@ -9,8 +9,9 @@ const authRoutes = require('./routes/authRoutes');
 const profileProtectedAppRoutes = require('./routes/profileProtectedAppRoutes');
 const protectedAppRoutes = require('./routes/appProtectedRoutes');
 const serviceProtectedAppRoutes = require('./routes/serviceProtectedAppRoutes');
-const jobProtectedAppRoutes = require('./routes/jobProtectedAppRoutes');
 const usedProtectProtectedAppRoutes = require('./routes/usedProductsProtectedAppRoutes');
+const localJobProtectedAppRoutes = require('./routes/localJobsProtectedAppRoutes.js');
+const jobProtectedAppRoutes = require('./routes/jobProtectedAppRoutes');
 
 const accountSettingsProtectedRoutes = require('./routes/accountSettingsProtectedAppRoutes');
 const industriesSettingsProtectedRoutes = require('./routes/industriesSettingsProtectedAppRoutes');
@@ -84,12 +85,11 @@ app.use('/api/auth-app/ip-country', limiter);
 
 // Use the routes
 app.use('/api/auth', authRoutes); // Add authentication routes
-app.use('/api/app/serve/used-product-listings', usedProtectProtectedAppRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/services', serviceProtectedAppRoutes); // All protected routes prefixed with /api/protected
+app.use('/api/app/serve/used-product-listings', usedProtectProtectedAppRoutes); // All protected routes prefixed with /api/protected
+app.use('/api/app/serve/local-jobs', localJobProtectedAppRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/jobs', jobProtectedAppRoutes); // All protected routes prefixed with /api/protected
-
 app.use('/api/serve/profile', profileProtectedAppRoutes); // All protected routes prefixed with /api/protected
-// Use the routes
 app.use('/api/app/serve', protectedAppRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/account-settings', accountSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
 app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes); // All protected routes prefixed with /api/protected
@@ -112,8 +112,6 @@ app.get('/open-graph-scraper', async (req, res) => {
 
 });
 
-
-
 app.get('/api/auth-app/ip-country', async (req, res) => {
     try {
         const ip =
@@ -123,8 +121,6 @@ app.get('/api/auth-app/ip-country', async (req, res) => {
         req.socket?.remoteAddress || // Fallback to direct connection
         '';
 
-        console.log(ip);
-      
         const response = await fetch(`https://ipwho.is/${ip}`);
         const data = await response.json();
 
@@ -141,8 +137,6 @@ app.get('/api/auth-app/ip-country', async (req, res) => {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 });
-
-
 
 //Handling dynamic file request for a folder
 app.get('/media/:folder/services/*', (req, res) => {

@@ -312,7 +312,6 @@ function verifyShortEncryptedUrl(token) {
 
         return extractedData;  // Return the extracted mediaId and filename
     } catch (error) {
-        console.error('Error during decryption or parsing:', error);
         return null;  // Return null if any error occurs
     }
 }

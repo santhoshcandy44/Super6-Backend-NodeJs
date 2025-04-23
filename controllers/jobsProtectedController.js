@@ -42,12 +42,16 @@ exports.getJobListingsForUser = async (req, res) => {
             .map(mode => mode.trim().toLowerCase())
             .filter(mode => VALID_WORK_MODES.includes(mode));
 
-        console.log(normalizedWorkModes);
+        const countryCode = req.headers['x-country-code']; // 👈 get it from headers
 
 
+        const salaryMin = salary_min !== undefined ? salary_min : -1;
+        const salaryMax = salary_max !== undefined ? salary_max : -1;
+
+       
         const PAGE_SIZE = 1;
 
-        const result = await Job.getJobPostingsUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes);
+        const result = await Job.getJobPostingsUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
