@@ -148,6 +148,7 @@ class LocalJobModel {
     lj.local_job_id,
     lj.title,
     lj.description,
+    lj.company,
     lj.age_min,
     lj.age_max,
     lj.marital_status,
@@ -227,6 +228,7 @@ GROUP BY lj.local_job_id;
                 local_job_id: jobData[0].local_job_id,
                 title: jobData[0].title,
                 description: jobData[0].description,
+                company:jobData[0].company,
                 age_min: jobData[0].age_min,
                 age_max: jobData[0].age_max,
                 marital_status: jobData[0].marital_status,
@@ -288,6 +290,7 @@ GROUP BY lj.local_job_id;
     lj.local_job_id,
     lj.title,
     lj.description,
+    lj.company,
     lj.age_min,
     lj.age_max,
     lj.marital_status,
@@ -350,7 +353,7 @@ GROUP BY lj.local_job_id;
             const localJobId = row.local_job_id;
 
             if (!items[localJobId]) {
-                const date = new Date(row.created_at);
+                const date = new Date(row.publisher_created_at);
                 const createdAtYear = date.getFullYear().toString();
 
                 items[localJobId] = {
@@ -371,6 +374,7 @@ GROUP BY lj.local_job_id;
                     local_job_id: row.local_job_id,
                     title: row.title,
                     description: row.description,
+                    company:row.company,
                     age_min: row.age_min,
                     age_max: row.age_max,
                     marital_status: row.marital_status,
@@ -395,10 +399,7 @@ GROUP BY lj.local_job_id;
             }
         });
 
-        console.log(
-            Object.values(items)
-        );
-        
+  
         return Object.values(items);
     }
 
@@ -716,7 +717,6 @@ distance LIMIT ? OFFSET ?`;
                 }
 
 
-                console.log("Camer");
 
                 // SQL query with Levenshtein distance
                 query = `
@@ -1083,24 +1083,15 @@ distance LIMIT ? OFFSET ?`;
 
         const connection = await db.getConnection();
 
-
-
         // If user coordinates are available, add distance filter
         let query, params;
         var radius = initialRadius; // You can adjust this as needed
-
-
-
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
 
-
-
             if (queryParam) {
-
-
 
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -1796,9 +1787,7 @@ distance LIMIT ? OFFSET ?`;
         }
     }
 
-
-
-    static async deleteUsedProductListing(user_id, product_id) {
+    static async deleteLocalJob(user_id, local_job_id) {
         let connection;
         try {
             connection = await db.getConnection();
@@ -1807,26 +1796,23 @@ distance LIMIT ? OFFSET ?`;
             await connection.beginTransaction();
 
 
-            // Delete the images from the database
             await connection.execute(
-                "DELETE FROM used_product_listing_images WHERE product_id = ?",
-                [product_id]
+                "DELETE FROM local_job_images WHERE local_job_id = ?",
+                [local_job_id]
             );
 
 
             await connection.execute(
-                "DELETE FROM used_product_listing_location WHERE product_id = ?",
-                [product_id]
+                "DELETE FROM local_job_location WHERE local_job_id = ?",
+                [local_job_id]
             );
 
             await connection.execute(
-                "DELETE FROM used_product_listings WHERE product_id = ?",
-                [product_id]
+                "DELETE FROM local_jobs WHERE local_job_id = ?",
+                [local_job_id]
             );
 
 
-
-            // Retrieve media_id for the user
             const [userResult] = await connection.execute(
                 "SELECT media_id FROM users WHERE user_id = ?",
                 [user_id]
@@ -1838,17 +1824,14 @@ distance LIMIT ? OFFSET ?`;
             }
 
 
-            // Construct the base directory path using the retrieved media_id and service_id
-            const s3Key = 'media/' + media_id.toString() + '/used-product-listings/' + product_id.toString();
+            const s3Key = 'media/' + media_id.toString() + '/local-jobs/' + local_job_id.toString();
 
 
-            // Step 1: List all objects in the folder
             const listedObjects = await awsS3Bucket.listObjectsV2({
                 Bucket: S3_BUCKET_NAME,
                 Prefix: s3Key
             }).promise();
 
-            // Step 2: Map objects to delete format
             const deleteParams = {
                 Bucket: S3_BUCKET_NAME,
                 Delete: {
@@ -1860,20 +1843,16 @@ distance LIMIT ? OFFSET ?`;
             console.log(`Deleted all files inside: ${s3Key}`);
 
 
-            // Commit transaction
             await connection.commit();
 
-            // Return success response
-            return { status: 'success', message: 'Product and related data deleted successfully' };
+            return { status: 'success', message: 'Local job and related data deleted successfully' };
         } catch (error) {
-            // Rollback transaction on error
             if (connection) {
                 await connection.rollback();
             }
             console.error('Error during used product deletion:', error.message);
             throw new Error(`Used product deletion failed: ${error.message}`);
         } finally {
-            // Ensure the connection is always released back to the pool
             if (connection) {
                 connection.release();
             }
@@ -2016,8 +1995,6 @@ distance LIMIT ? OFFSET ?`;
         }
 
     }
-
-
 
 }
 

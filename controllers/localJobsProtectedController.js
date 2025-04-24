@@ -267,8 +267,8 @@ exports.deleteLocalJob = async (req, res) => {
 
         }
         const user_id = req.user.user_id; // This will contain the uploaded images
-        const { product_id } = req.params;
-        const result = await UsedProductListingModel.deleteUsedProductListing(user_id, product_id);
+        const { local_job_id } = req.params;
+        const result = await LocalJobModel.deleteLocalJob(user_id, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete used product");
         }
