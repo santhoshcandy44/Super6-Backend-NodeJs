@@ -345,7 +345,7 @@ router.post(
         body('user_id')
             .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
-            .isInt().withMessage('Invalid product id format'),
+            .isInt().withMessage('Invalid local id format'),
 
     ],
     localJobsProtectedController.bookmarkLocalJob
@@ -359,7 +359,7 @@ router.post(
             .isInt().withMessage('Invalid user id format'),
 
         body('local_job_id')
-            .isInt().withMessage('Invalid product id format'),
+            .isInt().withMessage('Invalid local job id format'),
 
     ],
     localJobsProtectedController.removeBookmarkLocalJob

@@ -186,7 +186,6 @@ app.get('/media/:folder/services/*', (req, res) => {
 
 });
 
-//Handling dynamic file request for a folder
 app.get('/media/:folder/used-product-listings/*', (req, res) => {
     const { folder } = req.params; // Capture the folder parameter
 
@@ -234,6 +233,55 @@ app.get('/media/:folder/used-product-listings/*', (req, res) => {
 
 
 });
+
+app.get('/media/:folder/local-jobs/*', (req, res) => {
+    const { folder } = req.params; // Capture the folder parameter
+
+    const s3Key = `media/${folder}/local-jobs/${req.params[0]}`;
+
+
+    // Get the file from S3
+    const s3Params = {
+        Bucket: S3_BUCKET_NAME, // Your S3 bucket name
+        Key: s3Key,
+    };
+
+
+    // Get the metadata of the object (including Content-Type and Content-Length)
+    awsS3Bucket.headObject(s3Params, (err, metadata) => {
+        if (err) {
+            console.log(err);
+
+            return res.status(500).send('Error fetching file');
+        }
+
+        // Extract Content-Type and Content-Length from metadata
+        const contentType = metadata.ContentType;
+        const contentLength = metadata.ContentLength;
+
+
+        // Set the correct headers before streaming the file
+        res.setHeader('Content-Type', contentType); // Set the content type
+        res.setHeader('Content-Length', contentLength); // Set the content length
+
+        // Create a stream and pipe the S3 file directly to the response
+        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
+
+        // Pipe the S3 file stream directly to the response
+        s3Stream.pipe(res);
+
+        // Handle any errors in the stream
+        s3Stream.on('error', (streamError) => {
+            if (res.headersSent) {
+                return; // Headers already sent, so don't send anything further
+            }
+            res.status(500).send('Error fetching file');
+        });
+    });
+
+
+});
+
 
 app.get('/uploads/:folder/*', (req, res, next) => {
     const { folder } = req.params; // Get the folder name dynamically

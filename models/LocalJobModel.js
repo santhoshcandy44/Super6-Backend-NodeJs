@@ -286,64 +286,7 @@ GROUP BY lj.local_job_id;
 
 
         const [results] = await db.query(
-            `SELECT 
-    lj.local_job_id,
-    lj.title,
-    lj.description,
-    lj.company,
-    lj.age_min,
-    lj.age_max,
-    lj.marital_status,
-    lj.salary_unit,
-    lj.salary_min,
-    lj.salary_max,
-    lj.country,
-    lj.state,
-    lj.status,
-    lj.short_code,
-    lj.created_by,
-
-    -- User (publisher) details
-    u.user_id AS publisher_id,
-    u.first_name AS publisher_first_name,
-    u.last_name AS publisher_last_name,
-    u.email AS publisher_email,
-    u.is_email_verified AS publisher_email_verified,
-    u.profile_pic_url AS publisher_profile_pic_url,
-    u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
-    u.created_at AS publisher_created_at,
-
-    -- Location
-    loc.longitude,
-    loc.latitude,
-    loc.geo,
-    loc.location_type,
-
-    -- Images
-    COALESCE(
-        CONCAT('[', 
-            GROUP_CONCAT(
-                DISTINCT CASE 
-                    WHEN li.id IS NOT NULL THEN JSON_OBJECT(
-                        'image_id', li.id,
-                        'image_url', li.image_url,
-                        'width', li.width,
-                        'height', li.height,
-                        'size', li.size,
-                        'format', li.format
-                    )
-                END
-                ORDER BY li.created_at DESC
-            ), 
-        ']'), '[]') AS images
-
-FROM local_jobs lj
-JOIN users u ON lj.created_by = u.user_id
-LEFT JOIN local_job_location loc ON lj.local_job_id = loc.local_job_id
-LEFT JOIN local_job_images li ON lj.local_job_id = li.local_job_id
-WHERE lj.created_by = ?
-GROUP BY lj.local_job_id;
-`,
+           
             [userId]
         );
 
@@ -403,8 +346,7 @@ GROUP BY lj.local_job_id;
         return Object.values(items);
     }
 
-
-    static async getUsedProductListingsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
+    static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
 
 
         const connection = await db.getConnection();
@@ -434,7 +376,7 @@ GROUP BY lj.local_job_id;
 
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
                         ON DUPLICATE KEY UPDATE
                             popularity = popularity + 1,
@@ -447,15 +389,19 @@ GROUP BY lj.local_job_id;
                 // SQL query with Levenshtein distance
                 query = `
                     SELECT
-                        s.product_id AS product_id,
-                        s.name,
-                        s.description,
-                        s.price,
-                        s.price_unit,
-                        s.status,
-                        s.short_code,
-                        s.state, 
-                        s.country,
+                                SELECT
+    l.local_job_id AS local_job_id,
+    l.title,
+    l.description,
+    l.age_min,
+    l.age_max,
+    l.salary_unit,
+    l.salary_min,
+    l.salary_max,
+    l.marital_status,
+    l.short_code,
+        l.country,
+                        l.state, 
 
                      COALESCE(
             CONCAT('[', 
@@ -474,10 +420,10 @@ GROUP BY lj.local_job_id;
                 ), 
             ']'), '[]') AS images,
 
-                        sl.longitude,
-                        sl.latitude,
-                        sl.geo,
-                        sl.location_type,
+                        ll.longitude,
+                        ll.latitude,
+                        ll.geo,
+                        ll.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
                         u.created_at AS created_at,
@@ -500,33 +446,33 @@ GROUP BY lj.local_job_id;
                         ) * 0.001 AS distance,
 
                         -- Full-text search relevance scores
-                        COALESCE(MATCH(s.name) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS name_relevance,
+                        COALESCE(MATCH(s.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
                         COALESCE(MATCH(s.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
                        
                         -- Total relevance score
-                        COALESCE(MATCH(s.name) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
+                        COALESCE(MATCH(s.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
                         COALESCE(MATCH(s.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) As total_relevance
 
                         FROM
-                        used_product_listings s
+                        local_jobs l
 
                     LEFT JOIN
-                        used_product_listing_images si ON s.product_id = si.product_id
+                        local_job_images li ON l.local_job_id = li.local_job_id
             
                     LEFT JOIN
-                        used_product_listing_location sl ON s.product_id = sl.product_id
-   
+                        local_job_location ll ON l.local_job_id = ll.local_job_id
+
 
                     INNER JOIN
                         users u ON s.created_by = u.user_id
                     LEFT JOIN
-                        user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+                        user_bookmark_local_jobs lb ON l.local_job_id = lb.local_job_id AND lb.user_id = ?
 
                         LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
 
                     WHERE
-                        sl.latitude BETWEEN -90 AND 90
+                        ll.latitude BETWEEN -90 AND 90
                         AND sl.longitude BETWEEN -180 AND 180
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180`;
@@ -545,7 +491,7 @@ GROUP BY lj.local_job_id;
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
                         distance < ? AND (
-                            name_relevance > 0 OR
+                            title_relevance > 0 OR
                             description_relevance > 0
                         ) AND (
                         (total_relevance = ? AND distance <= ?)  -- Fetch records with the same relevance and within the current distance
@@ -553,9 +499,9 @@ GROUP BY lj.local_job_id;
                     ) `;
 
                 } else {
-                    query += ` GROUP BY product_id HAVING
+                    query += ` GROUP BY local_job_id HAVING
                         distance < ? AND (
-                            name_relevance > 0 OR
+                            title_relevance > 0 OR
                             description_relevance > 0)`
                 }
 
@@ -584,41 +530,45 @@ GROUP BY lj.local_job_id;
 
                 query = `
                     SELECT
-    s.product_id AS product_id,
-    s.name,
-    s.price,
-    s.price_unit,
-    s.description,
-    s.status,
-     s.short_code,
-        s.country,
-                        s.state, 
+    l.local_job_id AS local_job_id,
+    l.title,
+    l.company,
+    l.description,
+    l.age_min,
+    l.age_max,
+    l.salary_unit,
+    l.salary_min,
+    l.salary_max,
+    l.marital_status,
+    l.short_code,
+        l.country,
+                        l.state, 
+                        l.status,
 
                  COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
                     DISTINCT CASE 
-                        WHEN si.id IS NOT NULL THEN JSON_OBJECT(
-                            'image_id', si.id,
-                            'image_url', si.image_url,
-                            'width', si.width,
-                            'height', si.height,
-                            'size', si.size,
-                            'format', si.format
+                        WHEN li.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', li.id,
+                            'image_url', li.image_url,
+                            'width', li.width,
+                            'height', li.height,
+                            'size', li.size,
+                            'format', li.format
                         )
                     END
-                    ORDER BY si.created_at DESC
+                    ORDER BY li.created_at DESC
                 ), 
             ']'), '[]') AS images,
 
 
-    sl.longitude,
-    sl.latitude,
-    sl.geo,
-    sl.location_type,
+    ll.longitude,
+    ll.latitude,
+    ll.geo,
+    ll.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
@@ -630,55 +580,50 @@ GROUP BY lj.local_job_id;
       -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
 
-    CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+    CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
     CURRENT_TIMESTAMP AS initial_check_at,
 
     
      ST_Distance_Sphere(
         POINT(?, ?),
-        POINT(sl.longitude, sl.latitude)
+        POINT(ll.longitude, ll.latitude)
     ) * 0.001 AS distance
     
 FROM
-    used_product_listings s
+    local_jobs l
 
 LEFT JOIN
-    used_product_listing_images si ON s.product_id = si.product_id
+    local_job_images li ON l.local_job_id = li.local_job_id
 
 LEFT JOIN
-    used_product_listing_location sl ON s.product_id = sl.product_id
+   local_job_location ll ON l.local_job_id = ll.local_job_id
 
-
+   
 INNER JOIN
-    users u ON s.created_by = u.user_id
+    users u ON l.created_by = u.user_id
 
-    LEFT JOIN user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+    LEFT JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
 
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
 
 WHERE
-    sl.latitude BETWEEN -90 AND 90
-    AND sl.longitude BETWEEN -180 AND 180
+    ll.latitude BETWEEN -90 AND 90
+    AND ll.longitude BETWEEN -180 AND 180
     
     AND 
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
 
-
-
-
                 if (!lastTimeStamp) {
 
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
-                    query += ` AND s.created_at < ? `;
+                    query += ` AND l.created_at < ? `;
 
                 }
 
-
-
-                query += ` GROUP BY product_id HAVING
+                query += ` GROUP BY local_job_id HAVING
     distance < ?
     ORDER BY
 distance LIMIT ? OFFSET ?`;
@@ -692,12 +637,12 @@ distance LIMIT ? OFFSET ?`;
 
                     params = [userLon, userLat, userId, userLat, userLon, radius, pageSize, offset];
                 }
+
+
             }
 
         } else {
-
-
-
+            
             if (queryParam) {
 
 
@@ -706,7 +651,7 @@ distance LIMIT ? OFFSET ?`;
 
                     // Retrieve user coordinates
                     await connection.execute(
-                        `INSERT INTO used_product_listing_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
+                        `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
                         ON DUPLICATE KEY UPDATE
                             popularity = popularity + 1,
@@ -721,15 +666,17 @@ distance LIMIT ? OFFSET ?`;
                 // SQL query with Levenshtein distance
                 query = `
                     SELECT
-                        s.product_id AS product_id,
-                        s.name,
-                        s.description,
-                        s.price,
-                        s.price_unit,
-                        s.status,
-                        s.short_code,
-                           s.country,
-                        s.state, 
+                                   l.local_job_id AS local_job_id,
+    l.title,
+    l.description,
+    l.age_min,
+    l.age_max,
+    l.salary_unit,
+    l.salary_min,
+    l.salary_max,
+    l.marital_status,
+    l.short_code,
+        l.country,
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -772,33 +719,33 @@ distance LIMIT ? OFFSET ?`;
 
 
                         -- Full-text search relevance scores
-                        COALESCE(MATCH(s.name) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS name_relevance,
+                        COALESCE(MATCH(s.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
                         COALESCE(MATCH(s.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
                        
                         -- Total relevance score
-                        COALESCE(MATCH(s.name) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
+                        COALESCE(MATCH(s.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
                         COALESCE(MATCH(s.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
                    
                         
                         FROM
-                        used_product_listings s
+                        local_jobs l
                     LEFT JOIN
-                        used_product_listing_images si ON s.product_id = si.product_id
+                        local_job_images li ON l.local_job_id = li.local_job_id
                     LEFT JOIN
-                        used_product_listing_location sl ON s.product_id = sl.product_id
+                        local_job_location ll ON l.local_job_id = ll.local_job_id
                   
         
 
                     INNER JOIN
-                        users u ON s.created_by = u.user_id
+                        users u ON l.created_by = u.user_id
                     LEFT JOIN
-                        user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+                        user_bookmark_local_jobs lb ON l.local_job_id = lb.local_job_id AND ub.user_id = ?
                         LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
 
                     WHERE
-                        sl.latitude BETWEEN -90 AND 90
-                        AND sl.longitude BETWEEN -180 AND 180 `;
+                        ll.latitude BETWEEN -90 AND 90
+                        AND ll.longitude BETWEEN -180 AND 180 `;
 
 
 
@@ -812,9 +759,9 @@ distance LIMIT ? OFFSET ?`;
                 }
 
                 if (lastTotalRelevance !== null) {
-                    query += ` GROUP BY product_id HAVING
+                    query += ` GROUP BY local_job_id HAVING
                         (
-                            name_relevance > 0 OR
+                            title_relevance > 0 OR
                             description_relevance > 0
                         ) AND (
                         (total_relevance = ? )  -- Fetch records with the same relevance
@@ -854,15 +801,18 @@ distance LIMIT ? OFFSET ?`;
 
                 query = `
                 SELECT
-                    s.product_id AS product_id,
-                    s.name,
-                    s.description,
-                    s.price,
-                    s.price_unit,
-                    s.status,
-                    s.short_code,
-                       s.country,
-                        s.state, 
+                   l.local_job_id AS local_job_id,
+    l.title,
+    l.description,
+    l.age_min,
+    l.age_max,
+    l.salary_unit,
+    l.salary_min,
+    l.salary_max,
+    l.marital_status,
+    l.short_code,
+        l.country,
+                        l.state, 
 
                                      COALESCE(
             CONCAT('[', 
@@ -883,10 +833,10 @@ distance LIMIT ? OFFSET ?`;
 
 
     
-                    sl.longitude,
-                    sl.latitude,
-                    sl.geo,
-                    sl.location_type,
+                    l.longitude,
+                    l.latitude,
+                    l.geo,
+                    l.location_type,
 
                     u.user_id AS publisher_id,
                     u.first_name AS publisher_first_name,
@@ -909,16 +859,16 @@ distance LIMIT ? OFFSET ?`;
 
 
                 FROM
-                    used_product_listings s
+                    local_jobs l
                 LEFT JOIN
-                    used_product_listing_images si ON s.product_id = si.product_id
+                    local_job_images li ON l.local_job_id = li.local_job_id
              
                 LEFT JOIN
-                    used_product_listing_location sl ON s.product_id = sl.product_id
+                    local_job_location ll ON l.local_job_id = li.local_job_id
            
     
                  LEFT JOIN
-                 user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+                 user_bookmark_local_jobs lb ON l.local_job_id = lb.local_job_id AND lb.user_id = ?
 
                 INNER JOIN
                     users u ON s.created_by = u.user_id
@@ -927,20 +877,17 @@ distance LIMIT ? OFFSET ?`;
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
                     
                 WHERE
-                    sl.latitude BETWEEN -90 AND 90
-                    AND sl.longitude BETWEEN -180 AND 180`
-
-
+                    ll.latitude BETWEEN -90 AND 90
+                    AND ll.longitude BETWEEN -180 AND 180`
 
 
                 if (!lastTimeStamp) {
-
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
                 }
 
-                query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
+                query += ` GROUP BY local_job_id LIMIT ? OFFSET ?`;
 
                 const offset = (page - 1) * pageSize;
 
@@ -953,8 +900,6 @@ distance LIMIT ? OFFSET ?`;
 
 
             }
-
-
 
         }
 
@@ -970,7 +915,7 @@ distance LIMIT ? OFFSET ?`;
                     radius += 30;
                     console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
                     await connection.release();
-                    return await this.getUsedProductListingsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, radius)
+                    return await this.getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, radius)
 
                 } else {
                     console.log("Reached maximum distance limit. Returning available results.");
@@ -982,7 +927,7 @@ distance LIMIT ? OFFSET ?`;
 
         }
 
-        const services = {};  // Assuming services is declared somewhere
+        const items = {};  // Assuming services is declared somewhere
 
         // Wrap the code in an async IIFE (Immediately Invoked Function Expression)
         await (async () => {
@@ -998,20 +943,13 @@ distance LIMIT ? OFFSET ?`;
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
 
                 // Initialize service entry if it doesn't exist
-                if (!services[product_id]) {
-                    const publisher_id = row.publisher_id;
+                if (!items[product_id]) {
                     try {
-                        // Await the async operation
-                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
 
-                        if (!result) {
-                            throw new Error("Failed to retrieve published services of the user");
-                        }
+                     
 
 
-
-
-                        services[product_id] = {
+                        items[product_id] = {
                             user: {
                                 user_id: row.publisher_id,
                                 first_name: row.publisher_first_name,
@@ -1028,34 +966,36 @@ distance LIMIT ? OFFSET ?`;
                                 online: Boolean(row.user_online_status),
                                 created_at: createdAtYear
                             },
-                            product_id: product_id,
-                            created_used_product_listings: result,
-                            name: row.name,
+                            local_job_id: row.local_job_id,
+                            title: row.title,
                             description: row.description,
-                            price: row.price,
-                            price_unit: row.price_unit,
+                            company:row.company,
+                            age_min: row.age_min,
+                            age_max: row.age_max,
+                            marital_status: row.marital_status,
+                            salary_unit: row.salary_unit,
+                            salary_min: row.salary_min,
+                            salary_max: row.salary_max,
                             country: row.country,
                             state: row.state,
                             status: row.status,
+                            short_code: BASE_URL + "/local-job/" + row.short_code,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url
                             })) : [],
-                            short_code: BASE_URL + "/used-product/" + row.short_code,
-
+                            location: row.longitude ? {
+                                longitude: row.longitude,
+                                latitude: row.latitude,
+                                geo: row.geo,
+                                location_type: row.location_type
+                            } : null,
+                            is_bookmarked: Boolean(row.is_bookmarked),
 
                             initial_check_at: formattedDate,
                             total_relevance: row.total_relevance,
-                            is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
-                            location: row.longitude && row.latitude && row.geo && row.location_type
-                                ? {
-                                    longitude: row.longitude,
-                                    latitude: row.latitude,
-                                    geo: row.geo,
-                                    location_type: row.location_type
-                                }
-                                : null,
+                           
                         };
                     } catch (error) {
                         // Handle the error if the async operation fails
@@ -1069,12 +1009,9 @@ distance LIMIT ? OFFSET ?`;
         })();
 
 
-        // Close the connection
         await connection.release();
 
-
-        // Return the services object
-        return Object.values(services);
+        return Object.values(items);
     }
 
 
@@ -1714,73 +1651,59 @@ distance LIMIT ? OFFSET ?`;
     }
 
 
-    static async bookmarkUsedProductListing(userId, productId) {
+    static async bookmarkLocalJob(userId, localJobId) {
         let connection;
         try {
-            // Create a connection to the database
             connection = await db.getConnection();
 
-            // Begin transaction
             await connection.beginTransaction();
 
-            // Prepare the SQL statement to insert a bookmark
             const [rows] = await connection.execute(
-                "INSERT INTO user_bookmark_used_product_listings (user_id, product_id) VALUES (?, ?)",
-                [userId, productId]
+                "INSERT INTO user_bookmark_local_jobs (user_id, local_job_id) VALUES (?, ?)",
+                [userId, localJobId]
             );
 
-            // Check if any row was affected
             if (rows.affectedRows === 0) {
                 throw new Error('Error on inserting bookmark');
             }
 
-            // Commit transaction
             await connection.commit();
 
-            // Return the ID of the new bookmark
             return rows.insertId;
 
         } catch (error) {
-            // If there's an error, rollback the transaction
             (await connection).rollback();
             throw new Error('Failed to create bookmark: ' + error.message);
         } finally {
-            // Close the connection
             (await connection).release;
         }
     }
 
-    static async removeBookmarkUsedProductListing(userId, productId) {
+    static async removeBookmarkLocalJob(userId, localJobId) {
 
         let connection;
         try {
-            // Create a connection to the database
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
 
             const [result] = await connection.execute(
-                "DELETE FROM user_bookmark_used_product_listings WHERE user_id = ? AND product_id = ?",
-                [userId, productId]
+                "DELETE FROM user_bookmark_local_jobs WHERE user_id = ? AND local_job_id = ?",
+                [userId, localJobId]
             );
 
-            // Check if any row was affected
+  
             if (result.affectedRows === 0) {
                 throw new Error('No bookmark found to delete');
             }
 
-
-            // Commit transaction
             await connection.commit();
 
             return { "Success": true };
 
 
         } catch (error) {
-            // If there's an error, rollback the transaction
             (await connection).rollback();
-            throw new Error('Failed to remove  bookmark: ' + error.message);
+            throw new Error('Failed to remove bookmark: ' + error.message);
         } finally {
             // Close the connection
             (await connection).release;

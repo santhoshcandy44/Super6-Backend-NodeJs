@@ -28,7 +28,7 @@ exports.getLocalJobsForUser = async (req, res) => {
 
         const PAGE_SIZE = 30;
 
-        const result = await UsedProductListingModel.getUsedProductListingsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await LocalJobModel.getLocalJobsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -158,32 +158,30 @@ exports.getPublishedLocalJobs = async (req, res) => {
 
 };
 
-
-
 exports.bookmarkLocalJob= async (req, res) => {
 
 
     try {
 
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
 
             return sendErrorResponse(res, 400, firstError, errors.array());
 
         }
-        const user_id = req.user.user_id;
-        const { product_id } = req.body;
-        const result = await UsedProductListingModel.bookmarkUsedProductListing(user_id, product_id);
 
+        const user_id = req.user.user_id;
+        const { local_job_id } = req.body;
+        const result = await LocalJobModel.bookmarkLocalJob(user_id, local_job_id);
 
         if (!result) {
-            return sendErrorResponse(res, 400, "Failed to bookmark service");
+            return sendErrorResponse(res, 400, "Failed to bookmark local job");
         }
 
         return sendJsonResponse(res, 200, "Seconds bookmarked successfully");
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
 
     }
@@ -193,22 +191,16 @@ exports.bookmarkLocalJob= async (req, res) => {
 
 exports.removeBookmarkLocalJob= async (req, res) => {
 
-
-
     try {
-
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
-
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError, errors.array());
-
         }
 
         const user_id = req.user.user_id;
-        const { product_id } = req.body;
-        const result = await UsedProductListingModel.removeBookmarkUsedProductListing(user_id, product_id);
+        const { local_job_id } = req.body;
+        const result = await LocalJobModel.removeBookmarkLocalJob(user_id, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }
