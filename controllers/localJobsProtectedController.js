@@ -75,7 +75,7 @@ exports.guestGetLocalJobs = async (req, res) => {
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
 
 
-        const result = await UsedProductListingModel.guestGetUsedProductListings(user_id, decodedQuery, 
+        const result = await LocalJobModel.guestGetLocalJobs(user_id, decodedQuery, 
             queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
  
         if (!result) {
@@ -92,34 +92,32 @@ exports.guestGetLocalJobs = async (req, res) => {
 };
 
 
-exports.createOrUpdateUsedProductListing = async (req, res) => {
+exports.createOrUpdateLocalJob = async (req, res) => {
 
     try {
 
-
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0].msg; // Get the first error
+            const firstError = errors.array()[0].msg;
             return sendErrorResponse(res, 400,firstError, errors.array());
         }
 
 
-        const {local_job_id, title, description, company, age_min, age_max, marital_status, salary_unit, salary_min, salary_max, location, country, state, keepImageIds } = req.body;  // keepImageIds comes from req.body
+        const {local_job_id, title, description, company, age_min, age_max, marital_statuses, salary_unit, salary_min, salary_max, location, country, state, keep_image_ids } = req.body; 
 
         const images = req.files['images[]']; // This will contain the uploaded images
         const user_id = req.user.user_id; // This will contain the uploaded images
-        const keepImageIdsArray = JSON.parse(keepImageIds);
+        const keepImageIdsArray =keep_image_ids.map(id => Number(id));
 
 
         const result = await LocalJobModel.createOrUpdateLocalJob(user_id, title, description, company, age_min,
-            age_max, marital_status, salary_unit, salary_min, salary_max, country, state, images, location, keepImageIdsArray, local_job_id);
+            age_max, marital_statuses, salary_unit, salary_min, salary_max, country, state, images, location, keepImageIdsArray, local_job_id);
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish service");
         }
 
-        return sendJsonResponse(res, 200, "Used product updated successfully", result);
+        return sendJsonResponse(res, 200, "Local job updated successfully", result);
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
@@ -144,10 +142,10 @@ exports.getPublishedLocalJobs = async (req, res) => {
 
 
         if (!result) {
-            return sendErrorResponse(res, 400, "Failed to retrieve products");
+            return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
        
-        return sendJsonResponse(res, 200, "Published products retrieved successfully", result);
+        return sendJsonResponse(res, 200, "Published local jobs retrieved successfully", result);
 
       
     } catch (error) {
@@ -230,7 +228,7 @@ exports.localJobsSearchQueries = async (req, res) => {
         const query = req.query.query; // This will contain the uploaded images
 
         
-        const result = await UsedProductListingModel.usedProductListingsSearchQueries(query)
+        const result = await LocalJobModel.LocalJobsSearchQueries(query)
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
@@ -262,10 +260,10 @@ exports.deleteLocalJob = async (req, res) => {
         const { local_job_id } = req.params;
         const result = await LocalJobModel.deleteLocalJob(user_id, local_job_id);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to delete used product");
+            return sendErrorResponse(res, 500, "Failed to delete local job");
         }
 
-        return sendJsonResponse(res, 200, "Used product deleted successfully");
+        return sendJsonResponse(res, 200, "Local job deleted successfully");
 
     } catch (error) {
         console.log(error);

@@ -266,32 +266,38 @@ router.post('/create-or-update-used-product-listing',
         // Validate images if provided
         body('images[]')
             .custom((value, { req }) => {
-                // If images[] is empty, keepImageIds must not be empty
-                if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keepImageIds || JSON.parse(req.body.keepImageIds).length === 0)) {
+                if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keep_image_ids || req.body.keep_image_ids.length === 0)) {
                     throw new Error('Atleast 1 image is required');
                 }
                 return true;
             }),
 
-        body('keepImageIds')
+            body('keep_image_ids')
             .optional()
             .custom((value, { req }) => {
-
-                value = JSON.parse(value); // Parse if it's a string
-
                 if (!Array.isArray(value)) {
                     throw new Error('Keep Image IDs must be an array');
                 }
 
-                // Ensure all IDs are integers
-                if (!value.every(id => Number.isInteger(id))) {
+                // Convert each value to a number
+                const asNumbers = value.map(id => Number(id));
+
+                // Check if any value is NaN
+                if (asNumbers.includes(NaN)) {
                     throw new Error('All values in Keep Image IDs must be integers');
                 }
 
-                // If keepImageIds is empty, images[] must not be empty
-                if (value.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
+                // Ensure that all values are valid integers
+                if (!asNumbers.every(Number.isInteger)) {
+                    throw new Error('All values in Keep Image IDs must be integers');
+                }
+
+                // Ensure either images or IDs are present
+                if (asNumbers.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
                     throw new Error('Either Keep Image IDs or Images must be provided');
                 }
+
+                req.body.keep_image_ids = asNumbers;  // Store the parsed numbers
 
                 return true;
             }),

@@ -228,9 +228,15 @@ router.post('/create-or-update-local-job',
             .isIn(['INR', 'USD'])
             .withMessage('Price unit must be either INR or USD'),
 
-        body('marital_status')
-            .isIn(['ANY', 'SINGLE', 'MARRIED', 'UNMARRIED', 'WIDOWED'])
-            .withMessage('Marital status must be one of: any, single, married, divorced, widowed'),
+        body('marital_statuses')
+
+            .isArray().withMessage('Marital status must be an array')
+            .custom((value) => {
+                if (!value.every(status => ['ANY', 'SINGLE', 'MARRIED', 'UNMARRIED', 'WIDOWED'].includes(status))) {
+                    throw new Error('Each marital status must be one of: ANY, SINGLE, MARRIED, UNMARRIED, WIDOWED');
+                }
+                return true;
+            }),
 
         body('country')
             .isString()
@@ -268,34 +274,42 @@ router.post('/create-or-update-local-job',
 
         body('images[]')
             .custom((value, { req }) => {
-                if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keepImageIds || JSON.parse(req.body.keepImageIds).length === 0)) {
+
+                if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keep_image_ids || req.body.keep_image_ids.length === 0)) {
                     throw new Error('Atleast 1 image is required');
                 }
                 return true;
             }),
 
-        body('keepImageIds')
+        body('keep_image_ids')
             .optional()
             .custom((value, { req }) => {
-
-                value = JSON.parse(value);
-
                 if (!Array.isArray(value)) {
                     throw new Error('Keep Image IDs must be an array');
                 }
 
-                if (!value.every(id => Number.isInteger(id))) {
+                // Convert each value to a number
+                const asNumbers = value.map(id => Number(id));
+
+                // Check if any value is NaN
+                if (asNumbers.includes(NaN)) {
                     throw new Error('All values in Keep Image IDs must be integers');
                 }
 
-                if (value.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
+                // Ensure that all values are valid integers
+                if (!asNumbers.every(Number.isInteger)) {
+                    throw new Error('All values in Keep Image IDs must be integers');
+                }
+
+                // Ensure either images or IDs are present
+                if (asNumbers.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
                     throw new Error('Either Keep Image IDs or Images must be provided');
                 }
 
+                req.body.keep_image_ids = asNumbers;  // Store the parsed numbers
+
                 return true;
             }),
-
-
 
 
 
@@ -335,7 +349,7 @@ router.post('/create-or-update-local-job',
             }),
     ],
 
-    localJobsProtectedController.createOrUpdateUsedProductListing
+    localJobsProtectedController.createOrUpdateLocalJob
 );
 
 router.post(

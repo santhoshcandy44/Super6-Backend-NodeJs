@@ -2605,8 +2605,6 @@ END AS thumbnail,
         }
     }
 
-
-
     static async updateServiceDetails(service_id, user_id, title, short_description, long_description, industry) {
         let connection;
         try {
@@ -2836,7 +2834,6 @@ END AS thumbnail,
             if (connection) await connection.release();
         }
     }
-
 
 
 

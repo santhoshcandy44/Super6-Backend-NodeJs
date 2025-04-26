@@ -199,11 +199,11 @@ exports.createOrUpdateUsedProductListing = async (req, res) => {
 
 
         // Read values from req.body
-        const {product_id, name, description, price, price_unit, location, country, state, keepImageIds } = req.body;  // keepImageIds comes from req.body
+        const {product_id, name, description, price, price_unit, location, country, state, keep_image_ids } = req.body;  // keepImageIds comes from req.body
         // Access uploaded images
         const images = req.files['images[]']; // This will contain the uploaded images
         const user_id = req.user.user_id; // This will contain the uploaded images
-        const keepImageIdsArray = JSON.parse(keepImageIds);
+        const keepImageIdsArray = keep_image_ids.map(id => Number(id));
 
 
         const result = await UsedProductListingModel.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);
