@@ -107,7 +107,10 @@ exports.createOrUpdateLocalJob = async (req, res) => {
 
         const images = req.files['images[]']; // This will contain the uploaded images
         const user_id = req.user.user_id; // This will contain the uploaded images
-        const keepImageIdsArray =keep_image_ids.map(id => Number(id));
+        console.log(req.body);
+
+        const keepImageIdsArray =  keep_image_ids?  keep_image_ids.map(id => Number(id))
+        : [];
 
 
         const result = await LocalJobModel.createOrUpdateLocalJob(user_id, title, description, company, age_min,

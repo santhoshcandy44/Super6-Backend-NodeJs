@@ -21,7 +21,6 @@ class UsedProductListingModel {
             let productExists = false;
 
             if (product_id) {
-                // Check if product exists
                 const [existingProductResult] = await connection.execute(
                     'SELECT product_id FROM used_product_listings WHERE product_id = ? AND created_by = ?',
                     [product_id, user_id]
@@ -32,9 +31,7 @@ class UsedProductListingModel {
                 }
             }
 
-            // Insert or update product
             if (productExists) {
-                // Update existing product
                 await connection.execute(
                     `UPDATE used_product_listings
                      SET name = ?, description = ?, price =?, price_unit = ?, country = ?, state = ?, updated_at = NOW()
@@ -42,7 +39,6 @@ class UsedProductListingModel {
                     [name, description, price, price_unit, country, state, product_id]
                 );
             } else {
-                // Insert new product
                 const [insertResult] = await connection.execute(
                     `INSERT INTO used_product_listings (created_by, name, description, price, price_unit, country, state)
                      VALUES (?, ?, ?, ?, ? , ?, ?)`,
@@ -145,9 +141,7 @@ class UsedProductListingModel {
 
                 if (decodedLocation) {
 
-
                     const location = JSON.parse(decodedLocation);
-
 
                     if (!productExists) {
                         // Insert new location if product does not exist
@@ -163,6 +157,7 @@ class UsedProductListingModel {
                             location.geo,
                             location.location_type
                         ]);
+
                     } else {
                         // Update existing product location
                         const updateLocationText = `
@@ -182,7 +177,6 @@ class UsedProductListingModel {
                 }
             }
 
-            // Commit the transaction if all steps succeed
             await connection.commit();
 
 
@@ -244,7 +238,7 @@ class UsedProductListingModel {
             }
 
 
-      
+
 
             // Construct response object
             const product = {
@@ -860,7 +854,7 @@ distance LIMIT ? OFFSET ?`;
                     params = [userId, lastTimeStamp, pageSize, offset];
 
                 } else {
-                    params = [ userId, pageSize, offset];
+                    params = [userId, pageSize, offset];
                 }
 
 
@@ -1765,7 +1759,7 @@ distance LIMIT ? OFFSET ?`;
                     AND sl.longitude BETWEEN -180 AND 180`
 
 
-            
+
 
                 if (!lastTimeStamp) {
 
@@ -1864,18 +1858,18 @@ distance LIMIT ? OFFSET ?`;
                             product_id: productId,
                             name: row.name,
                             description: row.description,
-                            price:row.price,
-                            price_unit:row.price_unit,
+                            price: row.price,
+                            price_unit: row.price_unit,
                             country: row.country,
                             state: row.state,
                             status: row.status,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [], 
+                            })) : [],
 
                             short_code: BASE_URL + "/used-product/" + row.short_code,
-                      
+
                             initial_check_at: formattedDate,
                             total_relevance: row.total_relevance,
 
@@ -1988,7 +1982,7 @@ distance LIMIT ? OFFSET ?`;
         }
     }
 
-    
+
 
     static async deleteUsedProductListing(user_id, product_id) {
         let connection;
@@ -2040,17 +2034,22 @@ distance LIMIT ? OFFSET ?`;
                 Prefix: s3Key
             }).promise();
 
-            // Step 2: Map objects to delete format
-            const deleteParams = {
-                Bucket: S3_BUCKET_NAME,
-                Delete: {
-                    Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
-                }
-            };
 
-            await awsS3Bucket.deleteObjects(deleteParams).promise();
-            console.log(`Deleted all files inside: ${s3Key}`);
 
+            // Check if there are objects to delete
+            if (listedObjects?.Contents?.length > 0) {
+
+                const deleteParams = {
+                    Bucket: S3_BUCKET_NAME,
+                    Delete: {
+                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
+                    }
+                };
+
+                await awsS3Bucket.deleteObjects(deleteParams).promise();
+                console.log(`Deleted all files inside: ${s3Key}`);
+
+            }
 
             // Commit transaction
             await connection.commit();

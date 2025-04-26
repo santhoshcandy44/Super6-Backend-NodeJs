@@ -20,7 +20,6 @@ class LocalJobModel {
             await connection.beginTransaction();
 
             let jobExists = false;
-            let job_id = local_job_id;
 
             if (local_job_id) {
                 const [existingJobResult] = await connection.execute(
@@ -34,7 +33,6 @@ class LocalJobModel {
             }
 
             if (jobExists) {
-                console.log(marital_statuses);
 
                 await connection.execute(
                     `UPDATE local_jobs
@@ -56,7 +54,7 @@ class LocalJobModel {
                     ),
                         salary_unit, salary_min, salary_max, country, state]
                 );
-                job_id = insertResult.insertId;
+                local_job_id = insertResult.insertId;
             }
 
 
@@ -70,7 +68,7 @@ class LocalJobModel {
 
             const [existingImages] = await connection.execute(
                 `SELECT id, image_url FROM local_job_images WHERE local_job_id = ?`,
-                [job_id]
+                [local_job_id]
             );
 
             for (const image of existingImages) {
@@ -91,7 +89,7 @@ class LocalJobModel {
             if (files) {
                 for (const file of files) {
                     const newFileName = `${uuidv4()}-${file.originalname}`;
-                    const s3Key = `media/${media_id}/local-jobs/${job_id}/${newFileName}`;
+                    const s3Key = `media/${media_id}/local-jobs/${local_job_id}/${newFileName}`;
                     const uploadParams = {
                         Bucket: S3_BUCKET_NAME,
                         Key: s3Key,
@@ -118,7 +116,7 @@ class LocalJobModel {
                 await connection.execute(
                     `INSERT INTO local_job_images (local_job_id, image_url, width, height, size, format)
                      VALUES (?, ?, ?, ?, ?, ?)`,
-                    [job_id, image.url, image.width, image.height, image.size, image.format]
+                    [local_job_id, image.url, image.width, image.height, image.size, image.format]
                 );
             }
 
@@ -128,7 +126,7 @@ class LocalJobModel {
 
                 const [locResult] = await connection.execute(
                     `SELECT COUNT(*) as count FROM local_job_location WHERE local_job_id = ?`,
-                    [job_id]
+                    [local_job_id]
                 );
 
                 if (locResult[0].count > 0) {
@@ -136,13 +134,13 @@ class LocalJobModel {
                         `UPDATE local_job_location
                          SET longitude = ?, latitude = ?, geo = ?, location_type = ?
                          WHERE local_job_id = ?`,
-                        [location.longitude, location.latitude, location.geo, location.location_type, job_id]
+                        [location.longitude, location.latitude, location.geo, location.location_type, local_job_id]
                     );
                 } else {
                     await connection.execute(
                         `INSERT INTO local_job_location (local_job_id, longitude, latitude, geo, location_type)
                          VALUES (?, ?, ?, ?, ?)`,
-                        [job_id, location.longitude, location.latitude, location.geo, location.location_type]
+                        [local_job_id, location.longitude, location.latitude, location.geo, location.location_type]
                     );
                 }
             }
@@ -214,7 +212,7 @@ GROUP BY l.local_job_id;
 
 
             if (jobData.length === 0) {
-                throw new Error("Failed to fetch product details after creation/update.");
+                throw new Error("Failed to fetch local job details after creation/update.");
             }
 
             const job = {
@@ -260,7 +258,6 @@ GROUP BY l.local_job_id;
 
 
             return job;
-
 
         } catch (error) {
             if (connection) {
@@ -1773,22 +1770,26 @@ distance LIMIT ? OFFSET ?`;
 
             const s3Key = 'media/' + media_id.toString() + '/local-jobs/' + local_job_id.toString();
 
-
+        
             const listedObjects = await awsS3Bucket.listObjectsV2({
                 Bucket: S3_BUCKET_NAME,
                 Prefix: s3Key
             }).promise();
+            
+            // Check if there are objects to delete
+            if (listedObjects?.Contents?.length > 0) {
+                const deleteParams = {
+                    Bucket: S3_BUCKET_NAME,
+                    Delete: {
+                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
+                    }
+                };
+            
+                await awsS3Bucket.deleteObjects(deleteParams).promise();
+                console.log(`Deleted all files inside: ${s3Key}`);
 
-            const deleteParams = {
-                Bucket: S3_BUCKET_NAME,
-                Delete: {
-                    Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
-                }
-            };
-
-            await awsS3Bucket.deleteObjects(deleteParams).promise();
-            console.log(`Deleted all files inside: ${s3Key}`);
-
+            }
+            
 
             await connection.commit();
 
