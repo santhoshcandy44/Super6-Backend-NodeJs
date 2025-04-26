@@ -195,12 +195,12 @@ router.post('/create-or-update-local-job',
             .withMessage('Company must be between 1 and 100 characters'),
 
         body('age_min')
-            .isInt({ min: 18, max: 40 })
+            .isInt({ min: 18, max: 60 })
             .withMessage('Minimum age must be a valid number between 18 and 40'),
 
         body('age_max')
-            .isInt({ min: 18, max: 40 })
-            .withMessage('Maximum age must be a valid number between 18 and 100')
+            .isInt({ min: 18, max: 60 })
+            .withMessage('Maximum age must be a valid number between 18 and 40')
             .custom((value, { req }) => {
                 if (parseInt(value) < parseInt(req.body.age_min)) {
                     throw new Error('Maximum age must be greater than or equal to minimum age');
@@ -217,7 +217,7 @@ router.post('/create-or-update-local-job',
             .isInt()
             .withMessage('Maximum  must be a valid number')
             .custom((value, { req }) => {
-                if (parseInt(value) < parseInt(req.body.salary_max)) {
+                if (parseInt(value) < parseInt(req.body.salary_min)) {
                     throw new Error('Maximum salary must be greater than or equal to minimum');
                 }
                 return true;

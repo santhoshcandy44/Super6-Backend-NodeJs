@@ -6,12 +6,12 @@ const ServiceModel = require('./ServiceModel ');
 const UsedProductListingModel = require('./UsedProdctListingModel');
 
 
-class App{
+class App {
 
 
 
     static async updateUserFCMToken(userId, fcmToken) {
-       
+
         let connection;
 
         try {
@@ -35,7 +35,7 @@ class App{
             const [result] = await connection.execute(sql, [userId, encryptedToken, encryptedToken]);
 
             //    Check the affected rows 
-               if (result.affectedRows ==0) { throw Error("Error on updating fcm token"); }
+            if (result.affectedRows == 0) { throw Error("Error on updating fcm token"); }
 
             // Commit the transaction
             await connection.commit();
@@ -58,7 +58,7 @@ class App{
 
 
     static async invalidateUserFCMToken(userId, fcmToken) {
-       
+
         let connection;
 
         try {
@@ -80,7 +80,7 @@ class App{
             const [result] = await connection.execute(sql, [userId, fcmToken, fcmToken]);
 
             //    Check the affected rows 
-               if (result.affectedRows ==0) { throw Error("Error on updating fcm token"); }
+            if (result.affectedRows == 0) { throw Error("Error on updating fcm token"); }
 
             // Commit the transaction
             await connection.commit();
@@ -101,9 +101,9 @@ class App{
         }
     }
 
-    
+
     static async updateUserE2EEPublicKey(userId, publicKey, keyVersion) {
-       
+
         let connection;
 
         try {
@@ -122,7 +122,7 @@ class App{
             const [result] = await connection.execute(sql, [userId, publicKey, keyVersion, publicKey, keyVersion]);
 
             //    Check the affected rows 
-               if (result.affectedRows ==0) { throw Error("Error on updating e2ee public key"); }
+            if (result.affectedRows == 0) { throw Error("Error on updating e2ee public key"); }
 
             // Commit the transaction
             await connection.commit();
@@ -271,9 +271,6 @@ class App{
 
 
 
-    
-
-        // Initialize an object to hold the structured data
         const services = {};
         await (async () => {
 
@@ -337,15 +334,15 @@ class App{
                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
                             })) : [],
                             plans: row.plans
-                            ? JSON.parse(row.plans).map(plan => ({
-                                ...plan,
-                                plan_features: plan.plan_features
-                                    ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                                    : []
-                            }))
-                            : [],
+                                ? JSON.parse(row.plans).map(plan => ({
+                                    ...plan,
+                                    plan_features: plan.plan_features
+                                        ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                        : []
+                                }))
+                                : [],
                             is_bookmarked: Boolean(row.is_bookmarked),
-                            bookmarked_at:row.bookmarked_at,
+                            bookmarked_at: row.bookmarked_at,
                             location:
                                 row.longitude &&
                                     row.latitude &&
@@ -373,9 +370,8 @@ class App{
         })();
 
 
-        
-                 // Query to retrieve services, images, plans, and location for the specific user
-                 const [usedProductResults] = await db.query(`
+
+        const [usedProductResults] = await db.query(`
                
                     SELECT
                         s.product_id AS product_id,
@@ -442,103 +438,234 @@ class App{
                         GROUP BY product_id
                         `, [userId, userId]);
 
-      
+
+
+        const usedProducts = {};
+        await (async () => {
+
+            for (const row of usedProductResults) {
+
+                const productId = row.product_id;
+                const date = new Date(row.created_at);
+
+                // Extract the year
+                const createdAtYear = date.getFullYear().toString();
+
+
+                // Initialize service entry if it doesn't exist
+                if (!usedProducts[productId]) {
+                    try {
+
+
+                        const publisher_id = row.publisher_id;
+                        // Await the async operation
+                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
+
+                        if (!result) {
+                            throw new Error("Failed to retrieve published services of the user");
+                        }
+
+                        usedProducts[productId] = {
+                            user: {
+                                user_id: row.publisher_id,
+                                first_name: row.publisher_first_name,
+                                last_name: row.publisher_last_name,
+                                email: row.publisher_email,
+                                is_email_verified: !!row.publisher_email_verified,
+                                profile_pic_url: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                    : null,
+
+                                profile_pic_url_96x96: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                    : null,
+                                online: Boolean(row.user_online_status),
+                                created_at: createdAtYear
+                            },
+                            created_used_product_listings: result,
+                            product_id: productId,
+                            name: row.name,
+                            description: row.description,
+                            price: row.price,
+                            price_unit: row.price_unit,
+                            country: row.country,
+                            state: row.state,
+                            status: row.status,
+                            short_code: BASE_URL + "/service/" + row.short_code,
+
+                            images: row.images ? JSON.parse(row.images).map(image => ({
+                                ...image,
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                            })) : [],
+
+                            is_bookmarked: Boolean(row.is_bookmarked),
+                            bookmarked_at: row.bookmarked_at,
+                            location:
+                                row.longitude &&
+                                    row.latitude &&
+                                    row.geo &&
+                                    row.location_type
+                                    ? {
+                                        longitude: row.longitude,
+                                        latitude: row.latitude,
+                                        geo: row.geo,
+                                        location_type: row.location_type
+                                    }
+                                    : null
+                        };
+
+                    } catch (error) {
+                        // Handle the error if the async operation fails
+                        console.error(error);
+                        throw new Error("Error processing service data");
+                    }
+                }
+            }
+
+
+
+        })();
+
+
+        const [localJobResults] = await db.query(`
+               
+            SELECT
+                l.local_job_id AS local_job_id,
+                l.title,
+                l.description,
+                l.company,
+                l.age_min,
+                l.age_max,
+                l.marital_statuses,
+                l.salary_unit,
+                l.salary_min,
+                l.salary_max,
+                l.status,
+                        l.short_code,
+                           l.country,
+                            l.state, 
     
-         // Initialize an object to hold the structured data
-         const usedProducts = {};
-         await (async () => {
- 
-             for (const row of usedProductResults) {
- 
-                 const productId = row.product_id;
-                 const date = new Date(row.created_at);
- 
-                 // Extract the year
-                 const createdAtYear = date.getFullYear().toString();
- 
- 
- 
- 
-                 // Initialize service entry if it doesn't exist
-                 if (!usedProducts[productId]) {
-                     try {
- 
- 
-                         const publisher_id = row.publisher_id;
-                         // Await the async operation
-                         const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
- 
-                         if (!result) {
-                             throw new Error("Failed to retrieve published services of the user");
-                         }
- 
-                         usedProducts[productId] = {
-                             user: {
-                                 user_id: row.publisher_id,
-                                 first_name: row.publisher_first_name,
-                                 last_name: row.publisher_last_name,
-                                 email: row.publisher_email,
-                                 is_email_verified: !!row.publisher_email_verified,
-                                 profile_pic_url: row.publisher_profile_pic_url
-                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                     : null,
- 
-                                 profile_pic_url_96x96: row.publisher_profile_pic_url
-                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                     : null,
-                                 online: Boolean(row.user_online_status),
-                                 created_at: createdAtYear
-                             },
-                             created_used_product_listings: result,
-                             product_id: productId,
-                             name: row.name,
-                             description: row.description,
-                             price: row.price,
-                             price_unit:row.price_unit,
-                             country: row.country,
-                             state: row.state,
-                             status: row.status,
-                             short_code: BASE_URL + "/service/" + row.short_code,
-                          
-                             images: row.images ? JSON.parse(row.images).map(image => ({
-                                 ...image,
-                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                             })) : [],
-                          
-                             is_bookmarked: Boolean(row.is_bookmarked),
-                             bookmarked_at:row.bookmarked_at,
-                             location:
-                                 row.longitude &&
-                                     row.latitude &&
-                                     row.geo &&
-                                     row.location_type
-                                     ? {
-                                         longitude: row.longitude,
-                                         latitude: row.latitude,
-                                         geo: row.geo,
-                                         location_type: row.location_type
-                                     }
-                                     : null
-                         };
- 
-                     } catch (error) {
-                         // Handle the error if the async operation fails
-                         console.error(error);
-                         throw new Error("Error processing service data");
-                     }
-                 }
-             }
- 
- 
- 
-         })();
- 
+                       COALESCE(
+                CONCAT('[', 
+                    GROUP_CONCAT(
+                        DISTINCT CASE 
+                            WHEN li.id IS NOT NULL THEN JSON_OBJECT(
+                                'image_id', li.id,
+                                'image_url', li.image_url,
+                                'width', li.width,
+                                'height', li.height,
+                                'size', li.size,
+                                'format', li.format
+                            )
+                        END
+                        ORDER BY li.created_at DESC
+                    ), 
+                ']'), '[]') AS images,
+    
+                u.user_id AS publisher_id,
+                u.first_name AS publisher_first_name,
+                u.last_name AS publisher_last_name,
+                u.email AS publisher_email,
+                u.is_email_verified AS publisher_email_verified,
+                u.profile_pic_url AS publisher_profile_pic_url,
+                u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
+                            u.created_at AS created_at,
+    
+        -- User online status (0 = offline, 1 = online)
+        ci.online AS user_online_status,
+    
+                CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+
+                ub.created_at As bookmarked_at
+
+            FROM
+                local_jobs l
+            LEFT JOIN
+                local_job_images li ON l.local_job_id = li.local_job_id
+        
+            INNER JOIN
+                users u ON l.created_by = u.user_id
+       
+            LEFT JOIN
+                user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
+    
+                LEFT JOIN
+        chat_info ci ON u.user_id = ci.user_id  
+        
+            WHERE
+                ub.user_id = ? 
+                GROUP BY local_job_id
+                `, [userId, userId]);
+
+        const localJobs = {};
+        await (async () => {
+
+            for (const row of localJobResults) {
+
+                const localJobId = row.local_job_id;
+                const date = new Date(row.created_at);
+
+                // Extract the year
+                const createdAtYear = date.getFullYear().toString();
+
+
+                if (!localJobs[localJobId]) {
+                    try {
+
+                        localJobs[localJobId] = {
+                            user: {
+                                user_id: row.publisher_id,
+                                first_name: row.publisher_first_name,
+                                last_name: row.publisher_last_name,
+                                email: row.publisher_email,
+                                is_email_verified: !!row.publisher_email_verified,
+                                profile_pic_url: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                    : null,
+                                profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                    : null,
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString(),
+                            },
+                            local_job_id: row.local_job_id,
+                            title: row.title,
+                            description: row.description,
+                            company: row.company,
+                            age_min: row.age_min,
+                            age_max: row.age_max,
+                            marital_statuses: JSON.parse(row.marital_statuses),
+                            salary_unit: row.salary_unit,
+                            salary_min: row.salary_min,
+                            salary_max: row.salary_max,
+                            country: row.country,
+                            state: row.state,
+                            status: row.status,
+                            short_code: BASE_URL + "/local-job/" + row.short_code,
+                            is_bookmarked: Boolean(row.is_bookmarked),
+                            images: row.images ? JSON.parse(row.images).map(image => ({
+                                ...image,
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url
+                            })) : [],
+                            location: row.longitude ? {
+                                longitude: row.longitude,
+                                latitude: row.latitude,
+                                geo: row.geo,
+                                location_type: row.location_type
+                            } : null
+                        };
+
+                    } catch (error) {
+                        console.error(error);
+                        throw new Error("Error processing service data");
+                    }
+                }
+            }
+
+        })();
 
 
 
-
-      
-         const combinedResults = [
+        const combinedResults = [
             ...Object.values(services).map(s => ({
                 type: "service",
                 ...s
@@ -546,13 +673,17 @@ class App{
             ...Object.values(usedProducts).map(up => ({
                 type: "used_product_listing",
                 ...up
+            })),
+            ...Object.values(localJobs).map(l => ({
+                type: "local_job",
+                ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
         
 
+    
+        console.log(combinedResults);
 
-   
-        // Return the services object
         return Object.values(combinedResults);
 
     }
@@ -560,4 +691,4 @@ class App{
 }
 
 
-module.exports =App;
+module.exports = App;
