@@ -1254,7 +1254,9 @@ distance LIMIT ? OFFSET ?`;
                             geo: row.geo,
                             location_type: row.location_type
                         }
-                        : null
+                        : null,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+
                 };
             }
         });

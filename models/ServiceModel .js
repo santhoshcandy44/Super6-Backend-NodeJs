@@ -1717,16 +1717,16 @@ END AS thumbnail,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
                                 image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [], 
+                            })) : [],
 
                             plans: row.plans
-                            ? JSON.parse(row.plans).map(plan => ({
-                                ...plan,
-                                plan_features: plan.plan_features
-                                    ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                                    : []
-                            }))
-                            : [],
+                                ? JSON.parse(row.plans).map(plan => ({
+                                    ...plan,
+                                    plan_features: plan.plan_features
+                                        ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                        : []
+                                }))
+                                : [],
 
                             short_code: BASE_URL + "/service/" + row.short_code,
                             thumbnail: row.thumbnail ? {
@@ -2185,13 +2185,13 @@ END AS thumbnail,
                     })) : [],
 
                     plans: row.plans
-                    ? JSON.parse(row.plans).map(plan => ({
-                        ...plan,
-                        plan_features: plan.plan_features
-                            ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                            : []
-                    }))
-                    : [],
+                        ? JSON.parse(row.plans).map(plan => ({
+                            ...plan,
+                            plan_features: plan.plan_features
+                                ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                : []
+                        }))
+                        : [],
 
 
                     location: row.longitude && row.latitude && row.geo && row.location_type
@@ -2201,7 +2201,9 @@ END AS thumbnail,
                             geo: row.geo,
                             location_type: row.location_type
                         }
-                        : null
+                        : null,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+
                 };
             }
 
@@ -2214,7 +2216,6 @@ END AS thumbnail,
         return Object.values(services);
 
     }
-
 
 
     static async getUserPublishedServices(userId) {
@@ -2382,13 +2383,13 @@ END AS thumbnail,
                     })) : [],
 
                     plans: row.plans
-                    ? JSON.parse(row.plans).map(plan => ({
-                        ...plan,
-                        plan_features: plan.plan_features
-                            ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                            : []
-                    }))
-                    : [],
+                        ? JSON.parse(row.plans).map(plan => ({
+                            ...plan,
+                            plan_features: plan.plan_features
+                                ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                : []
+                        }))
+                        : [],
 
                     location: row.longitude && row.latitude && row.geo && row.location_type
                         ? {
@@ -3519,7 +3520,7 @@ END AS thumbnail,
     static async searchQueries(query) {
 
 
-  let connection;
+        let connection;
 
         try {
             connection = await db.getConnection();
@@ -3647,7 +3648,7 @@ END AS thumbnail,
                 (await connection).release();
             }
         }
-     
+
 
     }
 
