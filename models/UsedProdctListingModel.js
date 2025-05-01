@@ -1052,8 +1052,8 @@ distance LIMIT ? OFFSET ?`;
                 LEFT JOIN used_product_listing_images si ON s.product_id = si.product_id
                 LEFT JOIN used_product_listing_location sl ON s.product_id = sl.product_id
                                 
-
-                LEFT JOIN user_bookmark_services ub ON s.product_id = ub.service_id AND ub.user_id = ?
+                     LEFT JOIN
+                        user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = u.user_id
 
 
                 INNER JOIN users u ON s.created_by = u.user_id
@@ -1183,6 +1183,9 @@ distance LIMIT ? OFFSET ?`;
                 ), 
             ']'), '[]') AS images,
 
+            CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+
+
                 pl.longitude,
                 pl.latitude,
                 pl.geo,
@@ -1200,7 +1203,11 @@ distance LIMIT ? OFFSET ?`;
             FROM used_product_listings p
             LEFT JOIN used_product_listing_images pi ON p.product_id = pi.product_id
             LEFT JOIN used_product_listing_location pl ON p.product_id = pl.product_id
+            
+      LEFT JOIN user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = u.user_id
+
             INNER JOIN users u ON p.created_by = u.user_id
+            
             WHERE p.created_by = ? 
             GROUP BY p.product_id
         `, [userId]);
@@ -1255,7 +1262,7 @@ distance LIMIT ? OFFSET ?`;
                             location_type: row.location_type
                         }
                         : null,
-                    is_bookmarked: Boolean(row.is_bookmarked),
+                        is_bookmarked: Boolean(row.is_bookmarked),
 
                 };
             }
