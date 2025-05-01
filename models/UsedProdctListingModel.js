@@ -823,11 +823,12 @@ distance LIMIT ? OFFSET ?`;
                     used_product_listing_location sl ON s.product_id = sl.product_id
            
     
-                 LEFT JOIN
-                 user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
-
                 INNER JOIN
                     users u ON s.created_by = u.user_id
+
+                        LEFT JOIN
+                 user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+
            
                     LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
@@ -1050,13 +1051,15 @@ distance LIMIT ? OFFSET ?`;
 
                 FROM used_product_listings s
                 LEFT JOIN used_product_listing_images si ON s.product_id = si.product_id
+                
+                 INNER JOIN users u ON s.created_by = u.user_id
+
                 LEFT JOIN used_product_listing_location sl ON s.product_id = sl.product_id
                                 
                      LEFT JOIN
                         user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = u.user_id
 
 
-                INNER JOIN users u ON s.created_by = u.user_id
 
                 LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
@@ -1204,9 +1207,10 @@ distance LIMIT ? OFFSET ?`;
             LEFT JOIN used_product_listing_images pi ON p.product_id = pi.product_id
             LEFT JOIN used_product_listing_location pl ON p.product_id = pl.product_id
             
+                        INNER JOIN users u ON p.created_by = u.user_id
+
       LEFT JOIN user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = u.user_id
 
-            INNER JOIN users u ON p.created_by = u.user_id
             
             WHERE p.created_by = ? 
             GROUP BY p.product_id
