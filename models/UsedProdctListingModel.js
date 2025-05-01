@@ -987,9 +987,7 @@ distance LIMIT ? OFFSET ?`;
     static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId) {
 
 
-        // Create a connection to the database
 
-        // Check if user exists
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -999,7 +997,6 @@ distance LIMIT ? OFFSET ?`;
             throw new Error('User not exist');
         }
 
-        // Query to retrieve services, images, plans, and location for the specific user
         const [results] = await db.query(`
                 SELECT
                     s.product_id AS product_id,
@@ -1057,7 +1054,7 @@ distance LIMIT ? OFFSET ?`;
                 LEFT JOIN used_product_listing_location sl ON s.product_id = sl.product_id
                                 
                      LEFT JOIN
-                        user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = u.user_id
+                        user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
 
 
 
@@ -1085,9 +1082,6 @@ distance LIMIT ? OFFSET ?`;
                 const date = new Date(row.created_at);
                 // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
-
 
                 products[productId] = {
                     user: {
@@ -1133,13 +1127,10 @@ distance LIMIT ? OFFSET ?`;
                 };
             }
 
-
-            // No need to check for image and plan uniqueness here, since they are already parsed
         });
 
 
 
-        // Return the structured data as JSON
         return Object.values(products);
 
     }
