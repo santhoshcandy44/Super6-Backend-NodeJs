@@ -2006,9 +2006,7 @@ END AS thumbnail,
     static async getUserPublishedServicesFeedUser(userId, serviceOwnerId) {
 
 
-        // Create a connection to the database
 
-        // Check if user exists
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
