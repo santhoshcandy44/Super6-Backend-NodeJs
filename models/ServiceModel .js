@@ -787,7 +787,7 @@ END AS thumbnail,
                     const publisher_id = row.publisher_id;
                     try {
                         // Await the async operation
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1678,7 +1678,7 @@ END AS thumbnail,
                     const publisher_id = row.publisher_id;
                     try {
                         // Await the async operation
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1918,7 +1918,7 @@ END AS thumbnail,
 
                         const publisher_id = row.publisher_id;
                         // Await the async operation
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
