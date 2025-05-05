@@ -217,7 +217,7 @@ router.post('/create-or-update-local-job',
             .isInt()
             .withMessage('Maximum  must be a valid number')
             .custom((value, { req }) => {
-                if (parseInt(value) < parseInt(req.body.salary_min)) {
+                if (parseInt(value) !=-1 && parseInt(value)  < parseInt(req.body.salary_min)) {
                     throw new Error('Maximum salary must be greater than or equal to minimum');
                 }
                 return true;
