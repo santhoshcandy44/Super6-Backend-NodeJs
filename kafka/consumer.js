@@ -6,6 +6,8 @@ const { PROFILE_BASE_URL } = require('../config/config.js');
 const kafka = new Kafka({ clientId: 'notification-worker', brokers: ['localhost:9092'] });
 const consumer = kafka.consumer({ groupId: 'notification-workers' });
 
+
+
 async function startConsumer() {
   await consumer.connect();
   await consumer.subscribe({ topic: 'local-job-application-notifications', fromBeginning: false });
