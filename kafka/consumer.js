@@ -3,7 +3,6 @@ const db = require('../config/database.js')
 const {sendFCMNotification, decodeFCMToken } = require('../utils/fcmUtils.js');
 const User = require('../models/User.js');
 const { PROFILE_BASE_URL } = require('../config/config.js');
-
 const kafka = new Kafka({ clientId: 'notification-worker', brokers: ['localhost:9092'] });
 const consumer = kafka.consumer({ groupId: 'notification-workers' });
 
