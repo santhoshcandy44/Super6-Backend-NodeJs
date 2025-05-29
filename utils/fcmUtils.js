@@ -4,7 +4,7 @@ const axios = require('axios');
 const { FCM_TOKEN_SECRET } = require('../config/config');
 
 
-const keyJson = JSON.parse(fs.readFileSync('./config/service_account.json', 'utf8'));
+const keyJson = JSON.parse(fs.readFileSync('../config/service_account.json', 'utf8'));
 
 
 async function getAccessToken() {
