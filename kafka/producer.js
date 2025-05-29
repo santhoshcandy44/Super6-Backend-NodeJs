@@ -8,13 +8,23 @@ const kafka = new Kafka({
 const producer = kafka.producer();
 
 async function sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, message) {
-  await producer.connect();
-  await producer.send({
-    topic: 'local-job-application-notifications',
-    messages: [{ key: kafkaKey, value: JSON.stringify(message) }],
-  });
-  await producer.disconnect();
-}  
+  try {
+    console.log('Connecting to Kafka...');
+    await producer.connect();
+    console.log('Kafka connected.');
 
+    const result = await producer.send({
+      topic: 'local-job-application-notifications',
+      messages: [{ key: kafkaKey, value: JSON.stringify(message) }],
+    });
+
+    console.log('Message sent:', result);
+  } catch (error) {
+    console.error('Kafka send failed:', error);
+  } finally {
+    await producer.disconnect();
+    console.log('Kafka disconnected.');
+  }
+}
 
 module.exports = { sendLocalJobApplicantAppliedNotificationToKafka };
