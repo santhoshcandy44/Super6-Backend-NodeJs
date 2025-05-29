@@ -412,7 +412,6 @@ router.post(
             .isInt().withMessage('Invalid local job id format'),
         body('applicant_id')
             .isInt().withMessage('Invalid applicant id format'),
-
     ],
     localJobsProtectedController.markAsReviewedLocalJob
 );

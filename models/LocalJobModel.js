@@ -106,7 +106,7 @@ class LocalJobModel {
                                 ci.online AS user_online_status,
 
                         CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CASE WHEN lja.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+                        CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
                         CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -138,7 +138,7 @@ class LocalJobModel {
                         user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
 
                             LEFT JOIN local_job_applicants lja 
-    ON l.local_job_id = lja.local_job_id AND lja.applicant_id = ?  
+    ON l.local_job_id = lja.local_job_id AND lja.candidate_id = ?  
 
                         LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
@@ -248,7 +248,7 @@ class LocalJobModel {
 
     CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
     CURRENT_TIMESTAMP AS initial_check_at,
-CASE WHEN lja.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
     
      ST_Distance_Sphere(
@@ -272,7 +272,7 @@ INNER JOIN
     LEFT JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
 
     LEFT JOIN local_job_applicants lja 
-    ON l.local_job_id = lja.local_job_id AND lja.applicant_id = ?  
+    ON l.local_job_id = lja.local_job_id AND lja.candidate_id = ?  
 
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id  
 
@@ -386,7 +386,7 @@ distance LIMIT ? OFFSET ?`;
 
                             
                         CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CASE WHEN lja.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+                        CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
                         CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -413,7 +413,7 @@ distance LIMIT ? OFFSET ?`;
                         user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
 
                         LEFT JOIN local_job_applicants lja 
-    ON l.local_job_id = lja.local_job_id AND lja.applicant_id = ?
+    ON l.local_job_id = lja.local_job_id AND lja.candidate_id = ?
 
                         LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
@@ -528,7 +528,7 @@ distance LIMIT ? OFFSET ?`;
     ci.online AS user_online_status, 
 
                             CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                            CASE WHEN lja.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+                            CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
                         CURRENT_TIMESTAMP AS initial_check_at
 
@@ -546,7 +546,7 @@ distance LIMIT ? OFFSET ?`;
                  user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
 
                  LEFT JOIN local_job_applicants lja 
-    ON l.local_job_id = lja.local_job_id AND lja.applicant_id = ? 
+    ON l.local_job_id = lja.local_job_id AND lja.candidate_id = ? 
 
                 INNER JOIN
                     users u ON l.created_by = u.user_id

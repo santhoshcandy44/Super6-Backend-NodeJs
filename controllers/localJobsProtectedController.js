@@ -6,14 +6,13 @@ const LocalJobModel = require('../models/LocalJobModel');
 exports.getLocalJobsForUser = async (req, res) => {
 
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError, errors.array());
 
         }
-        const user_id = req.user.user_id; // This will contain the uploaded images
+        const user_id = req.user.user_id;
         const { s, page, last_timestamp, last_total_relevance } = req.query;
 
         const querySearch = !s ? '' : s;
@@ -34,7 +33,7 @@ exports.getLocalJobsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
 
-        return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
+        return sendJsonResponse(res, 200, "Local jobs retrieved successfully", result);
 
     } catch (error) {
         console.log(error);
@@ -46,17 +45,14 @@ exports.getLocalJobsForUser = async (req, res) => {
 exports.guestGetLocalJobs = async (req, res) => {
 
     try {
-        // Validate the request body
+
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
-
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError, errors.array());
         }
 
-
-        
-        const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
+        const { user_id, s, page, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
 
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
@@ -64,9 +60,6 @@ exports.guestGetLocalJobs = async (req, res) => {
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
 
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
-
-
-
 
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
 
