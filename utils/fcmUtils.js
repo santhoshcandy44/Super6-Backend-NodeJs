@@ -60,10 +60,10 @@ function decodeFCMToken(text) {
     return decrypted; // Return the decrypted text as a string
 }
 
-// Function to send FCM notification
-async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
+async function sendFCMNotification(key, fcmToken, type, title, data) {
 
 
+    const accessToken = await getAccessToken();
 
     const url = 'https://fcm.googleapis.com/v1/projects/lts360/messages:send';
 
@@ -82,34 +82,33 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
 
     if (byteSize > MAX_PAYLOAD_SIZE) {
 
-   
         const parts = Math.ceil(byteSize / MAX_PAYLOAD_SIZE);
         console.log(`Message will be split into ${parts} parts.`);
 
-        // Split the payload into parts
+
         const chunks = [];
         for (let i = 0; i < parts; i++) {
             const chunkData = payloadString.slice(i * MAX_PAYLOAD_SIZE, (i + 1) * MAX_PAYLOAD_SIZE);
             chunks.push({
                 partNumber: String(i + 1),
                 totalParts: String(parts),
-                data: chunkData // The actual chunk of data
+                data: chunkData ,
+                key
             });
         }
 
+        const responses = [];
 
-        const responses = []; // Initialize an array to store responses
-
-        // Use a for...of loop to process each chunk with async/await
         for (const chunk of chunks) {
             const notificationPayload = {
                 message: {
                     token: fcmToken,
                     data: {
-                        messageId: chunk.messageId, // Pass correct fields
+                        messageId: chunk.messageId, 
                         partNumber: chunk.partNumber,
                         totalParts: chunk.totalParts,
-                        data: chunk.data // The chunk data is what you're sending
+                        data: chunk.data,
+                        key:chunk.key
                     },
                     android: {
                         priority: "high",
@@ -118,7 +117,6 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
             };
 
             try {
-                // Send the notification via axios
                 const response = await axios.post(url, notificationPayload, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -126,7 +124,6 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
                     }
                 });
 
-                // Push the response to the responses array
                 responses.push(response.data);
             } catch (error) {
 
@@ -135,8 +132,7 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
             }
         }
 
-        return responses; // Return the collected responses after all chunks have been processed
-
+        return responses; 
     }
     else {
 
@@ -146,7 +142,8 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
                 data: {
                     partNumber: String(1),
                     totalParts: String(1),
-                    data: payloadString
+                    data: payloadString,
+                    key
                 },
                 android: {
                     priority: "high",
@@ -161,15 +158,10 @@ async function sendFCMNotification(accessToken, fcmToken, type, title, data) {
             }
         });
 
-        console.log(response);
 
         return response.data;
 
-
     }
-
-
-
 }
 
 module.exports = {

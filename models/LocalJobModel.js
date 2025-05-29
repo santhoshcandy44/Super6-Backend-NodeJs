@@ -1883,15 +1883,17 @@ GROUP BY l.local_job_id;
             }
 
             await connection.commit();
-            
-            
-            sendLocalJobApplicantAppliedNotificationToKafka(localJobId, createdBy, userId, {
-                user_id:createdBy,
-                applicant_id:rows.insertId,
-                candidate_id:userId,
-                local_job_title:localJobTitle
+
+
+            const kafkaKey = `${localJobId}:${createdBy}:${userId}`
+
+            sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, {
+                user_id: createdBy,
+                candidate_id: userId,
+                local_job_title: localJobTitle,
+                applicant_id: rows.insertId
             })
-          
+
             return rows.insertId;
 
         } catch (error) {

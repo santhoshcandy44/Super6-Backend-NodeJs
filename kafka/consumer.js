@@ -1,9 +1,7 @@
-// kafka/consumer.js
 const { Kafka } = require('kafkajs');
 const db = require('../config/database.js')
-const { getAccessToken, sendFCMNotification, decodeFCMToken } = require('../utils/fcmUtils.js');
+const {sendFCMNotification, decodeFCMToken } = require('../utils/fcmUtils.js');
 const User = require('../models/User.js');
-const { sendLocalJobApplicantAppliedNotificationToKafka } = require('./producer.js');
 const { PROFILE_BASE_URL } = require('../config/config.js');
 
 const kafka = new Kafka({ clientId: 'notification-worker', brokers: ['localhost:9092'] });
@@ -65,17 +63,10 @@ async function startConsumer() {
           },
   
         }
-
-
-        const accesToken = await getAccessToken();
-
-        console.log(results[0].fcm_token);
-        console.log(data);
-
-
+        
         const decodedFCMToken = decodeFCMToken(results[0].fcm_token)
-
-        await sendFCMNotification(accesToken, decodedFCMToken, "business_local_job_application", "Someone applied local job",  JSON.stringify(data));
+        await sendFCMNotification(`business_local_job_application:${user_id}:${applicant_id}`, decodedFCMToken, "business_local_job_application", "Someone applied local job",  JSON.stringify(data));
+        
       }
     },
   });
