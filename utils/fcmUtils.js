@@ -3,10 +3,9 @@ const fs = require('fs');
 const axios = require('axios');
 const { FCM_TOKEN_SECRET } = require('../config/config');
 
-
-const keyJson = JSON.parse(fs.readFileSync('../config/service_account.json', 'utf8'));
-
-
+const path = require('path');
+const keyJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config/service_account.json'), 'utf8'));
+//Access Token
 async function getAccessToken() {
 
     const audience = 'https://oauth2.googleapis.com/token';
