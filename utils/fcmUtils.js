@@ -75,9 +75,6 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
         data: data
     };
 
-    console.log("accessToken:", accessToken);
-    console.log("fcmToken:", fcmToken);
-
 
     const MAX_PAYLOAD_SIZE = 4 * 1024; // 4 KB limit
 
@@ -110,7 +107,6 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
                 message: {
                     token: fcmToken,
                     data: {
-                        messageId: chunk.messageId,
                         partNumber: chunk.partNumber,
                         totalParts: chunk.totalParts,
                         data: chunk.data,
