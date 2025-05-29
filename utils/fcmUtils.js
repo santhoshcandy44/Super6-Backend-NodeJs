@@ -5,7 +5,7 @@ const { FCM_TOKEN_SECRET } = require('../config/config');
 
 const path = require('path');
 const keyJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config/service_account.json'), 'utf8'));
-//Access Token
+
 async function getAccessToken() {
 
     const audience = 'https://oauth2.googleapis.com/token';
@@ -20,6 +20,9 @@ async function getAccessToken() {
         exp: Math.floor(Date.now() / 1000) + 3600,
         iat: Math.floor(Date.now() / 1000)
     };
+
+    console.log("Sending token request with JWT:", jwtClaims);
+
 
     const jwtHeaderEncoded = Buffer.from(JSON.stringify(jwtHeader)).toString('base64').replace(/=+$/, '');
     const jwtClaimsEncoded = Buffer.from(JSON.stringify(jwtClaims)).toString('base64').replace(/=+$/, '');
@@ -72,6 +75,10 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
         data: data
     };
 
+    console.log("accessToken:", accessToken);
+    console.log("fcmToken:", fcmToken);
+
+
     const MAX_PAYLOAD_SIZE = 4 * 1024; // 4 KB limit
 
     const payloadString = JSON.stringify(payload);
@@ -91,7 +98,7 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
             chunks.push({
                 partNumber: String(i + 1),
                 totalParts: String(parts),
-                data: chunkData ,
+                data: chunkData,
                 key
             });
         }
@@ -103,11 +110,11 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
                 message: {
                     token: fcmToken,
                     data: {
-                        messageId: chunk.messageId, 
+                        messageId: chunk.messageId,
                         partNumber: chunk.partNumber,
                         totalParts: chunk.totalParts,
                         data: chunk.data,
-                        key:chunk.key
+                        key: chunk.key
                     },
                     android: {
                         priority: "high",
@@ -131,7 +138,7 @@ async function sendFCMNotification(key, fcmToken, type, title, data) {
             }
         }
 
-        return responses; 
+        return responses;
     }
     else {
 

@@ -15,7 +15,6 @@ async function startConsumer() {
   await consumer.run({
     eachMessage: async ({ message }) => {
 
-      console.log("1");
 
       const { user_id, candidate_id, applicant_id, local_job_title } = JSON.parse(message.value.toString());
 
@@ -33,14 +32,12 @@ async function startConsumer() {
       const result = await User.getUserProfile(candidate_id)
 
 
-      console.log("2");
 
       if (results?.[0]?.fcm_token && result) {
 
         const date = new Date(result.created_at);
         const createdAtYear = date.getFullYear().toString();
 
-        console.log("3");
 
         const data = {
           applicant_id: applicant_id,
