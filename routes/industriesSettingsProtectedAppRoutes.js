@@ -5,7 +5,7 @@ const authenticateToken = require('../middlewares/authMiddleware'); // Import th
 const { body, query } = require('express-validator');
 
 
-const industriesSettingsProtectedController = require('../controllers/IndustriesSettingsProtectedController')
+const industriesSettingsProtectedController = require('../controllers/industriesSettingsProtectedController')
 
 // Get industries section route
 router.get('/get-industries',
