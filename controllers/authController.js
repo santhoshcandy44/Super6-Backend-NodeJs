@@ -144,13 +144,16 @@ exports.verifyOTP = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
+          phone_country_code: result.phone_country_code,
+          phone_number: result.phone_number,
+          is_phone_verified: result.is_phone_verified,
           profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
         },
-        boards:boards
+        boards: boards
 
       });
 
@@ -238,13 +241,16 @@ exports.googleSignUp = async (req, res) => {
           about: result.about,
           email: email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
+          phone_country_code: result.phone_country_code,
+          phone_number: result.phone_number,
+          is_phone_verified: result.is_phone_verified,
           profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           created_at: createdAtYear, // Date when the user was created
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
         },
-        boards:boards
+        boards: boards
       }
     );
 
@@ -295,7 +301,7 @@ exports.legacyEmailLogIn = async (req, res) => {
       return sendErrorResponse(res, 400, "User not exist");
     }
 
-  
+
     const updateResult = await User.updateLastSignedIn(user_id);
 
     if (!updateResult) {
@@ -325,6 +331,9 @@ exports.legacyEmailLogIn = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
+          phone_country_code: result.phone_country_code,
+          phone_number: result.phone_number,
+          is_phone_verified: result.is_phone_verified,
           profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
@@ -395,7 +404,7 @@ exports.partnerLegacyEmailLogIn = async (req, res) => {
       return sendErrorResponse(res, 400, "User not exist");
     }
 
-  
+
     // Generate access and refresh tokens
     // const { accessToken, refreshToken } = generateTokens(user_id, email, 'legacy_email', updateResult.last_sign_in);
 
@@ -417,6 +426,7 @@ exports.partnerLegacyEmailLogIn = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
+
           profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
@@ -531,6 +541,9 @@ exports.googleSignin = async (req, res) => {
           about: result.about,
           email: result.email, // User's email address
           is_email_verified: Boolean(result.is_email_verified),
+          phone_country_code: result.phone_country_code,
+          phone_number: result.phone_number,
+          is_phone_verified: result.is_phone_verified,
           profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
           account_type: result.account_type,
           location: (
@@ -550,7 +563,7 @@ exports.googleSignin = async (req, res) => {
           updated_at: result.updated_at, // Date when the user details were last updated
           // Add any other relevant fields here
         },
-        boards:boards
+        boards: boards
       }
 
     );
@@ -886,7 +899,7 @@ exports.refreshToken = async (req, res) => {
 
       // Here you might want to verify if the user exists in the database
       try {
-        
+
         if (err) {
           if (err.name === 'TokenExpiredError') {
             // Decode the expired token payload without verification
@@ -921,7 +934,7 @@ exports.refreshToken = async (req, res) => {
 
         // Generate access and refresh tokens
         const { accessToken, refreshToken } = generateTokens(user.userId, user.email, user.signUpMethod, user.lastSignIn);
-        
+
         sendJsonResponse(res, 201, 'Authorized',
           {
             user_id: existingUser.userId,

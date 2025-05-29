@@ -41,7 +41,7 @@ exports.getUserProfile = async (req, res) => {
             email: result.email, // User's email address
             is_email_verified: Boolean(result.is_email_verified),
             phone_country_code:result.phone_country_code,
-            phoneNumber:result.phone_number,
+            phone_number:result.phone_number,
             is_phone_verified: !!result.is_phone_verified,
             profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
             profile_pic_url_96x96: PROFILE_BASE_URL + "/" + result.profile_pic_url_96x96,
