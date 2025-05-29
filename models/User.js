@@ -39,7 +39,7 @@ class User {
         // Step 3: Retrieve the `user_id` using the email address
 
         const [userResult] = await db.query(
-            'SELECT user_id, first_name, last_name, about, email, is_email_verified, profile_pic_url, account_type, created_at, updated_at FROM users WHERE email = ?',
+            'SELECT user_id, first_name, last_name, about, email, is_email_verified, phone_country_code, phone_number, is_phone_verified, profile_pic_url, account_type, created_at, updated_at FROM users WHERE email = ?',
             [this.email]
         );
 
@@ -70,7 +70,7 @@ class User {
         // Step 3: Retrieve the `user_id` using the email address
 
         const [userResult] = await db.query(
-            'SELECT user_id, first_name, last_name, about, email, is_email_verified, profile_pic_url, account_type, created_at, updated_at FROM users WHERE email = ?',
+            'SELECT user_id, first_name, last_name, about, email, is_email_verified, phone_country_code, phone_number, is_phone_verified, profile_pic_url, account_type, created_at, updated_at FROM users WHERE email = ?',
             [this.email]
         );
 
