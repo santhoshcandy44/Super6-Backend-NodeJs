@@ -1,49 +1,38 @@
-
-const sharp = require('sharp'); // Import sharp for image processing
-
 const { validationResult } = require('express-validator');
-const User = require('../models/User'); // Assuming this is the user model
+const sharp = require('sharp'); 
+const User = require('../models/User');
 const UserLocation = require('../models/UserLocation');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const { PROFILE_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
 const App = require('../models/App');
-
 const { awsS3Bucket } = require("../config/awsS3.js")
 
 exports.getUserProfile = async (req, res) => {
-
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
         const userId = req.params.user_id;
-
         const result = await User.getUserProfile(userId);
-
         if (!result) {
             return sendErrorResponse(res, 400, "User not exist");
         }
-
         const date = new Date(result.created_at);
-        // Extract the year
         const createdAtYear = date.getFullYear().toString();
-
-
-        return sendJsonResponse(res, 200, "Profile is fetched successfully", {
+        return sendJsonResponse(res, 200, "OK", {
             user_id: userId,
-            first_name: result.first_name, // User's first name
-            last_name: result.last_name, // User's last name (corrected to access from the first result)
+            first_name: result.first_name, 
+            last_name: result.last_name, 
             about: result.about,
-            email: result.email, // User's email address
+            email: result.email, 
             is_email_verified: Boolean(result.is_email_verified),
             phone_country_code:result.phone_country_code,
             phone_number:result.phone_number,
             is_phone_verified: !!result.is_phone_verified,
-            profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, // URL to the user's profile picture (if applicable)
+            profile_pic_url: PROFILE_BASE_URL + "/" + result.profile_pic_url, 
             profile_pic_url_96x96: PROFILE_BASE_URL + "/" + result.profile_pic_url_96x96,
             account_type: result.account_type,
             location: result.latitude == null || result.longitude == null ? null : {
@@ -53,16 +42,13 @@ exports.getUserProfile = async (req, res) => {
                 location_type: result.location_type,
                 updated_at: result.updated_at,
             },
-            created_at: createdAtYear, // Date when the user was created
-            updated_at: result.profile_updated_at, // Date when the user details were last updated
-            // Add any other relevant fields here
+            created_at: createdAtYear,
+            updated_at: result.profile_updated_at,
         })
     } catch (error) {
-
         console.log(error);
         return sendErrorResponse(res, 500, "Internal server error");
     }
-
 };
 
 // Update first name
@@ -383,98 +369,63 @@ exports.updateEmailVerifyOTP = async (req, res) => {
 
 };
 
-
-// Update user location
 exports.updateLocation = async (req, res) => {
-
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
-        // Retrieve and sanitize POST data
         const latitude = req.body.latitude;
         const longitude = req.body.longitude;
         const locationType = req.body.location_type;
         const geo = req.body.geo;
-
-        const userId = req.user.user_id; // Assuming `authenticateToken` sets req.user  
-
-        // Check if the user exists
+        const userId = req.user.user_id; 
         const userExists = await User.findUserById(userId);
         if (!userExists) {
             return sendErrorResponse(res, 404, "User not found");
         }
-
-        // Update user location
         const locationResult = await UserLocation.updateUserLocation(userId, latitude, longitude, locationType, geo);
-
         if (!locationResult) {
             return sendErrorResponse(res, 400, "Faield to update location");
         }
-
         return sendJsonResponse(res, 200, "Location updated successfully", {
             location_type: locationResult.location_type,
             latitude: locationResult.latitude,
             longitude: locationResult.longitude,
             geo: locationResult.geo,
             updated_at: locationResult.updated_at
-
         });
-
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal server error", error.toString());
-
     }
-
 };
 
-
-// Update user location
 exports.logOut = async (req, res) => {
-
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
-
-        const userId = req.user.user_id; // Assuming `authenticateToken` sets req.user  
-
-        // Check if the user exists
+        const userId = req.user.user_id;  
         const userExists = await User.findUserById(userId);
         if (!userExists) {
             return sendErrorResponse(res, 404, "User not exist");
         }
-
         const deactivatedResult = await User.userAsDeactivated(userId);
-
         if (!deactivatedResult) {
             return sendErrorResponse(res, 404, "Fauied to deactivate account");
         }
-
-        // Update the FCM token in the database
         const result = await App.invalidateUserFCMToken(userId, null);
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update fcm token");
         }
-
-
-        return sendJsonResponse(res, 200, "Logged out successfully");
-
+        return sendJsonResponse(res, 200, "Logged out successfully", {
+            message:"Logged out successfully"
+        });
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.toString());
-
     }
-
 };

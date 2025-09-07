@@ -1,43 +1,35 @@
-const { v4: uuidv4 } = require('uuid'); // CommonJS syntax
+const { v4: uuidv4 } = require('uuid');
 const { API_DOC_BASE_URL } = require('../config/config');
-// Utility function to send a common JSON response
+
 function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true) {
-
-
     res.status(statusCode).json({
         isSuccessful: isSuccessful,
         status: isSuccessful ? 'success' : 'error',
         message: message,
-        data: data != null ? JSON.stringify(data) : "",
-
+        data: data != null ? JSON.stringify(data) : '{}'
     });
 }
   
-  
-  // Error response function
 function sendErrorResponse(res, statusCode, message, errorDetails = null,  error_code='ERROR') {
     const errorResponse = {
         status: 'error',
         statusCode: statusCode,
         error: {
-            code: error_code, // Customize error code as needed
+            code: error_code, 
             message: message,
-            details: JSON.stringify(errorDetails), // Additional error details if available
-            timestamp: new Date().toISOString(), // Current timestamp in ISO 8601 format
-            path: res.req.originalUrl // Current request URI
+            details: JSON.stringify(errorDetails),
+            timestamp: new Date().toISOString(), 
+            path: res.req.originalUrl 
         },
-        requestId: uuidv4(), // Unique ID for tracking the request
-        documentation_url: `${API_DOC_BASE_URL}/docs/errors` // Link to API documentation
+        requestId: uuidv4(), 
+        documentation_url: `${API_DOC_BASE_URL}/docs/errors`
     };
-
-  
-  
     res.status(statusCode).json(
       {
         isSuccessful:false,
-        data: errorResponse,
         status : "error",
-        message: message, // More specific error message
+        message: message,
+        data: errorResponse,
       }
     );
 }
