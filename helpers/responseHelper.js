@@ -6,7 +6,7 @@ function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true)
         isSuccessful: isSuccessful,
         status: isSuccessful ? 'success' : 'error',
         message: message,
-        data: data != null ? JSON.stringify(data) : '{}'
+        data: data != null ? data : {}
     });
 }
   
@@ -17,7 +17,7 @@ function sendErrorResponse(res, statusCode, message, errorDetails = null,  error
         error: {
             code: error_code, 
             message: message,
-            details: JSON.stringify(errorDetails),
+            details: errorDetails,
             timestamp: new Date().toISOString(), 
             path: res.req.originalUrl 
         },
