@@ -50,6 +50,8 @@ exports.getServices = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
 
+        console.log(result);
+
         return sendJsonResponse(res, 200, "Services retrieved successfully", result);
 
     } catch (error) {
