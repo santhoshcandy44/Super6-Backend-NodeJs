@@ -6,7 +6,7 @@ function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true)
         isSuccessful: isSuccessful,
         status: isSuccessful ? 'success' : 'error',
         message: message,
-        data: data != null ? data : {}
+        data: data != null ? data : ''
     });
 }
   
