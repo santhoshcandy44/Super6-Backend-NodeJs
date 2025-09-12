@@ -3,10 +3,6 @@ const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelp
 const JobUser = require('../models/JobUser');
 const Job = require('../models/Job');
 
-
-
-
-
 exports.getJobListingsForUser = async (req, res) => {
 
     try {

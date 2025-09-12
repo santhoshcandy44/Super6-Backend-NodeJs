@@ -10,7 +10,7 @@ const path = require('path');
 const { sendErrorResponse } = require('../helpers/responseHelper');
 
 
-router.get('/get-job-listings', // This ensures that user_id is a number
+router.get('/job-listings', // This ensures that user_id is a number
   authenticateToken, // Ensure the user is authenticated
   [
     // Validate and sanitize the user_id parameter
