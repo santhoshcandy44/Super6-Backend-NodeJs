@@ -911,14 +911,14 @@ exports.refreshToken = async (req, res) => {
         const { accessToken, refreshToken } = generateTokens(user.userId, user.email, user.signUpMethod, user.lastSignIn);
         console.log(
           {
-            user_id: existingUser.userId,
+            user_id: existingUser.user_id,
             access_token: accessToken,
             refresh_token: refreshToken
           }
         );
         sendJsonResponse(res, 201, 'Authorized',
           {
-            user_id: existingUser.userId,
+            user_id: existingUser.user_id,
             access_token: accessToken,
             refresh_token: refreshToken
           });

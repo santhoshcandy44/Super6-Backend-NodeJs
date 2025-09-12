@@ -309,20 +309,11 @@ class User {
 
     }
 
-
-
-
-
-    // Function to find a user by id
     static async findUserById(user_id) {
         const query = `
                 SELECT * FROM users 
-                WHERE user_id = ?`;  // SQL Query
-
-        // Execute the query and pass the email parameter to avoid SQL injection
+                WHERE user_id = ?`; 
         const [rows] = await db.query(query, [user_id]);
-
-        // Return the first row if a user is found, or null if no user is found
         return rows.length > 0 ? rows[0] : null;
     }
 
