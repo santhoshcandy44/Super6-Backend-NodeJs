@@ -878,83 +878,56 @@ exports.resetPassword = async (req, res) => {
 
 
 exports.refreshToken = async (req, res) => {
-
   try {
-
     const authHeader = req.headers['authorization'];
-
     if (!authHeader) {
       return sendErrorResponse(res, 401, "Access denied");
     }
-
     const token = authHeader.split(' ')[1];
-
     if (!token) {
       return sendErrorResponse(res, 401, "Access denied");
     }
 
-    // Verify the refresh token
     jwt.verify(token, REFRESH_TOKEN_SECRET, async (err, user) => {
-
-
-      // Here you might want to verify if the user exists in the database
       try {
-
         if (err) {
           if (err.name === 'TokenExpiredError') {
-            // Decode the expired token payload without verification
             const decoded = jwt.decode(token);
-
-
             if (decoded) {
-
               const userId = decoded.userId
-
-              // Check if the user exists
               const userExists = await User.findUserById(userId);
               if (userExists) {
                 await User.userAsDeactivated(userId);
                 await App.invalidateUserFCMToken(userId, null);
               }
-
             }
-
-            // Handle expired token scenario (e.g., force logout or request refresh)
-            return sendErrorResponse(res, 403, "Unauthorized"); // Token is invalid, forbidden
-
+            return sendErrorResponse(res, 403, "Unauthorized"); 
           } else {
-            return sendErrorResponse(res, 403, "Unauthorized"); // Token is invalid, forbidden
+            return sendErrorResponse(res, 403, "Unauthorized"); 
           }
-
         }
-
-        const existingUser = await User.findUserById(user.userId); // Implement this method in User model
-
-        if (!existingUser) return sendErrorResponse(res, 403, "User not exist"); // User not found, forbidden
-
-        // Generate access and refresh tokens
+        const existingUser = await User.findUserById(user.userId); 
+        if (!existingUser) return sendErrorResponse(res, 403, "User not exist"); 
         const { accessToken, refreshToken } = generateTokens(user.userId, user.email, user.signUpMethod, user.lastSignIn);
-
+        console.log(
+          {
+            user_id: existingUser.userId,
+            access_token: accessToken,
+            refresh_token: refreshToken
+          }
+        );
         sendJsonResponse(res, 201, 'Authorized',
           {
             user_id: existingUser.userId,
             access_token: accessToken,
             refresh_token: refreshToken
           });
-
       } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.toString());
       }
-
-
     });
   } catch (error) {
-
     return sendErrorResponse(res, 500, "Internal server error", error.toString());
   }
-
 };
-
-
-
