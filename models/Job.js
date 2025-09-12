@@ -6,30 +6,19 @@ const moment = require('moment');
 
 class JobModel {
 
-  static async getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, filterWorkModes, 
-    salaryMin, salaryMax, initialRadius = 50) {
-
+  static async getJobPostingsUser(userId, queryParam, page,
+    pageSize, lastTimeStamp, lastTotalRelevance = null,
+    filterWorkModes, salaryMin, salaryMax, initialRadius = 50) {
 
     const rootDbconnection = await rootDb.getConnection();
-
-    // Retrieve user coordinates
     const [userCoords] = await rootDbconnection.execute(
       'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
       [userId]
     );
-
-
-
     const connection = await db.getConnection();
-
-
     const userCoordsData = userCoords[0];
-
-    // If user coordinates are available, add distance filter
-    let query, params = []; // Initialize params as an empty array
-    var radius = initialRadius; // You can adjust this as needed
-
-
+    let query, params = [];
+    var radius = initialRadius;
 
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const userLat = userCoordsData.latitude;

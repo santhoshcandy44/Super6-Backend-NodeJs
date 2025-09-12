@@ -4,7 +4,6 @@ const JobUser = require('../models/JobUser');
 const Job = require('../models/Job');
 
 exports.getJobListingsForUser = async (req, res) => {
-
     try {
         // Validate the request body
         const errors = validationResult(req);
@@ -59,7 +58,6 @@ exports.getJobListingsForUser = async (req, res) => {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
-
 };
 
 
