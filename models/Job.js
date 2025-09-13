@@ -162,6 +162,7 @@ class JobModel {
         const [rows] = await db.execute(query, params);
       }
       else {
+        console.log("No query coming");
 
         query = `
         SELECT
@@ -225,10 +226,7 @@ class JobModel {
 
 
             -- Distance Calculation
-            ST_Distance_Sphere(
-                POINT(?, ?),
-                POINT(j.longitude, j.latitude)
-            ) * 0.001 AS distance
+          
 
 
         FROM lts360_jobs AS j
@@ -236,11 +234,7 @@ class JobModel {
         LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.user_id
         LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
 
-        WHERE
-            j.latitude BETWEEN -90 AND 90
-            AND j.longitude BETWEEN -180 AND 180
-            AND ? BETWEEN -90 AND 90
-            AND ? BETWEEN -180 AND 180
+        
     `;
 
         if (filterWorkModes.length > 0) {
