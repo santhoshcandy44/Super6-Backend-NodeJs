@@ -208,7 +208,6 @@ class JobModel {
             o.postal_code,
 
             -- Recruiter Info
-            u.user_id,
             u.first_name,
             u.last_name,
             u.email AS recruiter_email,
@@ -232,7 +231,7 @@ class JobModel {
 
         FROM lts360_jobs AS j
         LEFT JOIN lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.external_user_id
+        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.id
         LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
 
         
@@ -514,9 +513,8 @@ class JobModel {
 
     // Prepare and execute the query
     const [results] = await connection.execute(query, params);
-    const [results2] = await connection.execute("SELECT * FROM recruiter_user_profile");
 
-    console.log(results2);
+
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
 
