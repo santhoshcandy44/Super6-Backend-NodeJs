@@ -222,7 +222,7 @@ class JobModel {
             -- Currency Info
             c.currency_type AS salary_currency,
 
-                CURRENT_TIMESTAMP AS initial_check_at,
+                CURRENT_TIMESTAMP AS initial_check_at
 
 
             -- Distance Calculation
