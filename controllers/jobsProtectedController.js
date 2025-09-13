@@ -52,6 +52,8 @@ exports.getJobListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
 
+        console.log(result);
+
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
 
     } catch (error) {
