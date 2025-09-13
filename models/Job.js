@@ -514,7 +514,9 @@ class JobModel {
 
     // Prepare and execute the query
     const [results] = await connection.execute(query, params);
-    console.log(results);
+    const [results2] = await connection.execute("SELECT * FROM recruiter_user_profile");
+
+    console.log(results2);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
 
