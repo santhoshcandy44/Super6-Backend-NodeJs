@@ -266,13 +266,11 @@ class JobModel {
 
 
         if (lastTimeStamp) {
-          params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
+          params = [ lastTimeStamp, pageSize, offset];
         } else {
-          params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
+          params = [ pageSize, offset];
         }
-
       }
-
     } else {
 
 
