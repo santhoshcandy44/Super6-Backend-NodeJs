@@ -290,7 +290,7 @@ exports.legacyEmailLogIn = async (req, res) => {
     const isPasswordValid = hashedPasswordAttempt === existingUser.hashed_password;
 
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid password' });
+      return sendErrorResponse(res, 400, "Invalid password");
     }
 
     const { user_id, email } = existingUser;
@@ -307,8 +307,6 @@ exports.legacyEmailLogIn = async (req, res) => {
     if (!updateResult) {
       return sendErrorResponse(res, 400, "Failed to login");
     }
-
-
 
     // Generate access and refresh tokens
     const { accessToken, refreshToken } = generateTokens(user_id, email, 'legacy_email', updateResult.last_sign_in);
@@ -909,13 +907,6 @@ exports.refreshToken = async (req, res) => {
         const existingUser = await User.findUserById(user.userId); 
         if (!existingUser) return sendErrorResponse(res, 403, "User not exist"); 
         const { accessToken, refreshToken } = generateTokens(user.userId, user.email, user.signUpMethod, user.lastSignIn);
-        console.log(
-          {
-            user_id: existingUser.user_id,
-            access_token: accessToken,
-            refresh_token: refreshToken
-          }
-        );
         sendJsonResponse(res, 201, 'Authorized',
           {
             user_id: existingUser.user_id,
