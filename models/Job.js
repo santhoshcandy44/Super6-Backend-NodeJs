@@ -208,6 +208,7 @@ class JobModel {
             o.postal_code,
 
             -- Recruiter Info
+            u.user_id
             u.first_name,
             u.last_name,
             u.email AS recruiter_email,
@@ -513,9 +514,7 @@ class JobModel {
 
     // Prepare and execute the query
     const [results] = await connection.execute(query, params);
-
     console.log(results);
-
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
 
