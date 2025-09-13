@@ -257,7 +257,7 @@ class JobModel {
 
         query += `
         GROUP BY j.id
-        ORDER BY distance ASC, j.posted_at DESC
+        ORDER BY  j.posted_at DESC
         LIMIT ? OFFSET ?
     `;
 
