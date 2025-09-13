@@ -208,7 +208,7 @@ class JobModel {
             o.postal_code,
 
             -- Recruiter Info
-            u.user_id
+            u.user_id,
             u.first_name,
             u.last_name,
             u.email AS recruiter_email,
