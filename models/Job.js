@@ -230,7 +230,7 @@ class JobModel {
             -- Distance Calculation
             ST_Distance_Sphere(
                 POINT(?, ?),
-                POINT(j.longitude, j.latitude)
+                POINT(ci.longitude, ci.latitude)
             ) * 0.001 AS distance
 
         FROM lts360_jobs AS j
