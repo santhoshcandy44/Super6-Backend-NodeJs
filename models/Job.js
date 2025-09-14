@@ -649,7 +649,8 @@ class JobModel {
                 years_of_experience: row.years_of_experience,
                 is_verified: !!row.is_verified,
               },
-
+              is_applied:false,
+              is_bookrked:false,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
