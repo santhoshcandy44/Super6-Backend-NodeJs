@@ -162,14 +162,13 @@ class JobModel {
         const [rows] = await db.execute(query, params);
       }
       else {
-        console.log("No query coming");
 
         query = `
         SELECT
             j.id,
             j.title,
+            j.city_id,
             j.work_mode,
-            j.location,
             j.description,
             j.education,
             j.experience_type,
@@ -219,23 +218,31 @@ class JobModel {
             u.years_of_experience,
             u.is_verified,
 
+            --location
+            ci.name,
+            ci.latitude,
+            ci.longitude,
+
             -- Currency Info
             c.currency_type AS salary_currency,
-
-                CURRENT_TIMESTAMP AS initial_check_at
-
+                CURRENT_TIMESTAMP AS initial_check_at,
 
             -- Distance Calculation
-          
-
+            ST_Distance_Sphere(
+                POINT(?, ?),
+                POINT(j.longitude, j.latitude)
+            ) * 0.001 AS distance
 
         FROM lts360_jobs AS j
         LEFT JOIN lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.user_id
         LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
-
-        
-    `;
+        LEFT JOIN cities ci ON j.city_id = ci.id
+        WHERE
+            ci.latitude BETWEEN -90 AND 90
+            AND ci.longitude BETWEEN -180 AND 180
+            AND ? BETWEEN -90 AND 90
+            AND ? BETWEEN -180 AND 180`;
 
         if (filterWorkModes.length > 0) {
           query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
@@ -257,7 +264,8 @@ class JobModel {
 
         query += `
         GROUP BY j.id
-        ORDER BY  j.posted_at DESC
+        HAVING distance < ?
+        ORDER BY distance ASC, j.posted_at DESC
         LIMIT ? OFFSET ?
     `;
 
@@ -266,11 +274,13 @@ class JobModel {
 
 
         if (lastTimeStamp) {
-          params = [ lastTimeStamp, pageSize, offset];
+          params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
         } else {
-          params = [ pageSize, offset];
+          params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
         }
+
       }
+
     } else {
 
 
@@ -640,8 +650,6 @@ class JobModel {
                 is_verified: !!row.is_verified,
               },
 
-              is_bookmarked:false,
-              is_applied:false,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
