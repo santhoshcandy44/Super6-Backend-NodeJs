@@ -650,7 +650,7 @@ class JobModel {
                 is_verified: !!row.is_verified,
               },
               is_applied:false,
-              is_bookrked:false,
+              is_bookmarked:false,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
