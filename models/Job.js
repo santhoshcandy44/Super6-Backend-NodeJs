@@ -235,7 +235,7 @@ class JobModel {
 
         FROM lts360_jobs AS j
         LEFT JOIN lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.user_id
+        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.id
         LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
         WHERE
