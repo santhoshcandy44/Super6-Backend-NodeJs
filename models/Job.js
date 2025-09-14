@@ -219,7 +219,7 @@ class JobModel {
             u.is_verified,
 
             -- location
-            ci.name,
+            ci.name as location,
             ci.latitude,
             ci.longitude,
 
