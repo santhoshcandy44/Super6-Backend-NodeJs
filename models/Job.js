@@ -218,7 +218,7 @@ class JobModel {
             u.years_of_experience,
             u.is_verified,
 
-            --location
+            -- location
             ci.name,
             ci.latitude,
             ci.longitude,
