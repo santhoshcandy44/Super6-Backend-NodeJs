@@ -671,7 +671,7 @@ class JobModel {
     try {
       connection = await db.getConnection();
       const [jobCheckResult] = await connection.query(
-        'SELECT id title FROM lts360_jobs WHERE job_id = ?',
+        'SELECT id title FROM lts360_jobs WHERE id = ?',
         [jobId]
       );
       if (jobCheckResult.length === 0) {
@@ -720,7 +720,7 @@ class JobModel {
 
     } catch (error) {
       (await connection).rollback();
-      throw new Error('Failed to create local job: ' + error.message);
+      throw new Error('Failed to apply job: ' + error.message);
     } finally {
       (await connection).release;
     }
