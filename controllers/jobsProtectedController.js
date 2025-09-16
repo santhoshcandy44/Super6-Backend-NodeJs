@@ -74,11 +74,9 @@ exports.applyJob= async (req, res) => {
         const user_id = req.user.user_id;
         const { job_id } = req.body;
         const result = await Job.applyJob(user_id, job_id);
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to apply job");
         }
-        
         return sendJsonResponse(res, 200, "Job applied successfully");
     } catch (error) {
         console.log(error);
