@@ -223,7 +223,7 @@ class JobUser {
             profilePicUrl = existingProfile.profile_picture;
         }
 
-        const unique_user_id = await generateUnique11DigitId()
+        const unique_user_id = await this.generateUnique11DigitId()
         const query = `
             INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
