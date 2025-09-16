@@ -82,6 +82,19 @@ router.get('/job-listings', // This ensures that user_id is a number
 );
 
 
+router.post(
+  '/apply-job',
+  authenticateToken,
+  [
+      body('user_id')
+          .isInt().withMessage('Invalid user id format'),
+      body('job_id')
+          .isInt().withMessage('Invalid job id format'),
+
+  ],
+  jobsProtectedController.applyJob
+);
+
 router.get(
   '/applicant-profile/:user_id(\\d+)', // This ensures that user_id is a number
   authenticateToken, // Ensure the user is authenticated
@@ -93,8 +106,6 @@ router.get(
   jobsProtectedController.getApplicantProfile
 );
 
-
-// 🔹 Keep this outside as requested
 const profilePicFileFilter = (req, file, cb) => {
   const allowedTypes = ['.jpg', '.jpeg', '.png'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -106,10 +117,9 @@ const profilePicFileFilter = (req, file, cb) => {
   }
 };
 
-
 router.post(
   '/update-applicant-profile',
-  authenticateToken, // Ensure the user is authenticated
+  authenticateToken,
   multer({
     limits: {
       fileSize: 2 * 1024 * 1024,
@@ -131,7 +141,6 @@ router.post(
 
   jobsProtectedController.updateProfile
 );
-
 
 router.post(
   '/update-applicant-education',
@@ -351,7 +360,6 @@ router.post(
   authenticateToken, // Ensure the user is authenticated
   jobsProtectedController.updateLanguage
 );
-
 
 // 🔹 Keep this outside as requested
 const resumeFileFilter = (req, file, cb) => {

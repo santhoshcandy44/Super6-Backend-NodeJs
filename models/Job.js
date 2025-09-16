@@ -1,11 +1,9 @@
 const db = require('../config/jobDatabase.js')
 const rootDb = require('../config/database.js')
-
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 
 class JobModel {
-
   static async getJobPostingsUser(userId, queryParam, page,
     pageSize, lastTimeStamp, lastTotalRelevance = null,
     filterWorkModes, salaryMin, salaryMax, initialRadius = 50) {
@@ -649,8 +647,8 @@ class JobModel {
                 years_of_experience: row.years_of_experience,
                 is_verified: !!row.is_verified,
               },
-              is_applied:false,
-              is_bookmarked:false,
+              is_applied: false,
+              is_bookmarked: false,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
@@ -672,6 +670,66 @@ class JobModel {
     return Object.values(jobs);
   }
 
+
+  static async applyJob(userId, jobId) {
+    let connection;
+    try {
+      const [jobCheckResult] = await db.query(
+        'SELECT created_by, title FROM lts360_jobs WHERE job_id = ?',
+        [jobId, userId]
+      );
+      if (jobCheckResult.length === 0) {
+        throw new Error('Job not exist');
+      }
+      const createdBy = jobCheckResult[0].created_by;
+      const localJobTitle = jobCheckResult[0].title;
+      connection = await db.getConnection();
+
+      const [userResult] = await db.execute(
+        `SELECT id from lts360_job_applications where external_user_id = ?`,
+        [jobId]
+      );
+
+      if (userResult.length === 0) {
+        return {
+          is_profile_completed:false,
+          is_applied:false
+        }
+      }
+
+      const userProfileId = userResult[0].id;
+
+      await connection.beginTransaction();
+      const [rows] = await connection.execute(
+        `INSERT INTO lts360_job_applications (user_id, job_listing_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
+        [userProfileId, jobId]
+      );
+      if (rows.affectedRows === 0) {
+        throw new Error('Error on inserting local job');
+      }
+      await connection.commit();
+
+      // const kafkaKey = `${localJobId}:${createdBy}:${userId}`
+
+      // sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, {
+      //   user_id: createdBy,
+      //   candidate_id: userId,
+      //   local_job_title: localJobTitle,
+      //   applicant_id: rows.insertId
+      // })
+
+      return {
+        is_profile_completed:true,
+        is_applied:true
+      };
+
+    } catch (error) {
+      (await connection).rollback();
+      throw new Error('Failed to create local job: ' + error.message);
+    } finally {
+      (await connection).release;
+    }
+  }
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {
     if (!salary || isNaN(salary)) return `${currencySymbol}0`;
@@ -696,8 +754,6 @@ class JobModel {
       }
     }
   }
-
-
 }
 
 module.exports = JobModel;
