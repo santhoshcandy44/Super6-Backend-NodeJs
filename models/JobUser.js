@@ -225,8 +225,8 @@ class JobUser {
 
         const unique_user_id = await this.generateUnique11DigitId()
         const query = `
-            INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 id = VALUES(id),
                 first_name = VALUES(first_name),
@@ -244,7 +244,8 @@ class JobUser {
             email,
             gender,
             intro,
-            profilePicUrl
+            profilePicUrl,
+            new Date()
         ]);
         return await JobUser.getApplicantUserProfile(userId);
     }
