@@ -681,7 +681,7 @@ class JobModel {
       const localJobTitle = jobCheckResult[0].title;
 
       const [userResult] = await connection.execute(
-        `SELECT id from lts360_job_applications where external_user_id = ?`,
+        `SELECT id from user_profile where external_user_id = ?`,
         [userId]
       );
 
