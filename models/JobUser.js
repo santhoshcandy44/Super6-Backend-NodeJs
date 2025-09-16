@@ -176,46 +176,39 @@ class JobUser {
     }
 
 
+    static async generateUnique11DigitId() {
+        let id, exists = true;
+        while (exists) {
+            id = Math.floor(10000000000 + Math.random() * 90000000000);
+            const [rows] = await db.query("SELECT id FROM user_profile WHERE id = ? LIMIT 1", [id]);
+            exists = rows.length > 0;
+        }
+        return id;
+    }
+
     static async updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic) {
         const { first_name, last_name, email, gender, intro } = jobProfessionalInfo;
         let profilePicUrl = null;
-
-        // 1. Validate user
         const user = await User.getUserMedia(userId);
         if (!user) throw new Error("Access forbidden");
-
         const mediaId = user.media_id;
-
-        // 2. Check if user_profile already exists to delete old profile picture
         const [[existingProfile]] = await db.query(
             `SELECT profile_picture FROM user_profile WHERE external_user_id = ?`,
             [userId]
         );
-
-        // 3. If a new profile picture is being uploaded
         if (profilePic) {
             const buffer = profilePic.buffer;
-
-            // Compress and convert all images to JPEG
             const compressedImageBuffer = await sharp(buffer)
                 .resize(512, 512)
                 .jpeg({ quality: 80 })
                 .toBuffer();
-
             const fileName = profilePic.originalname;
             const newFileName = `${path.parse(fileName).name}.jpg`;
-
             const s3Key = `media/${mediaId}/careers/applicant/profile/${newFileName}`;
-
-            // 🧹 Delete old profile picture if it exists
             if (existingProfile?.profile_picture) {
-                // Extract the token from the profile picture URL
                 const token = existingProfile.profile_picture.split('q=')[1];
-
                 const decodedToken = decodeURIComponent(token);
-
                 if (token) {
-                    // Verify and extract the mediaId and filename from the token
                     const extractedData = verifyShortEncryptedUrl(decodedToken);
                     if (extractedData) {
                         const { path } = extractedData;
@@ -224,22 +217,18 @@ class JobUser {
                 }
             }
 
-
-            // Upload the new file to S3
             await this.uploadToS3(compressedImageBuffer, s3Key, 'image/jpeg');
-
-            // Generate the short encrypted URL
             profilePicUrl = generateShortEncryptedUrl(s3Key);
         } else if (existingProfile?.profile_picture) {
-            // If no new image is uploaded, keep the existing one
             profilePicUrl = existingProfile.profile_picture;
         }
 
-        // 4. Upsert user profile
+        const unique_user_id = await generateUnique11DigitId()
         const query = `
-            INSERT INTO user_profile (external_user_id, first_name, last_name, email, gender, intro, profile_picture)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
+                id = VALUES(unique_user_id),
                 first_name = VALUES(first_name),
                 last_name = VALUES(last_name),
                 email = VALUES(email),
@@ -247,8 +236,8 @@ class JobUser {
                 intro = VALUES(intro),
                 profile_picture = VALUES(profile_picture)
         `;
-
         await db.query(query, [
+            unique_user_id,
             userId,
             first_name,
             last_name,
@@ -257,13 +246,10 @@ class JobUser {
             intro,
             profilePicUrl
         ]);
-
         return await JobUser.getApplicantUserProfile(userId);
     }
 
-
     static async updateOrCreateEducationInfo(userId, educationList = []) {
-        // 1. Delete existing education records
         await db.query(
             'DELETE FROM user_profile_education_info WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
             [userId]
@@ -504,22 +490,22 @@ class JobUser {
 
     static async updateOrCreateUserResume(userId, file) {
 
-        
+
         // 1. Validate user
         const user = await User.getUserMedia(userId);
         if (!user) return; // Skip if user doesn't exist (ignore silently as per your earlier request)
-    
+
         const mediaId = user.media_id;
-    
+
         const allowedTypes = ["PDF", "DOC", "DOCX"];
         const fileType = file.mimetype.split('/')[1].toUpperCase(); // Get file type from mimetype
         if (!allowedTypes.includes(fileType)) return; // Skip if the file type is not allowed (ignore silently)
-    
+
         const [[userProfile]] = await db.query(
             `SELECT id FROM user_profile WHERE external_user_id = ?`,
             [userId]
         );
-        
+
         if (!userProfile) return; // Skip if user profile doesn't exist (ignore silently)
 
 
@@ -528,8 +514,8 @@ class JobUser {
             'SELECT resume_download_url FROM user_profile_resume WHERE  user_profile_id =  ?',
             [userProfile.id]
         );
-    
-    
+
+
         // 3. Delete the old resume if it exists in DB (and potentially in S3)
         if (exisitngResume?.resume_download_url) {
             // Assuming resume_download_url contains the S3 path to the resume file
@@ -539,12 +525,12 @@ class JobUser {
                 await this.deleteS3Keys([oldResumePath]);
             }
         }
-    
+
         // 4. Upload new resume to S3
         const fileName = file.originalname; // You should set this from the file object
         const s3Key = `media/${mediaId}/careers/resume/${fileName}`;
         await this.uploadToS3(file.buffer, s3Key, fileType); // Upload the file buffer to S3
-    
+
         // 5. Save new resume details to DB
         const resumeDownloadUrl = s3Key;
         const insertResumeQuery = `
@@ -559,12 +545,12 @@ class JobUser {
                 last_used = VALUES(last_used)
         `;
         await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
-    
+
         // 6. Return the updated user profile
         const result = await JobUser.getApplicantUserProfile(userId);
         return result;
     }
-    
+
 
     static async updateOrCreateUserCertificates(userId, certificates) {
         // 1. Validate user exists

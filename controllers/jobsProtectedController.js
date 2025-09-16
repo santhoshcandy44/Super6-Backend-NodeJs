@@ -77,7 +77,7 @@ exports.applyJob= async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to apply job");
         }
-        return sendJsonResponse(res, 200, "Job apply status", result);
+        return sendJsonResponse(res, 200, result.is_applied ? "Job applied successfully" : "Profile not completed" , result);
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
@@ -178,37 +178,23 @@ function getNextIncompleteStep(result) {
 }
 
 exports.updateProfile = async (req, res) => {
-
     try {
-
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
-
         }
-
         const jobProfessionalInfoJson = req.body.applicantProfessionalInfo;
-
         if (!jobProfessionalInfoJson) {
             return res.status(400).json({ error: 'Missing jobProfessionalInfo part' });
         }
-
-        const userId = req.user.user_id; // Assuming `authenticateToken` sets req.user
-
+        const userId = req.user.user_id;
         const jobProfessionalInfo = JSON.parse(jobProfessionalInfoJson);
-
-        // Access the uploaded profilePic if it exists
         const profilePic = req.file;
-
         const result = await JobUser.updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic);
-
-
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
-
         return sendJsonResponse(res, 200, "Profile fetched successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
@@ -218,8 +204,8 @@ exports.updateProfile = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList, // <-- return education list here
-            applicant_experience: result.experienceList, // <-- return education list here
+            applicant_education: result.educationList, 
+            applicant_experience: result.experienceList, 
             applicant_skill: result.skillsList,
             applicant_language: result.languagesList,
             applicant_certificate: result.certificateList,
