@@ -662,28 +662,23 @@ class JobModel {
 
     })();
 
-
-    // Close the connection
     await connection.release();
-
-
     return Object.values(jobs);
   }
-
 
   static async applyJob(userId, jobId) {
     let connection;
     try {
-      const [jobCheckResult] = await db.query(
+      connection = await db.getConnection();
+      const [jobCheckResult] = await connection.query(
         'SELECT created_by, title FROM lts360_jobs WHERE job_id = ?',
-        [jobId, userId]
+        [jobId]
       );
       if (jobCheckResult.length === 0) {
         throw new Error('Job not exist');
       }
       const createdBy = jobCheckResult[0].created_by;
       const localJobTitle = jobCheckResult[0].title;
-      connection = await db.getConnection();
 
       const [userResult] = await connection.execute(
         `SELECT id from lts360_job_applications where external_user_id = ?`,
