@@ -671,7 +671,7 @@ class JobModel {
     try {
       connection = await db.getConnection();
       const [jobCheckResult] = await connection.query(
-        'SELECT job_id title FROM lts360_jobs WHERE job_id = ?',
+        'SELECT id title FROM lts360_jobs WHERE job_id = ?',
         [jobId]
       );
       if (jobCheckResult.length === 0) {
