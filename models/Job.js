@@ -685,7 +685,7 @@ class JobModel {
       const localJobTitle = jobCheckResult[0].title;
       connection = await db.getConnection();
 
-      const [userResult] = await db.execute(
+      const [userResult] = await connection.execute(
         `SELECT id from lts360_job_applications where external_user_id = ?`,
         [jobId]
       );
@@ -705,7 +705,7 @@ class JobModel {
         [userProfileId, jobId]
       );
       if (rows.affectedRows === 0) {
-        throw new Error('Error on inserting local job');
+        throw new Error('Error on inserting job');
       }
       await connection.commit();
 
