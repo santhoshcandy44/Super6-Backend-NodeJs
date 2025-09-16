@@ -228,7 +228,7 @@ class JobUser {
             INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
-                id = VALUES(unique_user_id),
+                id = VALUES(id),
                 first_name = VALUES(first_name),
                 last_name = VALUES(last_name),
                 email = VALUES(email),
