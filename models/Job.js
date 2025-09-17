@@ -685,11 +685,13 @@ class JobModel {
         [userId]
       );
 
+      return {
+        is_profile_completed:false,
+        is_applied:false
+      }
+      
       if (userResult.length === 0) {
-        return {
-          is_profile_completed:false,
-          is_applied:false
-        }
+       
       }
 
       const userProfileId = userResult[0].id;
