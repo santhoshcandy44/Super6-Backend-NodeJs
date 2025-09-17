@@ -17,7 +17,7 @@ function sendErrorResponse(res, statusCode, message, errorDetails = null,  error
         error: {
             code: error_code, 
             message: message,
-            details: Json.stringify(errorDetails),
+            details: JSON.stringify(errorDetails),
             timestamp: new Date().toISOString(), 
             path: res.req.originalUrl 
         },
