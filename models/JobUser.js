@@ -281,8 +281,10 @@ class JobUser {
                     currently_studying
                 } = edu;
 
+                console.log(edu);
+
                 const startDate = formatToMySQLDate(start_year); 
-                const endDate = currently_studying ? false : formatToMySQLDate(end_year);
+                const endDate = currently_studying ? null : formatToMySQLDate(end_year);
                 await db.query(insertEducationQuery, [
                     userProfile.id,
                     institution,
