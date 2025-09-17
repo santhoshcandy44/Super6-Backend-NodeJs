@@ -81,7 +81,6 @@ router.get('/job-listings', // This ensures that user_id is a number
   jobsProtectedController.getJobListingsForUser // Controller function to load user profile
 );
 
-
 router.post(
   '/apply-job',
   authenticateToken,
@@ -96,10 +95,9 @@ router.post(
 );
 
 router.get(
-  '/applicant-profile/:user_id(\\d+)', // This ensures that user_id is a number
-  authenticateToken, // Ensure the user is authenticated
+  '/applicant-profile/:user_id(\\d+)', 
+  authenticateToken, 
   [
-    // Validate and sanitize the user_id parameter
     param('user_id')
       .isInt().withMessage('User ID must be a valid integer'),
   ],
@@ -138,7 +136,6 @@ router.post(
     }
     next(err);
   },
-
   jobsProtectedController.updateProfile
 );
 
@@ -146,12 +143,10 @@ router.post(
   '/update-applicant-education',
   authenticateToken,
   [
-    // 1. Root-level: validate that the body is a non-empty array
     body()
       .isArray({ min: 1, max: 3 })
       .withMessage('At least one education is required. (Max 3)'),
 
-    // 2. Per-item validations
     body('*.institution')
       .notEmpty()
       .withMessage('Institution is required.'),
@@ -164,13 +159,9 @@ router.post(
       .isInt()
       .withMessage('Start year must be a valid year.'),
 
-    // 3. Custom cross-field validations
     body().custom((educationList) => {
-
-
       for (const edu of educationList) {
         const currentlyStudying = Boolean(edu.currently_studying);
-
         if (currentlyStudying) {
           if (edu.end_year !== null && edu.end_year !== 0) {
             throw new Error('If currently studying, end_year must be null or 0.');
@@ -193,8 +184,6 @@ router.post(
       return true;
     })
   ],
-
-
   jobsProtectedController.updateEducation
 );
 

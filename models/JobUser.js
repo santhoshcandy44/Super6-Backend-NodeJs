@@ -259,15 +259,12 @@ class JobUser {
             'DELETE FROM user_profile_education_info WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
             [userId]
         );
-
-        // 2. Insert new education entries
         const insertEducationQuery = `
             INSERT INTO user_profile_education_info (
                 user_profile_id, organization_name, field_of_study, start_date, end_date, grade, currently_studying
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-
         const [[userProfile]] = await db.query(
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
@@ -284,9 +281,8 @@ class JobUser {
                     currently_studying
                 } = edu;
 
-                const startDate = formatToMySQLDate(start_year); // millis to 'YYYY-MM-DD'
-                const endDate = currently_studying ? null : formatToMySQLDate(end_year);
-
+                const startDate = formatToMySQLDate(start_year); 
+                const endDate = currently_studying ? false : formatToMySQLDate(end_year);
                 await db.query(insertEducationQuery, [
                     userProfile.id,
                     institution,
@@ -298,14 +294,8 @@ class JobUser {
                 ]);
             }
         }
-
-
-
         const result = await JobUser.getApplicantUserProfile(userId);
-
         return result;
-
-
     }
 
 
