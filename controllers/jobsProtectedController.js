@@ -275,8 +275,8 @@ exports.updateExperience = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0].msg; 
-            return sendErrorResponse(res, 400, firstError, errors.array());
+            const firstError = errors.array()[0]; 
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const applicantExperienceInfo = req.body;
         if (!applicantExperienceInfo) {
