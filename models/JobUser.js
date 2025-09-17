@@ -301,13 +301,11 @@ class JobUser {
     }
 
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
-        // 1. Delete existing experience records
         await db.query(
             'DELETE FROM user_profile_experience WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
             [userId]
         );
 
-        // 2. Insert new experience entries
         const insertExperienceQuery = `
             INSERT INTO user_profile_experience (
                 user_profile_id, organization, job_title, employment_type, location,
@@ -320,8 +318,6 @@ class JobUser {
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
         );
-
-
 
         if (userProfile && experienceList.length > 0) {
             for (const exp of experienceList) {
@@ -352,12 +348,8 @@ class JobUser {
                 ]);
             }
         }
-
-
         const result = await JobUser.getApplicantUserProfile(userId);
-
         return result;
-
     }
 
     static async updateExperienceAsNone(userId) {
