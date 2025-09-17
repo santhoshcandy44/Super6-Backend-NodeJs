@@ -195,7 +195,7 @@ exports.updateProfile = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Personal information updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
