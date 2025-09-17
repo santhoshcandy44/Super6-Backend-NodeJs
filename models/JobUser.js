@@ -298,7 +298,6 @@ class JobUser {
         return result;
     }
 
-
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
         // 1. Delete existing experience records
         await db.query(
