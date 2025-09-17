@@ -406,6 +406,52 @@ exports.updateSkill = async (req, res) => {
     }
 };
 
+exports.updateLanguage = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+
+        }
+        const applicantLanguageInfo = req.body;
+        if (!applicantLanguageInfo || applicantLanguageInfo.length === 0) {
+            return res.status(400).json({ error: 'Missing  languages' });
+        }
+        const userId = req.user.user_id; 
+        const result = await JobUser.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
+        if (!result) {
+            return sendErrorResponse(res, 500, "Failed to update skills information");
+        }
+        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+            applicant_professional_info: {
+                first_name: result.first_name,
+                last_name: result.last_name,
+                email: result.email,
+                gender: result.gender,
+                intro: result.intro,
+                profile_pic_url: result.profile_picture
+            },
+            applicant_education: result.educationList,
+            applicant_experience: result.experienceList, 
+            applicant_skill: result.skillsList,
+            applicant_language: result.languagesList,
+            applicant_certificate: result.certificateList,
+            applicant_resume: result.resume ? {
+                resume: result.resume.resume_download_url,
+                file_name: result.resume.file_name,
+                file_size: result.resume.resume_size,
+                type: result.resume.resume_type,
+                last_used: result.resume.last_used
+            } : null,
+            next_complete_step: getNextIncompleteStep(result)
+        });
+    } catch (error) {
+        console.log(error);
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+};
+
 exports.updateCertificate = async (req, res) => {
     try {
         // Validate the request body
@@ -490,63 +536,6 @@ exports.updateCertificate = async (req, res) => {
         console.error(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
-};
-
-exports.updateLanguage = async (req, res) => {
-
-    try {
-
-        // Validate the request body
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
-            return sendErrorResponse(res, 400, firstError, errors.array());
-
-        }
-
-        const applicantLanguageInfo = req.body;
-
-        if (!applicantLanguageInfo || applicantLanguageInfo.length === 0) {
-            return res.status(400).json({ error: 'Missing  languages' });
-        }
-
-        const userId = req.user.user_id; // Assuming `authenticateToken` sets req.user
-        const result = await JobUser.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
-
-        if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update skills information");
-        }
-
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
-            applicant_professional_info: {
-                first_name: result.first_name,
-                last_name: result.last_name,
-                email: result.email,
-                gender: result.gender,
-                intro: result.intro,
-                profile_pic_url: result.profile_picture
-            },
-            applicant_education: result.educationList, // <-- return education list here
-            applicant_experience: result.experienceList, // <-- return education list here
-            applicant_skill: result.skillsList,
-            applicant_language: result.languagesList,
-            applicant_certificate: result.certificateList,
-            applicant_resume: result.resume ? {
-                resume: result.resume.resume_download_url,
-                file_name: result.resume.file_name,
-                file_size: result.resume.resume_size,
-                type: result.resume.resume_type,
-                last_used: result.resume.last_used
-            } : null,
-            next_complete_step: getNextIncompleteStep(result)
-        });
-
-
-    } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
-    }
-
 };
 
 exports.updateResume = async (req, res) => {

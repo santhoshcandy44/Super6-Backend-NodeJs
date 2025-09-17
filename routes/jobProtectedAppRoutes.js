@@ -191,12 +191,10 @@ router.post(
   '/update-applicant-experience',
   authenticateToken,
   [
-    // 1. Validate that body is an array (max 5 entries)
     body()
       .isArray({ min: 1, max: 5 })
       .withMessage('Expected an array of experiences (min 1 and max 5 allowed).'),
 
-    // 2. Required fields per item
     body('*.company_name')
       .notEmpty()
       .withMessage('company_name is required.'),
@@ -225,15 +223,13 @@ router.post(
       .isBoolean()
       .withMessage('experienced must be a boolean.'),
 
-    // 3. Custom cross-field validations
     body().custom((experienceList) => {
       for (let i = 0; i < experienceList.length; i++) {
         const exp = experienceList[i];
         const isCurrent = Boolean(exp.is_current_job);
         const startDate = exp.start_date;
         const endDate = exp.end_date !== undefined && exp.end_date !== null ? exp.end_date : null;
-
-        // Rule: experienced must be true
+        
         if (exp.experienced !== true) {
           throw new Error(`"experienced" must be true at index ${i}.`);
         }
