@@ -1,26 +1,21 @@
 // User.js
 const sharp = require('sharp');
-const path = require('path'); // Import path module
+const path = require('path'); 
 const moment = require('moment');
-
 const db = require('../config/jobDatabase.js')
 const User = require('./User.js');
 const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils/authUtils.js');
 const { S3_BUCKET_NAME, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { awsS3Bucket } = require('../config/awsS3.js');
 
-
-
 const formatToMySQLDate = (millis) => {
     if (!millis) return null; // If no date provided, return null for MySQL
     return moment(millis).format('YYYY-MM-DD'); // Convert to 'YYYY-MM-DD' format
 };
 
-
 class JobUser {
-
     static async getApplicantUserProfile(userId) {
-        const [[profile]] = await db.query(
+        const [profile] = await db.query(
             `SELECT id, first_name, last_name, gender, email, phone, intro, profile_picture 
              FROM user_profile 
              WHERE external_user_id = ?`,
@@ -31,7 +26,7 @@ class JobUser {
 
         const userProfileId = profile.id;
 
-        // Experience
+        
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
              FROM user_profile_experience 
@@ -72,10 +67,7 @@ class JobUser {
                 }));
         }
 
-
-
-
-        // Education
+       // Education
         const [educationRows] = await db.query(
             `SELECT organization_name AS institution, field_of_study, start_date, end_date, grade, currently_studying 
              FROM user_profile_education_info 
@@ -174,7 +166,6 @@ class JobUser {
             languagesList
         };
     }
-
 
     static async generateUnique11DigitId() {
         let id, exists = true;

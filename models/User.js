@@ -338,10 +338,6 @@ class User {
         }
     }
 
-
-
-
-
     static async getUserProfile(user_id) {
         const query = `SELECT u.first_name, u.last_name, u.email, u.profile_pic_url,  u.profile_pic_url_96x96, u.created_at, u.updated_at as profile_updated_at, u.about, 
                 u.account_type,
@@ -353,14 +349,9 @@ class User {
                   ul.geo, ul.location_type, ul.updated_at
         FROM users u
         LEFT JOIN user_locations ul ON u.user_id = ul.user_id
-        WHERE u.user_id = ?`;  // SQL Query
-
-        // Execute the query and pass the email parameter to avoid SQL injection
+        WHERE u.user_id = ?`; 
         const [rows] = await db.query(query, [user_id]);
-
-        // Return the first row if a user is found, or null if no user is found
         return rows.length > 0 ? rows[0] : null;
-
     }
 
     // Function to manually update last_sign_in with a specific timestamp

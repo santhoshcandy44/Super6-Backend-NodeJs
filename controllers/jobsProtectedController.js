@@ -5,63 +5,43 @@ const Job = require('../models/Job');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
-            return sendErrorResponse(res, 400, firstError, errors.array());
+            const firstError = errors.array()[0]; 
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
 
         }
-        const user_id = req.user.user_id; // This will contain the uploaded images
+        const user_id = req.user.user_id;
         const { s, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
-
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
-
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
-
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
-
-
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
-
         const VALID_WORK_MODES = ['remote', 'office', 'hybrid', 'flexible'];
-
         const workModesArray = Array.isArray(work_modes)
             ? work_modes
             : typeof work_modes === 'string'
                 ? work_modes.split(',')
-                : [];
-
+                : [];        
         const normalizedWorkModes = workModesArray
             .map(mode => mode.trim().toLowerCase())
             .filter(mode => VALID_WORK_MODES.includes(mode));
-
-        const countryCode = req.headers['x-country-code']; // 👈 get it from headers
-
-
+        const countryCode = req.headers['x-country-code']; 
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
-
-       
         const PAGE_SIZE = 1;
-
         const result = await Job.getJobPostingsUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
-
         console.log(result);
-
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
-
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
-
 
 exports.applyJob= async (req, res) => {
     try {
@@ -101,7 +81,6 @@ exports.getApplicantProfile = async (req, res) => {
             return sendErrorResponse(res, 400, 'Access forbidden');
         }
 
-        // Call getApplicantUserProfile to fetch the profile data
         const result = await JobUser.getApplicantUserProfile(userId);
 
         if (!result) {
@@ -138,43 +117,30 @@ exports.getApplicantProfile = async (req, res) => {
 };
 
 function getNextIncompleteStep(result) {
-    // Check if profile information is missing
     if (!(result.first_name && result.last_name && result.gender && result.email && result.intro)) {
-        return 0; // Profile information is incomplete
+        return 0; 
     }
-
-    // Check if education information is missing
     if (!result.educationList || result.educationList.length === 0) {
-        return 1; // Education information is incomplete
+        return 1;
     }
-
-    // Check if experience information is missing
     if (!result.experienceList || result.experienceList.length === 0) {
-        return 2; // Experience information is incomplete
+        return 2; 
     }
-
-    // Check if skills information is missing
     if (!result.skillsList || result.skillsList.length === 0) {
-        return 3; // Skills information is incomplete
+        return 3; 
     }
-
-
-    // Check if languages information is missing
     if (!result.languagesList || result.languagesList.length === 0) {
-        return 4; // Languages information is incomplete
+        return 4; 
     }
-
-    // Check if resume is missing
     if (!result.resume) {
-        return 5; // Resume is missing
+        return 5; 
     }
 
-    //Certificate step
     if (!result.certificateList || result.certificateList.length === 0) {
-        return 6; // Skip step 4
+        return 6; 
     }
 
-    return -1; // All steps are complete
+    return -1;
 }
 
 exports.updateProfile = async (req, res) => {

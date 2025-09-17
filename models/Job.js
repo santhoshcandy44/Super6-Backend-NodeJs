@@ -160,7 +160,6 @@ class JobModel {
         const [rows] = await db.execute(query, params);
       }
       else {
-
         query = `
         SELECT
             j.id,
@@ -221,6 +220,10 @@ class JobModel {
             ci.latitude,
             ci.longitude,
 
+              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+   
+CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
             -- Currency Info
             c.currency_type AS salary_currency,
                 CURRENT_TIMESTAMP AS initial_check_at,
@@ -236,6 +239,11 @@ class JobModel {
         LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.id
         LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
+        LEFT JOIN user_bookmark_jobs ub ON j.id = ub.job_id AND ub.user_id = ?
+
+        LEFT JOIN lts360_job_applications ja 
+        ON j.id = ja.id AND ja.candidate_id = ?
+
         WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
@@ -519,23 +527,16 @@ class JobModel {
 
     }
 
-    // Prepare and execute the query
     const [results] = await connection.execute(query, params);
-
-
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
-
-
       if (availableResults < pageSize) {
         if (radius < 500) {
-          // Increase distance and fetch again
           radius += 30;
           console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
           await connection.release();
           await rootDbconnection.release();
           return await this.getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
-
         } else {
           console.log("Reached maximum distance limit. Returning available results.");
           // Process available results as needed, limited to requestedLimit
@@ -543,27 +544,15 @@ class JobModel {
           // console.log("Fetched Results:", limitedResults);
         }
       }
-
     }
-
-
-
+    
     const jobs = {};
-
-    // Wrap the code in an async IIFE (Immediately Invoked Function Expression)
     await (async () => {
-
       for (const row of results) {
         const job_id = row.id;
-
-
         const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
-        // Initialize job entry if it doesn't exist
         if (!jobs[job_id]) {
           try {
-
-
             jobs[job_id] = {
               id: row.id,
               title: row.title,
@@ -647,8 +636,8 @@ class JobModel {
                 years_of_experience: row.years_of_experience,
                 is_verified: !!row.is_verified,
               },
-              is_applied: false,
-              is_bookmarked: false,
+              is_applied: row.is_applied,
+              is_bookmarked: row.is_bookarked,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
@@ -662,8 +651,24 @@ class JobModel {
 
     })();
 
+    await rootDbconnection.release();
     await connection.release();
     return Object.values(jobs);
+  }
+
+  static async isProfileCompleted(result) {
+    return !!(
+      result.first_name &&
+      result.last_name &&
+      result.gender &&
+      result.email &&
+      result.intro &&
+      result.educationList?.length >= 1 &&
+      result.experienceList?.length >= 1 &&
+      result.skillsList?.length >= 1 &&
+      result.languagesList?.length >= 1 &&
+      result.resume
+    );
   }
 
   static async applyJob(userId, jobId) {
@@ -680,25 +685,33 @@ class JobModel {
       const createdBy = jobCheckResult[0].created_by;
       const localJobTitle = jobCheckResult[0].title;
 
+      applicant_profile = await JobUser.getApplicantUserProfile(userId)
+      is_profile_completed = await this.isProfileCompleted(applicant_profile)
+
+      if (!is_profile_completed) {
+        return {
+          is_profile_completed: false,
+          is_applied: false
+        }
+      }
       const [userResult] = await connection.execute(
         `SELECT id from user_profile where external_user_id = ?`,
         [userId]
       );
-
-      return {
-        is_profile_completed:false,
-        is_applied:false
-      }
-      
-      if (userResult.length === 0) {
-       
-      }
-
       const userProfileId = userResult[0].id;
+
+      const [existing] = await connection.execute(
+        `SELECT 1 FROM lts360_job_applications WHERE candidate_id = ? AND job_listing_id = ? LIMIT 1`,
+        [userProfileId, jobId]
+      );
+      
+      if (existing.length > 0) {
+        throw new Error("You have already applied for this job");
+      }      
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(
-        `INSERT INTO lts360_job_applications (user_id, job_listing_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
+        `INSERT INTO lts360_job_applications (candidate_id, job_listing_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
         [userProfileId, jobId]
       );
       if (rows.affectedRows === 0) {
@@ -716,10 +729,9 @@ class JobModel {
       // })
 
       return {
-        is_profile_completed:true,
-        is_applied:true
+        is_profile_completed: true,
+        is_applied: true
       };
-
     } catch (error) {
       (await connection).rollback();
       throw new Error('Failed to apply job: ' + error.message);
@@ -730,9 +742,7 @@ class JobModel {
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {
     if (!salary || isNaN(salary)) return `${currencySymbol}0`;
-
     currencyType = currencyType.toUpperCase();
-
     if (currencyType === 'INR') {
       if (salary >= 10000000) {
         return `${currencySymbol}${(salary / 10000000).toFixed(2)} Cr`;

@@ -229,7 +229,7 @@ router.post(
         const isCurrent = Boolean(exp.is_current_job);
         const startDate = exp.start_date;
         const endDate = exp.end_date !== undefined && exp.end_date !== null ? exp.end_date : null;
-        
+
         if (exp.experienced !== true) {
           throw new Error(`"experienced" must be true at index ${i}.`);
         }
@@ -287,14 +287,11 @@ const VALID_PROFICIENCIES = new Map([
 router.post(
   '/update-applicant-language',
   authenticateToken,
-
   [
-    // 1. Ensure it's a non-empty array
     body()
       .isArray({ min: 1 })
       .withMessage('Languages list cannot be empty.'),
 
-    // 2. Validate structure of each language item
     body('*.language')
       .isObject()
       .withMessage('Language must be an object.'),
@@ -319,11 +316,9 @@ router.post(
       .isString()
       .withMessage('Proficiency value must be a string.'),
 
-    // 3. Custom validation for value-name matching
     body().custom((langArray) => {
       langArray.forEach((entry, index) => {
         const { language, proficiency } = entry;
-
         if (!VALID_LANGUAGES.has(language.code) || VALID_LANGUAGES.get(language.code) !== language.name) {
           throw new Error(`Entry ${index + 1}: Invalid language code-name combination.`);
         }
@@ -335,8 +330,6 @@ router.post(
       return true;
     })
   ],
-
-
   jobsProtectedController.updateLanguage
 );
 
@@ -346,7 +339,6 @@ router.post(
   jobsProtectedController.updateLanguage
 );
 
-// 🔹 Keep this outside as requested
 const resumeFileFilter = (req, file, cb) => {
   const allowedTypes = ['.pdf', '.doc', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
