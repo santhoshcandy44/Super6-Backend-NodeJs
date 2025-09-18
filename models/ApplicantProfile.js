@@ -2,7 +2,7 @@
 const sharp = require('sharp');
 const path = require('path'); 
 const moment = require('moment');
-const db = require('../config/jobDatabase.js')
+const db = require('../config/lts360JobsDatabase.js')
 const User = require('./User.js');
 const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils/authUtils.js');
 const { S3_BUCKET_NAME, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
@@ -13,7 +13,7 @@ const formatToMySQLDate = (millis) => {
     return moment(millis).format('YYYY-MM-DD'); // Convert to 'YYYY-MM-DD' format
 };
 
-class JobUser {
+class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
         const [profile] = await db.query(
             `SELECT id, first_name, last_name, gender, email, phone, intro, profile_picture 
@@ -242,7 +242,7 @@ class JobUser {
             new Date(),
             new Date()
         ]);
-        return await JobUser.getApplicantUserProfile(userId);
+        return await ApplicantProfile.getApplicantUserProfile(userId);
     }
 
     static async updateOrCreateEducationInfo(userId, educationList = []) {
@@ -287,7 +287,7 @@ class JobUser {
                 ]);
             }
         }
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
@@ -339,7 +339,7 @@ class JobUser {
                 ]);
             }
         }
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
@@ -381,10 +381,9 @@ class JobUser {
         );
 
         // 4. Return the updated profile
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
-
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
         // 1. Delete existing skill records
@@ -419,11 +418,10 @@ class JobUser {
         }
 
 
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
 
         return result;
     }
-
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
         // 1. Delete existing language records
@@ -461,7 +459,7 @@ class JobUser {
             ]);
         }
 
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
 
         return result;
     }
@@ -526,7 +524,7 @@ class JobUser {
         await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
 
         // 6. Return the updated user profile
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
@@ -649,7 +647,7 @@ class JobUser {
         }
 
         // 6. Return updated user profile
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
@@ -689,4 +687,4 @@ class JobUser {
 }
 
 
-module.exports = JobUser;
+module.exports = ApplicantProfile;

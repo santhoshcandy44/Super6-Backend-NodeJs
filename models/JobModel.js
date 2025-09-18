@@ -1,4 +1,4 @@
-const db = require('../config/jobDatabase.js')
+const db = require('../config/lts360JobsDatabase.js')
 const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
@@ -162,7 +162,7 @@ class JobModel {
       else {
         query = `
         SELECT
-            j.id,
+            j.job_id,
             j.title,
             j.city_id,
             j.work_mode,
@@ -222,7 +222,7 @@ class JobModel {
 
               CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
    
-CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency Info
             c.currency_type AS salary_currency,
@@ -235,14 +235,14 @@ CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ) * 0.001 AS distance
 
         FROM lts360_jobs AS j
-        LEFT JOIN lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.id
-        LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
+        LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profile u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
         LEFT JOIN user_bookmark_jobs ub ON j.id = ub.job_id AND ub.user_id = ?
 
-        LEFT JOIN lts360_job_applications ja 
-        ON j.id = ja.id AND ja.candidate_id = ?
+        LEFT JOIN applications a 
+        ON j.job_id = a.id AND a.applicant_profile_id = ?
 
         WHERE
             ci.latitude BETWEEN -90 AND 90
@@ -676,16 +676,16 @@ CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     try {
       connection = await db.getConnection();
       const [jobCheckResult] = await connection.query(
-        'SELECT id title FROM lts360_jobs WHERE id = ?',
+        'SELECT posted_by_id, title FROM jobs WHERE job_id = ?',
         [jobId]
       );
       if (jobCheckResult.length === 0) {
         throw new Error('Job not exist');
       }
       const createdBy = jobCheckResult[0].created_by;
-      const localJobTitle = jobCheckResult[0].title;
+      const title = jobCheckResult[0].title;
 
-      applicant_profile = await JobUser.getApplicantUserProfile(userId)
+      applicant_profile = await ApplicantProfile.getApplicantUserProfile(userId)
       is_profile_completed = await this.isProfileCompleted(applicant_profile)
 
       if (!is_profile_completed) {
@@ -701,7 +701,7 @@ CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       const userProfileId = userResult[0].id;
 
       const [existing] = await connection.execute(
-        `SELECT 1 FROM lts360_job_applications WHERE candidate_id = ? AND job_listing_id = ? LIMIT 1`,
+        `SELECT 1 FROM applications WHERE applicant_id = ? AND job_listing_id = ? LIMIT 1`,
         [userProfileId, jobId]
       );
       
@@ -711,7 +711,7 @@ CASE WHEN ja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(
-        `INSERT INTO lts360_job_applications (candidate_id, job_listing_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
+        `INSERT INTO applications (applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
         [userProfileId, jobId]
       );
       if (rows.affectedRows === 0) {

@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const JobUser = require('../models/JobUser');
-const Job = require('../models/Job');
+const ApplicantProfile = require('../models/ApplicantProfile');
+const Job = require('../models/JobModel');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
@@ -81,7 +81,7 @@ exports.getApplicantProfile = async (req, res) => {
             return sendErrorResponse(res, 400, 'Access forbidden');
         }
 
-        const result = await JobUser.getApplicantUserProfile(userId);
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
 
         if (!result) {
             return sendErrorResponse(res, 404, 'User profile not found');
@@ -157,7 +157,7 @@ exports.updateProfile = async (req, res) => {
         const userId = req.user.user_id;
         const jobProfessionalInfo = JSON.parse(jobProfessionalInfoJson);
         const profilePic = req.file;
-        const result = await JobUser.updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic);
+        const result = await ApplicantProfile.updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
@@ -203,7 +203,7 @@ exports.updateEducation = async (req, res) => {
             return res.status(400).json({ error: 'Missing  jobProfessionalInfo' });
         }
         const userId = req.user.user_id; 
-        const result = await JobUser.updateOrCreateEducationInfo(userId, applicantEducationInfo);
+        const result = await ApplicantProfile.updateOrCreateEducationInfo(userId, applicantEducationInfo);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
@@ -249,7 +249,7 @@ exports.updateExperience = async (req, res) => {
             return res.status(400).json({ error: 'Missing  jobProfessionalInfo' });
         }
         const userId = req.user.user_id; 
-        const result = await JobUser.updateOrCreateExperienceInfo(userId, applicantExperienceInfo);
+        const result = await ApplicantProfile.updateOrCreateExperienceInfo(userId, applicantExperienceInfo);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
@@ -290,7 +290,7 @@ exports.updateNoExperience = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.user.user_id;
-        const result = await JobUser.updateExperienceAsNone(userId);
+        const result = await ApplicantProfile.updateExperienceAsNone(userId);
 
         if (!result) {
             return sendErrorResponse(res, 500, 'Failed to update personal information');
@@ -339,7 +339,7 @@ exports.updateSkill = async (req, res) => {
             return res.status(400).json({ error: 'Missing  skills' });
         }
         const userId = req.user.user_id;
-        const result = await JobUser.updateOrCreateSkillInfo(userId, applicantSkillInfo);
+        const result = await ApplicantProfile.updateOrCreateSkillInfo(userId, applicantSkillInfo);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update skills information");
         }
@@ -385,7 +385,7 @@ exports.updateLanguage = async (req, res) => {
             return res.status(400).json({ error: 'Missing  languages' });
         }
         const userId = req.user.user_id; 
-        const result = await JobUser.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
+        const result = await ApplicantProfile.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update skills information");
         }
@@ -468,7 +468,7 @@ exports.updateCertificate = async (req, res) => {
             };
         });
 
-        const result = await JobUser.updateOrCreateUserCertificates(userId, certificates);
+        const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
 
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update certificates");
@@ -529,7 +529,7 @@ exports.updateResume = async (req, res) => {
 
 
 
-        const result = await JobUser.updateOrCreateUserResume(userId, resume);
+        const result = await ApplicantProfile.updateOrCreateUserResume(userId, resume);
 
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update resume");
