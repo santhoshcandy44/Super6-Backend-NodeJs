@@ -96,6 +96,22 @@ router.get('/job-listings', // This ensures that user_id is a number
   jobsProtectedController.getJobListingsForUser // Controller function to load user profile
 );
 
+
+router.get('/job-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
+    authenticateToken, // Ensure the user is authenticated
+    [
+        // Validate and sanitize the user_id parameter
+        param('user_id')
+            .isInt().withMessage('Invalid user id format'),
+
+        // Validate and sanitize the query parameter
+        query('query')
+            .isString().withMessage('Invalid user query format')
+            .notEmpty().withMessage('Query cannot be empty'),
+    ],
+    jobsProtectedController.searchSuggestions // Controller function to load user profile
+);
+
 router.post(
   '/apply-job',
   authenticateToken,

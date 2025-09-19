@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const ApplicantProfile = require('../models/ApplicantProfile');
 const Job = require('../models/JobModel');
+const JobModel = require('../models/JobModel');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
@@ -39,6 +40,35 @@ exports.getJobListingsForUser = async (req, res) => {
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
         console.log(error);
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+};
+
+
+exports.searchSuggestions = async (req, res) => {
+
+
+    try {
+
+        // Validate the request body
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0]; // Get the first error
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+
+        // const user_id = req.user.user_id; // This will contain the uploaded images
+        const query = req.query.query; // This will contain the uploaded images
+
+        
+        const result = await JobModel.searchLocationSuggestions(query)
+
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to get suggestions");
+        }
+
+        return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
+    } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };

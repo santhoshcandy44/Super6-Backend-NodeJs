@@ -811,8 +811,7 @@ router.get('/search-services-suggestions/:user_id(\\d+)', // This ensures that u
     servicesProtectedController.searchSuggestions // Controller function to load user profile
 );
 
-
-
+ 
 // Update Service Route
 router.get('/guest-services-search-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
     [

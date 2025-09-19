@@ -9,8 +9,8 @@ class JobModel {
     longitudeParam,
     page,
     pageSize, lastTimeStamp, lastTotalRelevance = null,
-    filterWorkModes, salaryMin, salaryMax, 
-    
+    filterWorkModes, salaryMin, salaryMax,
+
     initialRadius = 50) {
 
     const rootDbconnection = await rootDb.getConnection();
@@ -24,13 +24,13 @@ class JobModel {
     var radius = initialRadius;
 
     const { latitude: userLat, longitude: userLon } =
-    latitudeParam && longitudeParam
-      ? { latitude: latitudeParam, longitude: longitudeParam }
-      : userCoordsData || {};
-  
+      latitudeParam && longitudeParam
+        ? { latitude: latitudeParam, longitude: longitudeParam }
+        : userCoordsData || {};
+
 
     if (userLat && userLon) {
-      
+
       if (queryParam) {
         if (initialRadius == 50) {
           const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -564,7 +564,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
           await connection.release();
           await rootDbconnection.release();
-          return await this.getJobPostingsUser(userId, 
+          return await this.getJobPostingsUser(userId,
             queryParam,
             latitudeParam,
             longitudeParam,
@@ -687,6 +687,45 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     await connection.release();
     return Object.values(jobs);
   }
+
+  static async searchLocationSuggestions(query) {
+    let connection;
+    try {
+
+      // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
+      const trimmedQuery = query.trim();
+      const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+      const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
+
+      // Escape the query to prevent SQL injection
+      const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
+
+      // Simple SQL to search cities
+      const sql = `
+            SELECT id,
+            name, 
+            state_id,
+            country_id,
+            latitude,
+            longitude
+            FROM cities
+            WHERE name LIKE CONCAT('%', ${escapedQuery}, '%')
+            ORDER BY name ASC
+            LIMIT 10;
+        `;
+
+      const [results] = await connection.execute(sql);
+      return results;
+
+    } catch (error) {
+      throw error;
+    } finally {
+      if (connection) {
+        (await connection).release();
+      }
+    }
+  }
+
 
   static async isProfileCompleted(result) {
     return !!(
