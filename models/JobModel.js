@@ -221,10 +221,9 @@ class JobModel {
             ci.longitude,
 
               CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-   
 CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
-            -- Currency Info
+            -- Currency
             c.currency_type AS salary_currency,
                 CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -235,14 +234,16 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
             ) * 0.001 AS distance
 
         FROM lts360_jobs AS j
-        LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_profile u ON j.posted_by_id = u.id
+        LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
-        LEFT JOIN user_bookmark_jobs ub ON j.id = ub.job_id AND ub.user_id = ?
-
-        LEFT JOIN applications a 
-        ON j.job_id = a.id AND a.applicant_profile_id = ?
+        LEFT JOIN applicant_profile ap ON ap.external_user_id = ?
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ap.applicant_id
+        LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+        WHERE
+            j.latitude BETWEEN -90 AND 90
+            AND j.longitude BETWEEN -180 AND 180
 
         WHERE
             ci.latitude BETWEEN -90 AND 90
@@ -288,8 +289,6 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
       }
 
     } else {
-
-
       if (queryParam) {
         if (initialRadius == 50) {
           const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -432,7 +431,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
       else {
         query = `
         SELECT
-            j.id,
+            j.job_id,
             j.title,
             j.work_mode,
             j.location,
@@ -487,7 +486,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
     
             -- Currency
             c.currency_type AS salary_currency,
-    
+
             -- User online status (0 = offline, 1 = online)
             ci.online AS user_online_status
     
@@ -695,7 +694,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         }
       }
       const [userResult] = await connection.execute(
-        `SELECT id from user_profile where external_user_id = ?`,
+        `SELECT applcant_id from applicant_profile where external_user_id = ?`,
         [userId]
       );
       const userProfileId = userResult[0].id;

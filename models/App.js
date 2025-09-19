@@ -8,20 +8,12 @@ const UsedProductListingModel = require('./UsedProdctListingModel');
 
 class App {
 
-
-
     static async updateUserFCMToken(userId, fcmToken) {
-
         let connection;
-
         try {
             connection = await db.getConnection();
             // Start a transaction
             await connection.beginTransaction();
-
-
-
-            // Encrypt the FCM token using the secret
             const encryptedToken = await encrypt(fcmToken);
 
             // Prepare the SQL statement
@@ -56,77 +48,19 @@ class App {
         }
     }
 
-
-    static async invalidateUserFCMToken(userId, fcmToken) {
-
-        let connection;
-
-        try {
-            connection = await db.getConnection();
-            // Start a transaction
-            await connection.beginTransaction();
-
-
-
-
-            // Prepare the SQL statement
-            const sql = `
-                INSERT INTO fcm_tokens (user_id, fcm_token)
-                VALUES (?, ?)
-                ON DUPLICATE KEY UPDATE fcm_token = ?, updated_at = CURRENT_TIMESTAMP
-            `;
-
-            // Execute the statement
-            const [result] = await connection.execute(sql, [userId, fcmToken, fcmToken]);
-
-            //    Check the affected rows 
-            if (result.affectedRows == 0) { throw Error("Error on updating fcm token"); }
-
-            // Commit the transaction
-            await connection.commit();
-
-            return {
-                success: true,
-                message: 'FCM token updated successfully.',
-                result: result
-            };
-        } catch (error) {
-            console.log(error);
-            // Rollback transaction in case of an error
-            await connection.rollback();
-            throw error;
-        } finally {
-            // Close the connection
-            await connection.release();
-        }
-    }
-
-
     static async updateUserE2EEPublicKey(userId, publicKey, keyVersion) {
-
         let connection;
-
         try {
             connection = await db.getConnection();
-            // Start a transaction
             await connection.beginTransaction();
-
-            // Prepare the SQL statement
             const sql = `
                 INSERT INTO e2ee_public_keys (user_id, encrypted_public_key, key_version)
                 VALUES (?, ?, ?)
                 ON DUPLICATE KEY UPDATE encrypted_public_key = ?, key_version = ?, updated_at = CURRENT_TIMESTAMP
             `;
-
-            // Execute the statement
             const [result] = await connection.execute(sql, [userId, publicKey, keyVersion, publicKey, keyVersion]);
-
-            //    Check the affected rows 
             if (result.affectedRows == 0) { throw Error("Error on updating e2ee public key"); }
-
-            // Commit the transaction
             await connection.commit();
-
             return {
                 success: true,
                 message: 'E2EE public key updated successfully.',
@@ -134,33 +68,23 @@ class App {
             };
         } catch (error) {
             console.log(error);
-            // Rollback transaction in case of an error
             await connection.rollback();
             throw error;
         } finally {
-            // Close the connection
             await connection.release();
         }
     }
 
 
     static async getUserBookmarks(userId) {
-
-        // Create a connection to the database
-
-        // Check if user exists
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
         );
-
         if (userCheckResult.length === 0) {
             throw new Error('User does not exist.');
         }
-
-        // Query to retrieve services, images, plans, and location for the specific user
-        const [results] = await db.query(`
-               
+        const [results] = await db.query(`               
         SELECT
             s.service_id AS service_id,
             s.title,
@@ -268,36 +192,19 @@ class App {
             GROUP BY service_id
             `, [userId, userId]);
 
-
-
-
         const services = {};
         await (async () => {
-
             for (const row of results) {
-
                 const serviceId = row.service_id;
                 const date = new Date(row.created_at);
-
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
-
-
-                // Initialize service entry if it doesn't exist
                 if (!services[serviceId]) {
                     try {
-
-
                         const publisher_id = row.publisher_id;
-                        // Await the async operation
                         const result = await ServiceModel.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
-
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
-
                         services[serviceId] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -369,10 +276,7 @@ class App {
 
         })();
 
-
-
-        const [usedProductResults] = await db.query(`
-               
+        const [usedProductResults] = await db.query(`       
                     SELECT
                         s.product_id AS product_id,
                         s.name,
@@ -439,32 +343,19 @@ class App {
                         `, [userId, userId]);
 
 
-
         const usedProducts = {};
         await (async () => {
-
             for (const row of usedProductResults) {
-
                 const productId = row.product_id;
                 const date = new Date(row.created_at);
-
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
-                // Initialize service entry if it doesn't exist
                 if (!usedProducts[productId]) {
                     try {
-
-
                         const publisher_id = row.publisher_id;
-                        // Await the async operation
                         const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
-
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
-
                         usedProducts[productId] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -513,22 +404,16 @@ class App {
                                     }
                                     : null
                         };
-
                     } catch (error) {
-                        // Handle the error if the async operation fails
                         console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
-
         })();
 
 
         const [localJobResults] = await db.query(`
-               
             SELECT
                 l.local_job_id AS local_job_id,
                 l.title,
@@ -577,21 +462,21 @@ class App {
                 CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
 
                 ub.created_at As bookmarked_at
-
             FROM
                 local_jobs l
+                
             LEFT JOIN
                 local_job_images li ON l.local_job_id = li.local_job_id
         
             INNER JOIN
                 users u ON l.created_by = u.user_id
-       
-            LEFT JOIN
-                user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
-    
+               
                 LEFT JOIN
         chat_info ci ON u.user_id = ci.user_id  
-        
+
+            LEFT JOIN
+                user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
+
             WHERE
                 ub.user_id = ? 
                 GROUP BY local_job_id
@@ -599,16 +484,10 @@ class App {
 
         const localJobs = {};
         await (async () => {
-
             for (const row of localJobResults) {
-
                 const localJobId = row.local_job_id;
                 const date = new Date(row.created_at);
-
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
                 if (!localJobs[localJobId]) {
                     try {
 
@@ -660,10 +539,90 @@ class App {
                     }
                 }
             }
-
         })();
 
+        
+        const [jobResults] = await db.query(`
+             SELECT
+            j.job_id,
+            j.title,
+            j.city_id,
+            j.work_mode,
+            j.description,
+            j.education,
+            j.experience_type,
+            j.experience_range_min,
+            j.experience_range_max,
+            j.experience_fixed,
+            j.salary_min,
+            j.salary_max,
+            j.salary_not_disclosed,
+            j.must_have_skills,
+            j.good_to_have_skills,
+            j.industry_type,
+            j.department,
+            j.role,
+            j.employment_type,
+            j.vacancies,
+            j.highlights,
+            j.posted_at,
+            j.organization_id,
+            j.expiry_date,
+            j.status,
+            j.approval_status,
+            j.slug,
+            j.company_id,
+            j.posted_by_id,
 
+            -- Organization Info
+            o.organization_name,
+            o.logo AS organization_logo,
+            o.email AS organization_email,
+            o.organization_address,
+            o.website,
+            o.country,
+            o.state,
+            o.city,
+            o.postal_code,
+
+            -- Recruiter Info
+            u.first_name,
+            u.last_name,
+            u.email AS recruiter_email,
+            u.role AS recruiter_role,
+            u.company,
+            u.phone,
+            u.profile_picture,
+            u.bio,
+            u.years_of_experience,
+            u.is_verified,
+
+            -- location
+            ci.name as location,
+            ci.latitude,
+            ci.longitude,
+
+              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+   
+CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
+            -- Currency Info
+            c.currency_type AS salary_currency,
+                CURRENT_TIMESTAMP AS initial_check_at,
+
+
+        FROM lts360_jobs AS j
+        LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profile u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
+        LEFT JOIN cities ci ON j.city_id = ci.id
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ?
+        LEFT JOIN applicant_profile ap ON ap.external_user_id = ?
+        LEFT JOIN applications a ON j.job_id = a.id AND a.applicant_profile_id = ap.applicant_profile_id
+        
+        WHERE ub.user_id = ? 
+        GROUP BY j.job_id
+                `, [userId, userId]);
 
         const combinedResults = [
             ...Object.values(services).map(s => ({
@@ -680,14 +639,9 @@ class App {
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
         
-
-    
         console.log(combinedResults);
-
         return Object.values(combinedResults);
-
     }
-
 }
 
 
