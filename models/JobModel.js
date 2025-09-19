@@ -14,7 +14,7 @@ class JobModel {
       [userId]
     );
     const connection = await db.getConnection();
-    const userCoordsData = userCoords[0];
+    const userCoordsData = null;
     let query, params = [];
     var radius = initialRadius;
 
@@ -274,15 +274,12 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         const offset = (page - 1) * pageSize;
 
-
         if (lastTimeStamp) {
           params = [userLon, userLat, userId, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
         } else {
           params = [userLon, userLat, userId, userId, userLat, userLon, radius, pageSize, offset];
         }
-
       }
-
     } else {
       if (queryParam) {
         if (initialRadius == 50) {
@@ -428,8 +425,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         SELECT
             j.job_id,
             j.title,
+            j.city_id,
             j.work_mode,
-            j.location,
             j.description,
             j.education,
             j.experience_type,
@@ -454,9 +451,9 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.approval_status,
             j.slug,
             j.company_id,
-            j.posted_by_id AS posted_by_id,
-    
-            -- Organization
+            j.posted_by_id,
+
+            -- Organization Info
             o.organization_name,
             o.logo AS organization_logo,
             o.email AS organization_email,
@@ -466,8 +463,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             o.state,
             o.city,
             o.postal_code,
-    
-            -- Recruiter
+
+            -- Recruiter Info
             u.first_name,
             u.last_name,
             u.email AS recruiter_email,
@@ -478,45 +475,43 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             u.bio,
             u.years_of_experience,
             u.is_verified,
-    
+
+            -- location
+            ci.name as location,
+            ci.latitude,
+            ci.longitude,
+
+              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
             -- Currency
             c.currency_type AS salary_currency,
+                CURRENT_TIMESTAMP AS initial_check_at,
 
-            -- User online status (0 = offline, 1 = online)
-            ci.online AS user_online_status
-    
-        FROM
-            lts360_jobs j
-        LEFT JOIN
-            lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN
-            recruiter_user_profile u ON j.posted_by_id = u.user_id
-        LEFT JOIN
-            lts360_jobs_settings c ON j.posted_by_id = c.user_id
-        LEFT JOIN
-            chat_info ci ON u.user_id = ci.user_id -- Join chat_info to get user online status
-    
+            -- Distance Calculation
+            ST_Distance_Sphere(
+                POINT(?, ?),
+                POINT(ci.longitude, ci.latitude)
+            ) * 0.001 AS distance
+
+        FROM jobs AS j
+        LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
+        LEFT JOIN cities ci ON j.city_id = ci.id
+        LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
+        LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
         WHERE
-            o.latitude BETWEEN -90 AND 90
-            AND o.longitude BETWEEN -180 AND 180
-            AND (j.location LIKE ? OR o.city LIKE ? OR o.state LIKE ? OR o.country LIKE ?)
-        `;
+            ci.latitude BETWEEN -90 AND 90
+            AND ci.longitude BETWEEN -180 AND 180
+            AND ? BETWEEN -90 AND 90
+            AND ? BETWEEN -180 AND 180`;
 
-        if (!lastTimeStamp) {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        } else {
-          query += ` AND j.posted_at < ?`;
+        if (filterWorkModes.length > 0) {
+          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
         }
 
-        query += ` GROUP BY j.id ORDER BY j.posted_at DESC LIMIT ? OFFSET ?`;
-
-        const offset = (page - 1) * pageSize;
-
-        if (lastTimeStamp) {
-          params = [queryParam, queryParam, queryParam, queryParam, lastTimeStamp, pageSize, offset];
-        } else {
-          params = [queryParam, queryParam, queryParam, queryParam, pageSize, offset];
-        }
       }
 
     }
