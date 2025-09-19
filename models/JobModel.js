@@ -488,12 +488,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             c.currency_type AS salary_currency,
                 CURRENT_TIMESTAMP AS initial_check_at,
 
-            -- Distance Calculation
-            ST_Distance_Sphere(
-                POINT(?, ?),
-                POINT(ci.longitude, ci.latitude)
-            ) * 0.001 AS distance
-
         FROM jobs AS j
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
         LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
@@ -504,9 +498,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
         WHERE
             ci.latitude BETWEEN -90 AND 90
-            AND ci.longitude BETWEEN -180 AND 180
-            AND ? BETWEEN -90 AND 90
-            AND ? BETWEEN -180 AND 180`;
+            AND ci.longitude BETWEEN -180 AND 180`;
 
         if (filterWorkModes.length > 0) {
           query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
@@ -528,8 +520,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         query += `
         GROUP BY j.job_id
-        HAVING distance < ?
-        ORDER BY distance ASC, j.posted_at DESC
+        ORDER BY j.posted_at DESC
         LIMIT ? OFFSET ?
     `;
 
