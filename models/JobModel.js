@@ -242,10 +242,6 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ap.applicant_id
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
         WHERE
-            j.latitude BETWEEN -90 AND 90
-            AND j.longitude BETWEEN -180 AND 180
-
-        WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
             AND ? BETWEEN -90 AND 90
