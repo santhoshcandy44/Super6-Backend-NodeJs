@@ -233,7 +233,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
                 POINT(ci.longitude, ci.latitude)
             ) * 0.001 AS distance
 
-        FROM lts360_jobs AS j
+        FROM jobs AS j
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
         LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
