@@ -486,9 +486,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
             c.currency_type AS salary_currency,
-                CURRENT_TIMESTAMP AS initial_check_at,
+                CURRENT_TIMESTAMP AS initial_check_at
 
         FROM jobs AS j
+
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
         LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
@@ -523,9 +524,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         ORDER BY j.posted_at DESC
         LIMIT ? OFFSET ?
     `;
-
         const offset = (page - 1) * pageSize;
-
         if (lastTimeStamp) {
           params = [userId, userId,lastTimeStamp, pageSize, offset];
         } else {
