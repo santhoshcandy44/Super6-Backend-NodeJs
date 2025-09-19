@@ -4,9 +4,14 @@ const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 
 class JobModel {
-  static async getJobPostingsUser(userId, queryParam, page,
+  static async getJobPostingsUser(userId, queryParam,
+    latitudeParam,
+    longitudeParam,
+    page,
     pageSize, lastTimeStamp, lastTotalRelevance = null,
-    filterWorkModes, salaryMin, salaryMax, initialRadius = 50) {
+    filterWorkModes, salaryMin, salaryMax, 
+    
+    initialRadius = 50) {
 
     const rootDbconnection = await rootDb.getConnection();
     const [userCoords] = await rootDbconnection.execute(
@@ -18,10 +23,14 @@ class JobModel {
     let query, params = [];
     var radius = initialRadius;
 
-    if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-      const userLat = userCoordsData.latitude;
-      const userLon = userCoordsData.longitude;
+    const { latitude: userLat, longitude: userLon } =
+    latitudeParam && longitudeParam
+      ? { latitude: latitudeParam, longitude: longitudeParam }
+      : userCoordsData || {};
+  
 
+    if (userLat && userLon) {
+      
       if (queryParam) {
         if (initialRadius == 50) {
           const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -37,10 +46,8 @@ class JobModel {
           );
         }
 
-        // Build base query
-        query = `
-                SELECT
-                    j.id,
+        query = `SELECT
+                    j.job_id,
                     j.title,
                     j.work_mode,
                     j.location,
@@ -96,7 +103,7 @@ class JobModel {
                     -- Distance in kilometers
                     ST_Distance_Sphere(
                         POINT(?, ?),
-                        POINT(j.longitude, j.latitude)
+                        POINT(ci.longitude, cj.latitude)
                     ) * 0.001 AS distance,
         
                     -- Full-text relevance scoring
@@ -108,16 +115,33 @@ class JobModel {
         
                 FROM lts360_jobs j
         
-                LEFT JOIN lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-                LEFT JOIN recruiter_user_profile u ON j.posted_by_id = u.user_id
-                LEFT JOIN lts360_jobs_settings c ON j.posted_by_id = c.user_id
-        
-                WHERE
-                    j.latitude BETWEEN -90 AND 90
-                    AND j.longitude BETWEEN -180 AND 180
+        LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
+        LEFT JOIN cities ci ON j.city_id = ci.id
+        LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
+        LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+       
+        WHERE
+            ci.latitude BETWEEN -90 AND 90
+            AND ci.longitude BETWEEN -180 AND 180
+
                     AND ? BETWEEN -90 AND 90
                     AND ? BETWEEN -180 AND 180
-            `;
+        `;
+
+        if (filterWorkModes.length > 0) {
+          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+        }
+
+        if (salaryMin !== -1 && salaryMax !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+        } else if (salaryMin !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin}`;
+        } else if (salaryMax !== -1) {
+          query += ` AND j.salary_max <= ${salaryMax}`;
+        }
 
         if (lastTimeStamp != null) {
           query += ` AND j.posted_at < ?`;
@@ -135,7 +159,7 @@ class JobModel {
                         (total_relevance < ? AND distance <= ?)
                     )`;
         } else {
-          query += ` GROUP BY j.id HAVING
+          query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
                         title_relevance > 0 OR
                         description_relevance > 0
@@ -156,8 +180,6 @@ class JobModel {
         } else {
           params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, radius, pageSize, offset];
         }
-
-        const [rows] = await db.execute(query, params);
       }
       else {
         query = `
@@ -526,7 +548,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     `;
         const offset = (page - 1) * pageSize;
         if (lastTimeStamp) {
-          params = [userId, userId,lastTimeStamp, pageSize, offset];
+          params = [userId, userId, lastTimeStamp, pageSize, offset];
         } else {
           params = [userId, userId, pageSize, offset];
         }
@@ -542,7 +564,11 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
           await connection.release();
           await rootDbconnection.release();
-          return await this.getJobPostingsUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
+          return await this.getJobPostingsUser(userId, 
+            queryParam,
+            latitudeParam,
+            longitudeParam,
+            page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
         } else {
           console.log("Reached maximum distance limit. Returning available results.");
           // Process available results as needed, limited to requestedLimit
@@ -551,7 +577,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
       }
     }
-    
+
     const jobs = {};
     await (async () => {
       for (const row of results) {
@@ -710,10 +736,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         `SELECT 1 FROM applications WHERE applicant_id = ? AND job_listing_id = ? LIMIT 1`,
         [userProfileId, jobId]
       );
-      
+
       if (existing.length > 0) {
         throw new Error("You have already applied for this job");
-      }      
+      }
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(

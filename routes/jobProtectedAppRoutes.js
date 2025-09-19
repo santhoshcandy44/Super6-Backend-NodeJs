@@ -31,6 +31,21 @@ router.get('/job-listings', // This ensures that user_id is a number
       .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
       .withMessage('Query string must be between 1 and 100 characters long'), // Example length validation
 
+
+        query('latitude')
+            .optional()
+            .isFloat({ min: -90, max: 90 })
+            .withMessage('Latitude must be a valid float between -90 and 90')
+            .trim()
+            .escape(),
+
+        query('longitude')
+            .optional()
+            .isFloat({ min: -180, max: 180 })
+            .withMessage('Longitude must be a valid float between -180 and 180')
+            .trim()
+            .escape(),
+
     query('last_timestamp')
       .optional()
       .isString().withMessage('Last Timestamp must be a valid string format') // Ensures it's a string
