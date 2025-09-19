@@ -266,7 +266,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
 
         query += `
-        GROUP BY j.id
+        GROUP BY j.job_id
         HAVING distance < ?
         ORDER BY distance ASC, j.posted_at DESC
         LIMIT ? OFFSET ?
