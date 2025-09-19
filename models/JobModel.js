@@ -221,7 +221,7 @@ class JobModel {
             ci.longitude,
 
               CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
             c.currency_type AS salary_currency,
@@ -239,7 +239,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
-        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ap.applicant_id
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
         WHERE
             ci.latitude BETWEEN -90 AND 90
@@ -275,11 +275,10 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         const offset = (page - 1) * pageSize;
 
 
-
         if (lastTimeStamp) {
-          params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
+          params = [userLon, userLat, userId, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
         } else {
-          params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
+          params = [userLon, userLat, userId, userId, userLat, userLon, radius, pageSize, offset];
         }
 
       }
