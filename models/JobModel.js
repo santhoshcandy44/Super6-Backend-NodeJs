@@ -512,8 +512,35 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
         }
 
-      }
+        if (salaryMin !== -1 && salaryMax !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+        } else if (salaryMin !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin}`;
+        } else if (salaryMax !== -1) {
+          query += ` AND j.salary_max <= ${salaryMax}`;
+        }
 
+        if (!lastTimeStamp) {
+          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
+        } else {
+          query += ` AND j.posted_at < ?`;
+        }
+
+        query += `
+        GROUP BY j.job_id
+        HAVING distance < ?
+        ORDER BY distance ASC, j.posted_at DESC
+        LIMIT ? OFFSET ?
+    `;
+
+        const offset = (page - 1) * pageSize;
+
+        if (lastTimeStamp) {
+          params = [userLon, userLat, userId, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
+        } else {
+          params = [userLon, userLat, userId, userId, userLat, userLon, radius, pageSize, offset];
+        }
+      }
     }
 
     const [results] = await connection.execute(query, params);
