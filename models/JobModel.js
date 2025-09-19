@@ -14,7 +14,7 @@ class JobModel {
       [userId]
     );
     const connection = await db.getConnection();
-    const userCoordsData = null;
+    const userCoordsData = userCoords[0];
     let query, params = [];
     var radius = initialRadius;
 
