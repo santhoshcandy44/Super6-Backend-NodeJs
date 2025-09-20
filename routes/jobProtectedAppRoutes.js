@@ -93,7 +93,7 @@ router.get('/job-listings', // This ensures that user_id is a number
 
 
   ],
-  jobsProtectedController.searchLocationSuggestions // Controller function to load user profile
+  jobsProtectedController.getJobListingsForUser // Controller function to load user profile
 );
 
 
