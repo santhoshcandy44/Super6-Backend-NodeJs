@@ -47,10 +47,7 @@ exports.getJobListingsForUser = async (req, res) => {
 
 
 exports.searchLocationSuggestions = async (req, res) => {
-
-
     try {
-
         // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -70,6 +67,7 @@ exports.searchLocationSuggestions = async (req, res) => {
 
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
+        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
