@@ -312,6 +312,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       }
     } else {
       if (queryParam) {
+        console.log("AAA")
         // if (initialRadius == 50) {
         //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
 
