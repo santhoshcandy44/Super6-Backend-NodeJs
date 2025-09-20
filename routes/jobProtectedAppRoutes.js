@@ -105,7 +105,7 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)', // This ensures th
             .isInt().withMessage('Invalid user id format'),
 
         // Validate and sanitize the query parameter
-        query('s')
+        query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
@@ -121,7 +121,7 @@ router.get('/job-search-role-suggestions/:user_id(\\d+)', // This ensures that u
             .isInt().withMessage('Invalid user id format'),
 
         // Validate and sanitize the query parameter
-        query('s')
+        query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
