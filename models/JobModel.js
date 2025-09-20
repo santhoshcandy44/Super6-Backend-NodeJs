@@ -711,7 +711,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             FROM cities
             WHERE name LIKE CONCAT('%', ${escapedQuery}, '%')
             ORDER BY 
-               name LIKE CONCAT(?, '%') DESC, 
+               name LIKE CONCAT(${escapedQuery}, '%') DESC, 
              name ASC
             LIMIT 5;
         `;
