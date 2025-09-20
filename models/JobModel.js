@@ -27,7 +27,7 @@ class JobModel {
         ? { latitude: latitudeParam, longitude: longitudeParam }
         : userCoordsData || {};
 
-    if (userLat && userLon) {
+    if (userLat==1 && userLon==1) {
       if (queryParam) {
         // if (initialRadius == 50) {
         //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -312,102 +312,120 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       }
     } else {
       if (queryParam) {
-        if (initialRadius == 50) {
-          const searchTermConcatenated = queryParam.replace(/\s+/g, '');
+        // if (initialRadius == 50) {
+        //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
 
-          // Insert or update search term in the query history table
-          await connection.execute(
-            `INSERT INTO used_job_listing_search_queries (search_term, popularity, last_searched, search_term_concatenated)
-                  VALUES (?, 1, NOW(), ?)
-                  ON DUPLICATE KEY UPDATE
-                      popularity = popularity + 1,
-                      last_searched = NOW();`,
-            [queryParam, searchTermConcatenated]
-          );
+        //   // Insert or update search term in the query history table
+        //   await connection.execute(
+        //     `INSERT INTO used_job_search_queries (search_term, popularity, last_searched, search_term_concatenated)
+        //           VALUES (?, 1, NOW(), ?)
+        //           ON DUPLICATE KEY UPDATE
+        //               popularity = popularity + 1,
+        //               last_searched = NOW();`,
+        //     [queryParam, searchTermConcatenated]
+        //   );
+        // }
+
+        
+        query = `SELECT
+                    j.job_id,
+                    j.title,
+                    j.work_mode,
+                    j.city_id,
+                    j.description,
+                    j.education,
+                    j.experience_type,
+                    j.experience_range_min,
+                    j.experience_range_max,
+                    j.experience_fixed,
+                    j.salary_min,
+                    j.salary_max,
+                    j.salary_not_disclosed,
+                    j.must_have_skills,
+                    j.good_to_have_skills,
+                    j.industry_type,
+                    j.department,
+                    j.role,
+                    j.employment_type,
+                    j.vacancies,
+                    j.highlights,
+                    j.posted_at,
+                    j.organization_id,
+                    j.expiry_date,
+                    j.status,
+                    j.approval_status,
+                    j.slug,
+                    j.company_id,
+                    j.posted_by_id,
+        
+                  
+            -- Organization Info
+            o.organization_name,
+            o.logo AS organization_logo,
+            o.email AS organization_email,
+            o.organization_address,
+            o.website,
+            o.country,
+            o.state,
+            o.city,
+            o.postal_code,
+
+            -- Recruiter Info
+            u.first_name,
+            u.last_name,
+            u.email AS recruiter_email,
+            u.role AS recruiter_role,
+            u.company,
+            u.phone,
+            u.profile_picture,
+            u.bio,
+            u.years_of_experience,
+            u.is_verified,
+
+            -- location
+            ci.name as location,
+            ci.latitude,
+            ci.longitude,
+
+              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+        
+                    c.currency_type AS salary_currency,
+        
+                  
+                    -- Full-text relevance scoring
+                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
+                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
+        
+                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
+                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
+        
+                FROM jobs j
+        
+        LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
+        LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
+        LEFT JOIN cities ci ON j.city_id = ci.id
+        LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
+        LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
+        LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+       
+        WHERE
+            ci.latitude BETWEEN -90 AND 90
+            AND ci.longitude BETWEEN -180 AND 180
+        `;
+
+        if (filterWorkModes.length > 0) {
+          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
         }
 
-
-        // SQL query for job search with full-text search and Levenshtein distance logic
-        let query = `
-              SELECT
-                  j.id,
-                  j.title,
-                  j.work_mode,
-                  j.location,
-                  j.description,
-                  j.education,
-                  j.experience_type,
-                  j.experience_range_min,
-                  j.experience_range_max,
-                  j.experience_fixed,
-                  j.salary_min,
-                  j.salary_max,
-                  j.salary_not_disclosed,
-                  j.must_have_skills,
-                  j.good_to_have_skills,
-                  j.industry_type,
-                  j.department,
-                  j.role,
-                  j.employment_type,
-                  j.vacancies,
-                  j.highlights,
-                  j.posted_at,
-                  j.organization_id,
-                  j.expiry_date,
-                  j.status,
-                  j.approval_status,
-                  j.slug,
-                  j.company_id,
-                  j.posted_by_id AS posted_by_id,
-      
-                  -- Organization Info
-                  o.organization_name,
-                  o.logo AS organization_logo,
-                  o.email AS organization_email,
-                  o.organization_address,
-                  o.website,
-                  o.country,
-                  o.state,
-                  o.city,
-                  o.postal_code,
-      
-                  -- Recruiter Info
-                  u.first_name,
-                  u.last_name,
-                  u.email AS recruiter_email,
-                  u.role AS recruiter_role,
-                  u.company,
-                  u.phone,
-                  u.profile_picture,
-                  u.bio,
-                  u.years_of_experience,
-                  u.is_verified,
-      
-                  -- Currency Info
-                  c.currency_type AS salary_currency,
-      
-                  -- Full-text search relevance scores
-                  COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
-                  COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
-      
-                  -- Total relevance score
-                  COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) + 
-                  COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
-      
-              FROM
-                  lts360_jobs j
-              LEFT JOIN
-                  lts360_jobs_organizations_profile o ON j.organization_id = o.organization_id
-              LEFT JOIN
-                  recruiter_user_profile u ON j.posted_by_id = u.user_id
-              LEFT JOIN
-                  lts360_jobs_settings c ON j.posted_by_id = c.user_id
-              WHERE
-                  j.location IS NOT NULL AND
-                  o.country = ? AND
-                  o.state = ?`;
-
-
+        if (salaryMin !== -1 && salaryMax !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+        } else if (salaryMin !== -1) {
+          query += ` AND j.salary_min >= ${salaryMin}`;
+        } else if (salaryMax !== -1) {
+          query += ` AND j.salary_max <= ${salaryMax}`;
+        }
 
         if (lastTimeStamp != null) {
           query += ` AND j.posted_at < ?`;
@@ -416,38 +434,34 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
 
         if (lastTotalRelevance !== null) {
-          query += ` GROUP BY j.id HAVING
-                  (
-                      title_relevance > 0 OR
-                      description_relevance > 0
-                  ) AND (
-                      (total_relevance = ?) 
-                      OR (total_relevance < ?)
-                  )`;
+          query += ` GROUP BY j.id HAVING  (
+                        title_relevance > 0 OR
+                        description_relevance > 0
+                    ) AND (
+                        (total_relevance = ?) OR
+                        (total_relevance < ? )
+                    )`;
         } else {
-          query += ` GROUP BY j.id HAVING
-                  (
-                      title_relevance > 0 OR
-                      description_relevance > 0
-                  )`;
+          query += ` GROUP BY j.job_id HAVING
+                    (
+                        title_relevance > 0 OR
+                        description_relevance > 0
+                    )`;
         }
 
-        query += ` ORDER BY total_relevance DESC
-              LIMIT ? OFFSET ?`;
+        query += `
+                ORDER BY
+                    total_relevance DESC
+                LIMIT ? OFFSET ?
+            `;
 
-        const offset = (page - 1) * pageSize; // Calculate the offset for pagination
+        const offset = (page - 1) * pageSize;
 
-        // Set parameters for the query execution
-        let params = [
-          queryParam, queryParam, queryParam, queryParam, country, state
-        ];
-
-        if (lastTimeStamp != null && lastTotalRelevance != null) {
-          params = [...params, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
+        if (lastTotalRelevance != null && lastTimeStamp != null) {
+          params = [ queryParam, queryParam, queryParam, queryParam, userId, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
         } else {
-          params = [...params, pageSize, offset];
+          params = [queryParam, queryParam, queryParam, queryParam, userId, userId, pageSize, offset];
         }
-
 
       }
       else {
