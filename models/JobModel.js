@@ -773,8 +773,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         // Dynamically build the Levenshtein conditions for each position up to maxWords
         for (let i = 1; i <= maxWords; i++) {
-          levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
-          matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
+          levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
+          matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
         }
 
         // Combine the conditions for this word
