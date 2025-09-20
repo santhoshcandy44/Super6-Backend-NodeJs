@@ -110,7 +110,7 @@ class JobModel {
                     COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
                     COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
         
-                FROM lts360_jobs j
+                FROM jobs j
         
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
         LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
