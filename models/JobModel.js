@@ -184,9 +184,9 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         const offset = (page - 1) * pageSize;
 
         if (lastTotalRelevance != null && lastTimeStamp != null) {
-          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
+          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, userId, userId, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
         } else {
-          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, radius, pageSize, offset];
+          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, userId, userId, radius, pageSize, offset];
         }
       }
       else {
