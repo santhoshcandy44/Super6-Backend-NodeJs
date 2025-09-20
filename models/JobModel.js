@@ -10,7 +10,6 @@ class JobModel {
     page,
     pageSize, lastTimeStamp, lastTotalRelevance = null,
     filterWorkModes, salaryMin, salaryMax,
-
     initialRadius = 50) {
 
     const rootDbconnection = await rootDb.getConnection();
@@ -28,23 +27,21 @@ class JobModel {
         ? { latitude: latitudeParam, longitude: longitudeParam }
         : userCoordsData || {};
 
-
     if (userLat && userLon) {
-
       if (queryParam) {
-        if (initialRadius == 50) {
-          const searchTermConcatenated = queryParam.replace(/\s+/g, '');
+        // if (initialRadius == 50) {
+        //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
 
-          // Insert or update search term popularity
-          await db.execute(
-            `INSERT INTO job_search_queries (search_term, popularity, last_searched, search_term_concatenated)
-                     VALUES (?, 1, NOW(), ?)
-                     ON DUPLICATE KEY UPDATE
-                         popularity = popularity + 1,
-                         last_searched = NOW();`,
-            [queryParam, searchTermConcatenated]
-          );
-        }
+        //   // Insert or update search term popularity
+        //   await db.execute(
+        //     `INSERT INTO job_search_queries (search_term, popularity, last_searched, search_term_concatenated)
+        //              VALUES (?, 1, NOW(), ?)
+        //              ON DUPLICATE KEY UPDATE
+        //                  popularity = popularity + 1,
+        //                  last_searched = NOW();`,
+        //     [queryParam, searchTermConcatenated]
+        //   );
+        // }
 
         query = `SELECT
                     j.job_id,
