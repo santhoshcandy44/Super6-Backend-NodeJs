@@ -47,7 +47,7 @@ class JobModel {
                     j.job_id,
                     j.title,
                     j.work_mode,
-                    j.location,
+                    j.city-id,
                     j.description,
                     j.education,
                     j.experience_type,
@@ -74,26 +74,38 @@ class JobModel {
                     j.company_id,
                     j.posted_by_id,
         
-                    o.organization_name,
-                    o.logo AS organization_logo,
-                    o.email AS organization_email,
-                    o.organization_address,
-                    o.website,
-                    o.country,
-                    o.state,
-                    o.city,
-                    o.postal_code,
-        
-                    u.first_name,
-                    u.last_name,
-                    u.email AS recruiter_email,
-                    u.role AS recruiter_role,
-                    u.company,
-                    u.phone,
-                    u.profile_picture,
-                    u.bio,
-                    u.years_of_experience,
-                    u.is_verified,
+                  
+            -- Organization Info
+            o.organization_name,
+            o.logo AS organization_logo,
+            o.email AS organization_email,
+            o.organization_address,
+            o.website,
+            o.country,
+            o.state,
+            o.city,
+            o.postal_code,
+
+            -- Recruiter Info
+            u.first_name,
+            u.last_name,
+            u.email AS recruiter_email,
+            u.role AS recruiter_role,
+            u.company,
+            u.phone,
+            u.profile_picture,
+            u.bio,
+            u.years_of_experience,
+            u.is_verified,
+
+            -- location
+            ci.name as location,
+            ci.latitude,
+            ci.longitude,
+
+              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
         
                     c.currency_type AS salary_currency,
         
