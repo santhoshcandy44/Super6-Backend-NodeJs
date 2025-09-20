@@ -706,8 +706,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             name, 
             state_id,
             country_id,
-            latitude,
-            longitude
+            CAST(latitude AS DOUBLE) AS latitude,
+            CAST(longitude AS DOUBLE) AS longitude,
             FROM cities
             WHERE name LIKE CONCAT('%', ${escapedQuery}, '%')
             ORDER BY name ASC
