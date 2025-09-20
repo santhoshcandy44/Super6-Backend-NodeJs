@@ -109,7 +109,7 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)', // This ensures th
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
-    jobsProtectedController.searchSuggestions // Controller function to load user profile
+    jobsProtectedController.searchLocationSuggestions // Controller function to load user profile
 );
 
 
