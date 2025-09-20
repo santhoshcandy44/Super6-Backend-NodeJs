@@ -803,7 +803,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                   )
                   ORDER BY
                       relevance_score ASC, -- Order by relevance score (exact match is highest priority)
-                      match_count DESC, -- Then order by number of matched words based on Levenshtein distance  
+                      match_count DESC -- Then order by number of matched words based on Levenshtein distance  
                       LIMIT 10;
               `;
 
