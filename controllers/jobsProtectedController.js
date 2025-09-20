@@ -3,6 +3,7 @@ const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelp
 const ApplicantProfile = require('../models/ApplicantProfile');
 const Job = require('../models/JobModel');
 const JobModel = require('../models/JobModel');
+const { errorMonitor } = require('nodemailer/lib/xoauth2');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
@@ -39,6 +40,7 @@ exports.getJobListingsForUser = async (req, res) => {
         console.log(result);
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
+        throw error;
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
@@ -74,10 +76,7 @@ exports.searchLocationSuggestions = async (req, res) => {
 };
 
 exports.searchRoleSuggestions = async (req, res) => {
-
-
     try {
-
         // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
