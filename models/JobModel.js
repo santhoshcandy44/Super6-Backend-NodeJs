@@ -710,8 +710,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             CAST(longitude AS DOUBLE) AS longitude
             FROM cities
             WHERE name LIKE CONCAT('%', ${escapedQuery}, '%')
-            ORDER BY name ASC
-            LIMIT 10;
+            ORDER BY 
+               name LIKE CONCAT(?, '%') DESC, 
+             name ASC
+            LIMIT 5;
         `;
 
       const [results] = await connection.execute(sql);
