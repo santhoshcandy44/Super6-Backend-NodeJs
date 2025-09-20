@@ -58,12 +58,14 @@ exports.searchLocationSuggestions = async (req, res) => {
         // const user_id = req.user.user_id; // This will contain the uploaded images
         const query = req.query.query; // This will contain the uploaded images
 
-        
+    
         const result = await JobModel.searchLocationSuggestions(query)
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
+
+        console.log(result)
 
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
