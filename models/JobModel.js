@@ -47,7 +47,7 @@ class JobModel {
                     j.job_id,
                     j.title,
                     j.work_mode,
-                    j.city-id,
+                    j.city_id,
                     j.description,
                     j.education,
                     j.experience_type,
@@ -105,7 +105,6 @@ class JobModel {
 
               CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
-
         
                     c.currency_type AS salary_currency,
         
