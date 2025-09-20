@@ -52,7 +52,6 @@ exports.searchLocationSuggestions = async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0]; // Get the first error
-            console.log(firstError.msg)
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
 
@@ -63,8 +62,6 @@ exports.searchLocationSuggestions = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
-
-        console.log(result)
 
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
@@ -92,6 +89,7 @@ exports.searchRoleSuggestions = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
 
+        console.log(result);
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
         console.log(error)
