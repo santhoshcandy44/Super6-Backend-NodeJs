@@ -45,7 +45,7 @@ exports.getJobListingsForUser = async (req, res) => {
 };
 
 
-exports.searchSuggestions = async (req, res) => {
+exports.searchLocationSuggestions = async (req, res) => {
 
 
     try {
@@ -72,6 +72,35 @@ exports.searchSuggestions = async (req, res) => {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
+
+exports.searchRoleSuggestions = async (req, res) => {
+
+
+    try {
+
+        // Validate the request body
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0]; // Get the first error
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+
+        // const user_id = req.user.user_id; // This will contain the uploaded images
+        const query = req.query.query; // This will contain the uploaded images
+
+        
+        const result = await JobModel.searchRoleSuggestions(query)
+
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to get suggestions");
+        }
+
+        return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+};
+
 
 exports.applyJob= async (req, res) => {
     try {

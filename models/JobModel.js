@@ -726,6 +726,101 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
   }
 
+  static async searchRoleSuggestions(query) {
+    let connection;
+    try {
+      connection = await db.getConnection();
+      // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
+      const trimmedQuery = query.trim();
+      const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+      const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
+
+      // Escape the query to prevent SQL injection
+      const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
+
+      // Split the query into individual words
+      const words = cleanQuery.split(' '); // e.g., ['texi', '2024']
+
+      // Remove spaces from the query to match concatenated search terms
+      const concatenatedQuery = escapedQuery.replace(/ /g, ''); // e.g., 'bluaa2024'
+
+
+      // Create LIKE conditions for partial match (all words should be present)
+      const likeConditions = words.map(word => {
+        const escapedWord = connection.escape(word);
+        return `name LIKE CONCAT('%', ${escapedWord}, '%')`;
+      }).join(' AND ');
+
+      const maxWords = 10; // Define a reasonable max number of words to check in search_term
+      const levenshteinConditions = [];
+      const matchCounts = [];
+
+      for (const word of words) {
+        const escapedWord = connection.escape(word);
+
+        const levenshteinCondition = [];
+        const matchCountCondition = [];
+
+        // Dynamically build the Levenshtein conditions for each position up to maxWords
+        for (let i = 1; i <= maxWords; i++) {
+          levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
+          matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
+        }
+
+        // Combine the conditions for this word
+        levenshteinConditions.push(`(${levenshteinCondition.join(' OR ')})`);
+        matchCounts.push(`(${matchCountCondition.join(' OR ')})`);
+      }
+
+      // Combine the conditions for all query words
+      const levenshteinSql = levenshteinConditions.join(' OR ');
+      const matchCountSql = matchCounts.join(' + ');
+
+      // Your final SQL query logic stays the same
+      const sql = `
+                  (
+                      SELECT name, 0 AS match_count, 0 AS relevance_score
+                      FROM job_roles 
+                      WHERE name LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
+                      
+                  )
+                  UNION ALL
+                  (
+                      SELECT name, 0 AS match_count, 1 AS relevance_score
+                      FROM job_roles 
+                      WHERE ${likeConditions} -- Partial match (contains all words)
+                      AND name NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
+                      
+                  )
+                  UNION ALL
+                  (
+                      SELECT name, (${matchCountSql}) AS match_count, 3 AS relevance_score
+                      FROM job_roles 
+                      WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
+                      AND name NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
+                  )
+                  ORDER BY
+                      relevance_score ASC, -- Order by relevance score (exact match is highest priority)
+                      match_count DESC, -- Then order by number of matched words based on Levenshtein distance  
+                      LIMIT 10;
+              `;
+
+      // Execute the query
+      const [results] = await connection.execute(sql);
+
+      return results;
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    } finally {
+      if (connection) {
+        // Close the connection
+        (await connection).release();
+      }
+    }
+
+  }
 
   static async isProfileCompleted(result) {
     return !!(
