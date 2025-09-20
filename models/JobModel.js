@@ -111,7 +111,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     -- Distance in kilometers
                     ST_Distance_Sphere(
                         POINT(?, ?),
-                        POINT(ci.longitude, cj.latitude)
+                        POINT(ci.longitude, ci.latitude)
                     ) * 0.001 AS distance,
         
                     -- Full-text relevance scoring
