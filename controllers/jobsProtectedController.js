@@ -52,6 +52,7 @@ exports.searchLocationSuggestions = async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0]; // Get the first error
+            console.log(firstError.msg)
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
 
