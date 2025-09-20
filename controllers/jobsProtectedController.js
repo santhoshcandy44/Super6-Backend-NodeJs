@@ -58,8 +58,6 @@ exports.searchLocationSuggestions = async (req, res) => {
 
         // const user_id = req.user.user_id; // This will contain the uploaded images
         const query = req.query.query; // This will contain the uploaded images
-
-    
         const result = await JobModel.searchLocationSuggestions(query)
 
         if (!result) {

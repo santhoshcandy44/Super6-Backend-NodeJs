@@ -696,7 +696,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       const trimmedQuery = query.trim();
       const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
       const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
-
+      connection = await db.getConnection();
       // Escape the query to prevent SQL injection
       const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
 
