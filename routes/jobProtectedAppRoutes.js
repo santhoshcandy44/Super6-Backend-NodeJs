@@ -1,50 +1,45 @@
 const express = require('express');
-const router = express.Router();
 const authenticateToken = require('../middlewares/authMiddleware'); // Import the auth middleware
-// Import the controller
-const jobsProtectedController = require('../controllers/jobsProtectedController');
 const { body, param, query } = require('express-validator');
+const jobsProtectedController = require('../controllers/jobsProtectedController');
 const multer = require('multer');
-
 const path = require('path');
 const { sendErrorResponse } = require('../helpers/responseHelper');
 
+const router = express.Router();
 
-router.get('/job-listings', // This ensures that user_id is a number
-  authenticateToken, // Ensure the user is authenticated
+router.get('/job-listings',
+  authenticateToken,
   [
-    // Validate and sanitize the user_id parameter
     query('user_id')
       .optional()
-      .isInt().withMessage('Invalid user id format'), // Checks if user_id is a valid MongoDB ObjectId
+      .isInt().withMessage('Invalid user id format'),
 
-    // Validate and sanitize the user_id parameter
     query('page')
       .optional()
-      .isInt().withMessage('Invalid page format'), // Checks if user_id is a valid MongoDB ObjectId
+      .isInt().withMessage('Invalid page format'),
 
     query('s')
       .optional()
-      .isString().withMessage('Query string must be a valid string format') // Ensures it's a string
+      .isString().withMessage('Query string must be a valid string format')
       .trim()
       .escape()
-      .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
-      .withMessage('Query string must be between 1 and 100 characters long'), // Example length validation
+      .isLength({ min: 0, max: 100 })
+      .withMessage('Query string must be between 1 and 100 characters long'),
 
+    query('latitude')
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude must be a valid float between -90 and 90')
+      .trim()
+      .escape(),
 
-        query('latitude')
-            .optional()
-            .isFloat({ min: -90, max: 90 })
-            .withMessage('Latitude must be a valid float between -90 and 90')
-            .trim()
-            .escape(),
-
-        query('longitude')
-            .optional()
-            .isFloat({ min: -180, max: 180 })
-            .withMessage('Longitude must be a valid float between -180 and 180')
-            .trim()
-            .escape(),
+    query('longitude')
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude must be a valid float between -180 and 180')
+      .trim()
+      .escape(),
 
     query('last_timestamp')
       .optional()
@@ -52,31 +47,22 @@ router.get('/job-listings', // This ensures that user_id is a number
       .trim()
       .escape()
       .custom((value, { req }) => {
-
-
-        // Decode URL-encoded timestamp
         const decodedValue = decodeURIComponent(value);
-
-        // Regular expression for validating YYYY-MM-DD HH:MM:SS format
         const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
 
-        // Check if the timestamp matches the format
         if (!timestampRegex.test(decodedValue)) {
           throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
         }
 
-        // If valid, store the decoded value back in req.query
-        // req.query.last_timestamp = decodedValue;  // Store the valid timestamp
+        // req.query.last_timestamp = decodedValue; 
 
-        return true; // Indicate successful validation
+        return true;
       })
-      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), // Check length after conversion
-
-
-
+      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), 
+  
     query('last_total_relevance')
       .optional()
-      .isFloat().withMessage('Last total relevance must be a valid float format'), // Ensures it's a string
+      .isFloat().withMessage('Last total relevance must be a valid float format'), 
 
     query('work_modes')
       .optional()
@@ -90,60 +76,51 @@ router.get('/job-listings', // This ensures that user_id is a number
     query('salary_max')
       .optional()
       .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
-
-
   ],
-  jobsProtectedController.getJobListingsForUser // Controller function to load user profile
+  jobsProtectedController.getJobListingsForUser
 );
 
+router.get('/job-search-location-suggestions/:user_id(\\d+)', 
+  authenticateToken, 
+  [
+    param('user_id')
+      .isInt().withMessage('Invalid user id format'),
 
-router.get('/job-search-location-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
-    authenticateToken, // Ensure the user is authenticated
-    [
-        // Validate and sanitize the user_id parameter
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
-        // Validate and sanitize the query parameter
-        query('query')
-            .isString().withMessage('Invalid user query format')
-            .notEmpty().withMessage('Query cannot be empty'),
-    ],
-    jobsProtectedController.searchLocationSuggestions // Controller function to load user profile
+    query('query')
+      .isString().withMessage('Invalid user query format')
+      .notEmpty().withMessage('Query cannot be empty'),
+  ],
+  jobsProtectedController.searchLocationSuggestions 
 );
 
+router.get('/job-search-role-suggestions/:user_id(\\d+)', 
+  authenticateToken, 
+  [
+    param('user_id')
+      .isInt().withMessage('Invalid user id format'),
 
-router.get('/job-search-role-suggestions/:user_id(\\d+)', // This ensures that user_id is a number
-    authenticateToken, // Ensure the user is authenticated
-    [
-        // Validate and sanitize the user_id parameter
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
-        // Validate and sanitize the query parameter
-        query('query')
-            .isString().withMessage('Invalid user query format')
-            .notEmpty().withMessage('Query cannot be empty'),
-    ],
-    jobsProtectedController.searchRoleSuggestions // Controller function to load user profile
+    query('query')
+      .isString().withMessage('Invalid user query format')
+      .notEmpty().withMessage('Query cannot be empty'),
+  ],
+  jobsProtectedController.searchRoleSuggestions 
 );
 
 router.post(
   '/apply-job',
   authenticateToken,
   [
-      body('user_id')
-          .isInt().withMessage('Invalid user id format'),
-      body('job_id')
-          .isInt().withMessage('Invalid job id format'),
-
+    body('user_id')
+      .isInt().withMessage('Invalid user id format'),
+    body('job_id')
+      .isInt().withMessage('Invalid job id format')
   ],
   jobsProtectedController.applyJob
 );
 
 router.get(
-  '/applicant-profile/:user_id(\\d+)', 
-  authenticateToken, 
+  '/applicant-profile/:user_id(\\d+)',
+  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('User ID must be a valid integer'),
@@ -154,7 +131,6 @@ router.get(
 const profilePicFileFilter = (req, file, cb) => {
   const allowedTypes = ['.jpg', '.jpeg', '.png'];
   const ext = path.extname(file.originalname).toLowerCase();
-
   if (allowedTypes.includes(ext)) {
     cb(null, true);
   } else {
@@ -171,18 +147,6 @@ router.post(
     },
     fileFilter: profilePicFileFilter
   }).single('profile_pic'),
-  (err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-      let message = 'Upload error';
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        message = 'File too large. Max size is 2MB.';
-      } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-        message = err.message;
-      }
-      return sendErrorResponse(res, 400, message)
-    }
-    next(err);
-  },
   jobsProtectedController.updateProfile
 );
 
@@ -299,13 +263,13 @@ router.post(
 
 router.post(
   '/update-applicant-no-experience',
-  authenticateToken, // Ensure the user is authenticated
-  jobsProtectedController.updateNoExperience // Proceed to the controller
+  authenticateToken,
+  jobsProtectedController.updateNoExperience
 );
 
 router.post(
   '/update-applicant-skill',
-  authenticateToken, // Ensure the user is authenticated
+  authenticateToken, 
   jobsProtectedController.updateSkill
 );
 
@@ -382,14 +346,13 @@ router.post(
 
 router.post(
   '/update-applicant-language',
-  authenticateToken, // Ensure the user is authenticated
+  authenticateToken, 
   jobsProtectedController.updateLanguage
 );
 
 const resumeFileFilter = (req, file, cb) => {
   const allowedTypes = ['.pdf', '.doc', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
-
   if (allowedTypes.includes(ext)) {
     cb(null, true);
   } else {
@@ -397,29 +360,15 @@ const resumeFileFilter = (req, file, cb) => {
   }
 };
 
-// 🔹 Route
 router.post(
   '/update-applicant-resume',
   authenticateToken,
   multer({
     limits: {
-      fileSize: 2 * 1024 * 1024, // ✅ 2MB limit
+      fileSize: 2 * 1024 * 1024, 
     },
     fileFilter: resumeFileFilter
   }).single('resume'),
-
-  (err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-      let message = 'Upload error';
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        message = 'File too large. Max size is 2MB.';
-      } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-        message = err.message;
-      }
-      return sendErrorResponse(res, 400, message)
-    }
-    next(err);
-  },
   (req, res, next) => {
     if (!req.file) {
       return sendErrorResponse(res, 404, message)
@@ -430,11 +379,9 @@ router.post(
 );
 
 
-// 🔹 Keep this outside as requested
 const certificatesFileFilter = (req, file, cb) => {
   const allowedTypes = ['.jpg', '.jpeg', '.png'];
   const ext = path.extname(file.originalname).toLowerCase();
-
   if (allowedTypes.includes(ext)) {
     cb(null, true);
   } else {
@@ -442,10 +389,9 @@ const certificatesFileFilter = (req, file, cb) => {
   }
 };
 
-// 🔹 Multer upload instance
 const certificatesUpload = multer({
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB
+    fileSize: 2 * 1024 * 1024, 
   },
   fileFilter: certificatesFileFilter
 });
@@ -455,7 +401,6 @@ router.post(
   authenticateToken,
   certificatesUpload.any(),
   (req, res, next) => {
-    // Filter files to only allow certificates-new, certificates-1, etc.
     req.files = req.files.filter(file =>
       /^certificates-(new|\d+)$/.test(file.fieldname)
     );
@@ -463,21 +408,5 @@ router.post(
   },
   jobsProtectedController.updateCertificate
 );
-
-// 🔹 Global Multer error handler
-router.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    let message = 'Upload error';
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      message = 'File too large. Max size is 2MB.';
-    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      message = err.message;
-    }
-    return sendErrorResponse(res, 400, message);
-  }
-
-  next(err);
-});
-
 
 module.exports = router;

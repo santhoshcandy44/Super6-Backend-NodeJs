@@ -1,35 +1,30 @@
 const express = require('express');
-const authenticateToken = require('../middlewares/authMiddleware'); // Import the auth middleware
-const { updateFirstName, updateLastName, updateAbout, getIndustries, updateIndustries,
+const authenticateToken = require('../middlewares/authMiddleware');
+const { updateFirstName, updateLastName, updateAbout,
     updateProfilePic,
     updateEmail,
     updateEmailVerifyOTP,
     getUserProfile,
     updateLocation,
     logOut
-} = require('../controllers/ProfileProtectedController'); // Import the controller function for protected routes
-const router = express.Router();
-const { body, query, param } = require('express-validator');
+} = require('../controllers/ProfileProtectedController'); 
+const { body, param } = require('express-validator');
 const multer = require('multer');
 const he = require('he');
+const router = express.Router();
 
-
-// GET /profile/:user_id route with validation
 router.get(
-    '/:user_id(\\d+)', // This ensures that user_id is a number
-    authenticateToken, // Ensure the user is authenticated
+    '/:user_id(\\d+)',
+    authenticateToken,
     [
-        // Validate and sanitize the user_id parameter
         param('user_id')
             .isInt().withMessage('User ID must be a valid integer'),
     ],
-    getUserProfile // Controller function to load user profile
+    getUserProfile 
 );
 
-
-// Update first name route
 router.patch('/update-first-name',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         body('first_name')
@@ -37,27 +32,19 @@ router.patch('/update-first-name',
             .isString().withMessage('First name must be a string')
             .trim()
             .escape()
-            .isLength({ min: 1, max: 70 }) // Ensures length is between 1 and 70 characters
+            .isLength({ min: 1, max: 70 })
             .withMessage('First name must be between 1 and 70 characters long'),
     ],
-
-    
     (req, res, next) => {
-
-        // Manually decode URL-encoded fields
         req.body.user_id = he.decode(req.body.user_id);
         req.body.first_name = he.decode(req.body.first_name);
-        // Continue to validation and controller
         next();
     },
-
-
     updateFirstName
 );
 
-// Update last name route
 router.patch('/update-last-name',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -66,25 +53,19 @@ router.patch('/update-last-name',
             .isString().withMessage('Last name must be a string')
             .trim()
             .escape()
-            .isLength({ min: 1, max: 50 }) // Ensures length is between 1 and 50 characters
+            .isLength({ min: 1, max: 50 })
             .withMessage('Last name must be between 1 and 50 characters long'),
     ],
-
     (req, res, next) => {
-
-        // Manually decode URL-encoded fields
         req.body.user_id = he.decode(req.body.user_id);
         req.body.last_name = he.decode(req.body.last_name);
-        // Continue to validation and controller
         next();
     },
-
     updateLastName
 );
 
-// Update about section route
 router.patch('/update-about',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken, 
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -93,26 +74,19 @@ router.patch('/update-about',
             .isString().withMessage('Last name must be a string')
             .trim()
             .escape()
-            .isLength({ min: 1, max: 160 }) // Ensures length is between 1 and 50 characters
+            .isLength({ min: 1, max: 160 })
             .withMessage('Last name must be between 1 and 160 characters long'),
     ],
-
     (req, res, next) => {
-
-        // Manually decode URL-encoded fields
         req.body.user_id = he.decode(req.body.user_id);
         req.body.about = he.decode(req.body.about);
-        // Continue to validation and controller
         next();
     },
-
     updateAbout
 );
 
-
-// Configure multer for handling file uploads (profile picture)
 const upload = multer({
-    limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB file size
+    limits: { fileSize: 5 * 1024 * 1024 }, 
     fileFilter(req, file, cb) {
         if (!file.mimetype.startsWith('image/')) {
             return cb(new Error('Only image files are allowed!'));
@@ -120,20 +94,18 @@ const upload = multer({
         cb(null, true);
     }
 });
-// Route to update profile picture (PATCH request)
+
 router.patch('/update-profile-pic',
-    authenticateToken, // Ensure the user is authenticated
-    upload.single('profile_pic'), // Expecting a single file field named 'profilePicture'
+    authenticateToken, 
+    upload.single('profile_pic'), 
     [
-        // Validate user_id as an integer
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
     ],
-    updateProfilePic // Controller function to handle the update
+    updateProfilePic 
 );
 
-// Update about section route
 router.patch('/update-email',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken, 
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         body('email')
@@ -141,23 +113,16 @@ router.patch('/update-email',
             .isEmail().withMessage('Valid email is required')
             .normalizeEmail(),
     ],
-
-    
     (req, res, next) => {
-
-        // Manually decode URL-encoded fields
         req.body.user_id = he.decode(req.body.user_id);
         req.body.email = he.decode(req.body.email);
-        // Continue to validation and controller
         next();
     },
-
     updateEmail
 );
 
-// Update about section route
 router.patch('/update-email-verify-otp',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -172,23 +137,17 @@ router.patch('/update-email-verify-otp',
             .trim()
             .escape()
             .matches(/^\d{6}$/).withMessage('OTP must be exactly 6 digits and contain only numbers'),
-
     ],
-
     (req, res, next) => {
-
-        // Manually decode URL-encoded fields
         req.body.user_id = he.decode(req.body.user_id);
         req.body.otp = he.decode(req.body.otp);
-        // Continue to validation and controller
         next();
     },
     updateEmailVerifyOTP
 );
 
-// Update about section route
 router.put('/update-location',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken, 
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -218,14 +177,12 @@ router.put('/update-location',
 );
 
 
-// Update about section route
 router.post('/logout',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken, 
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
     ],
     logOut
 );
-
 
 module.exports = router;

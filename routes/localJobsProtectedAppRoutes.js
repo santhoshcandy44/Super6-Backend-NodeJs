@@ -1,99 +1,72 @@
 const express = require('express');
-const router = express.Router();
+const { body, param, query } = require('express-validator');
 const authenticateToken = require('../middlewares/authMiddleware');
-const he = require('he'); // For decoding the HTML entities in the string (if needed)
-
-
+const he = require('he');
+const multer = require('multer');
 const localJobsProtectedController = require('../controllers/localJobsProtectedController');
 
-const { body, param, query } = require('express-validator');
-const multer = require('multer');
-
-
-// Multer setup for handling multipart form data
+const router = express.Router();
 const upload = multer();
 
-
-
-router.get('/get-local-jobs', // This ensures that user_id is a number
-    authenticateToken, // Ensure the user is authenticated
+router.get('/get-local-jobs',
+    authenticateToken,
     [
-        // Validate and sanitize the user_id parameter
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), // Checks if user_id is a valid MongoDB ObjectId
+            .isInt().withMessage('Invalid user id format'),
 
-        // Validate and sanitize the user_id parameter
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'), // Checks if user_id is a valid MongoDB ObjectId
+            .isInt().withMessage('Invalid page format'), 
 
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') // Ensures it's a string
+            .isString().withMessage('Query string must be a valid string format') 
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
-            .withMessage('Query string must be between 1 and 100 characters long'), // Example length validation
+            .isLength({ min: 0, max: 100 })
+            .withMessage('Query string must be between 1 and 100 characters long'), 
 
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') // Ensures it's a string
+            .isString().withMessage('Last Timestamp must be a valid string format')
             .trim()
             .escape()
             .custom((value, { req }) => {
-
-
-                // Decode URL-encoded timestamp
                 const decodedValue = decodeURIComponent(value);
-
-                // Regular expression for validating YYYY-MM-DD HH:MM:SS format
                 const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-
-                // Check if the timestamp matches the format
                 if (!timestampRegex.test(decodedValue)) {
                     throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
                 }
-
-                // If valid, store the decoded value back in req.query
-                // req.query.last_timestamp = decodedValue;  // Store the valid timestamp
-
+                // req.query.last_timestamp = decodedValue; 
                 return true; // Indicate successful validation
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), // Check length after conversion
 
-
-
         query('last_total_relevance')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format') // Ensures it's a string
-
+            .isFloat().withMessage('Last total relevance must be a valid float format') 
     ],
-    localJobsProtectedController.getLocalJobsForUser // Controller function to load user profile
+    localJobsProtectedController.getLocalJobsForUser
 );
 
-
-router.get('/guest-get-local-jobs', // This ensures that user_id is a number
-
+router.get('/guest-get-local-jobs',
     [
-        // Validate and sanitize the user_id parameter
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), // Checks if user_id is a valid MongoDB ObjectId
+            .isInt().withMessage('Invalid user id format'), 
 
-        // Validate and sanitize the user_id parameter
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'), // Checks if user_id is a valid MongoDB ObjectId
+            .isInt().withMessage('Invalid page format'),
 
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') // Ensures it's a string
+            .isString().withMessage('Query string must be a valid string format') 
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
-            .withMessage('Query string must be between 1 and 100 characters long'), // Example length validation
-
+            .isLength({ min: 0, max: 100 }) 
+            .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
             .optional()
@@ -111,37 +84,26 @@ router.get('/guest-get-local-jobs', // This ensures that user_id is a number
 
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') // Ensures it's a string
+            .isString().withMessage('Last Timestamp must be a valid string format') 
             .trim()
             .escape()
             .custom((value, { req }) => {
-
-
                 const decodedValue = decodeURIComponent(value);
-
                 const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-
                 if (!timestampRegex.test(decodedValue)) {
                     throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
                 }
-
-                // If valid, store the decoded value back in req.query
-                // req.query.last_timestamp = decodedValue;  // Store the valid timestamp
-
+                // req.query.last_timestamp = decodedValue; 
                 return true;
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
-
         query('last_total_relevance')
             .optional()
             .isFloat().withMessage('Last total relevance must be a valid float format')
-
     ],
-
     localJobsProtectedController.guestGetLocalJobs
 );
-
 
 router.get('/get-published-local-jobs/:user_id(\\d+)',
     authenticateToken,
@@ -157,7 +119,6 @@ router.post('/create-or-update-local-job',
     upload.fields([
         { name: 'images[]', maxCount: 10 }
     ]),
-
     [
         body('local_job_id').isInt().withMessage('Local Job ID must be a valid integer'),
 
@@ -171,7 +132,6 @@ router.post('/create-or-update-local-job',
             .isLength({ min: 1, max: 100 })
             .withMessage('Title must be between 1 and 100 characters'),
 
-
         body('description')
             .isString()
             .withMessage('Long Description must be a valid string')
@@ -181,7 +141,6 @@ router.post('/create-or-update-local-job',
             .withMessage('Long Description cannot be empty')
             .isLength({ min: 1, max: 5000 })
             .withMessage('Long Description must be between 1 and 5000 characters'),
-
 
         body('company')
             .isString()
@@ -207,7 +166,6 @@ router.post('/create-or-update-local-job',
                 return true;
             }),
 
-
         body('salary_min')
             .isInt()
             .withMessage('Minimum salary must be a valid number'),
@@ -222,13 +180,11 @@ router.post('/create-or-update-local-job',
                 return true;
             }),
 
-
         body('salary_unit')
             .isIn(['INR', 'USD'])
             .withMessage('Price unit must be either INR or USD'),
 
         body('marital_statuses')
-
             .isArray().withMessage('Marital status must be an array')
             .custom((value) => {
                 if (!value.every(status => ['ANY', 'SINGLE', 'MARRIED', 'UNMARRIED', 'WIDOWED'].includes(status))) {
@@ -253,7 +209,6 @@ router.post('/create-or-update-local-job',
             .withMessage('State must be a valid string')
             .custom((value, { req }) => {
                 const country = req.body.country;
-
                 if (country === 'IN') {
                     if (![
                         "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
@@ -266,14 +221,11 @@ router.post('/create-or-update-local-job',
                         throw new Error('State must be a valid state of India');
                     }
                 }
-
                 return true;
             }),
 
-
         body('images[]')
             .custom((value, { req }) => {
-
                 if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keep_image_ids || req.body.keep_image_ids.length === 0)) {
                     throw new Error('Atleast 1 image is required');
                 }
@@ -288,30 +240,21 @@ router.post('/create-or-update-local-job',
                     throw new Error('Keep Image IDs must be an array');
                 }
 
-                // Convert each value to a number
                 const asNumbers = value.map(id => Number(id));
-
-                // Check if any value is NaN
                 if (asNumbers.includes(NaN)) {
                     throw new Error('All values in Keep Image IDs must be integers');
                 }
 
-                // Ensure that all values are valid integers
                 if (!asNumbers.every(Number.isInteger)) {
                     throw new Error('All values in Keep Image IDs must be integers');
                 }
 
-                // Ensure either images or IDs are present
                 if (asNumbers.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
                     throw new Error('Either Keep Image IDs or Images must be provided');
                 }
-
-                req.body.keep_image_ids = asNumbers;  // Store the parsed numbers
-
+                req.body.keep_image_ids = asNumbers;
                 return true;
             }),
-
-
 
         body('location')
             .isString()
@@ -323,7 +266,6 @@ router.post('/create-or-update-local-job',
             .custom((value) => {
                 const decodedLocation = he.decode(value);
                 const location = JSON.parse(decodedLocation);
-
                 if (
                     typeof location.latitude !== 'number' ||
                     typeof location.longitude !== 'number'
@@ -339,19 +281,16 @@ router.post('/create-or-update-local-job',
                     throw new Error('Longitude must be a number between -180 and 180');
                 }
 
-
                 const validTypes = ['approximate', 'precise'];
+
                 if (!validTypes.includes(location.location_type)) {
                     throw new Error('Location type must be either "approximate" or "precise"');
                 }
-
                 return true;
             }),
     ],
-
     localJobsProtectedController.createOrUpdateLocalJob
 );
-
 
 router.post(
     '/apply-local-job',
@@ -360,12 +299,10 @@ router.post(
         body('user_id')
             .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
-            .isInt().withMessage('Invalid local job id format'),
-
+            .isInt().withMessage('Invalid local job id format')
     ],
     localJobsProtectedController.applyLocalJob
 );
-
 
 router.get(
     '/get-local-job-applicants/:local_job_id(\\d+)',
@@ -378,14 +315,12 @@ router.get(
             .optional()
             .isInt().withMessage('Invalid page format'),
 
-
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') // Ensures it's a string
+            .isString().withMessage('Last Timestamp must be a valid string format') 
             .trim()
             .escape()
             .custom((value, { req }) => {
-
                 const decodedValue = decodeURIComponent(value);
 
                 const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
@@ -401,7 +336,6 @@ router.get(
     localJobsProtectedController.getLocalJobApplicants
 );
 
-
 router.post(
     '/mark-as-reviewed-local-job',
     authenticateToken,
@@ -416,7 +350,6 @@ router.post(
     localJobsProtectedController.markAsReviewedLocalJob
 );
 
-
 router.post(
     '/unmark-reviewed-local-job',
     authenticateToken,
@@ -426,13 +359,10 @@ router.post(
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format'),
         body('applicant_id')
-            .isInt().withMessage('Invalid applicant id format'),
-
+            .isInt().withMessage('Invalid applicant id format')
     ],
     localJobsProtectedController.unmarkReviewedLocalJob
 );
-
-
 
 router.post(
     '/bookmark-local-job',
@@ -441,12 +371,10 @@ router.post(
         body('user_id')
             .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
-            .isInt().withMessage('Invalid local job id format'),
-
+            .isInt().withMessage('Invalid local job id format')
     ],
     localJobsProtectedController.bookmarkLocalJob
 );
-
 
 router.post(
     '/remove-bookmark-local-job',
@@ -456,8 +384,7 @@ router.post(
             .isInt().withMessage('Invalid user id format'),
 
         body('local_job_id')
-            .isInt().withMessage('Invalid local job id format'),
-
+            .isInt().withMessage('Invalid local job id format')
     ],
     localJobsProtectedController.removeBookmarkLocalJob
 );
@@ -470,7 +397,7 @@ router.get('/search-local-job-suggestions/:user_id(\\d+)',
 
         query('query')
             .isString().withMessage('Invalid user query format')
-            .notEmpty().withMessage('Query cannot be empty'),
+            .notEmpty().withMessage('Query cannot be empty')
     ],
     localJobsProtectedController.localJobsSearchQueries
 );

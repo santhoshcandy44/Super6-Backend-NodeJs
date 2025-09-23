@@ -1,15 +1,11 @@
-const authenticateToken = require('../middlewares/authMiddleware'); // Import the auth middleware
 const express = require('express');
-const router = express.Router();
 const { body } = require('express-validator');
+const router = express.Router();
+const authenticateToken = require('../middlewares/authMiddleware');
+const { changePassword, forgotPassword, forgotPasswordVerifyOTP, resetPassword, updateAccountType } = require('../controllers/accountSettingsProtectedController');
 
-const { changePassword, forgotPassword, forgotPasswordVerifyOTP, resetPassword, updateAccountType } =
-    require('../controllers/accountSettingsProtectedController');
-
-
-// Update about section route
 router.patch('/update-account-type',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -23,12 +19,9 @@ router.patch('/update-account-type',
     updateAccountType
 );
 
-
-// Change password route
 router.put('/change-password',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
-        // Validate and sanitize the email and password fields
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
         body('current_password')
@@ -43,16 +36,13 @@ router.put('/change-password',
             .isString().withMessage('New password must be a string')
             .trim()
             .escape()
-            .isLength({ min: 8, max: 16 }).withMessage('New password must be between 8 and 16 characters long'),
-
-
+            .isLength({ min: 8, max: 16 }).withMessage('New password must be between 8 and 16 characters long')
     ],
     changePassword);
-// Forgot password route
+
 router.post('/forgot-password',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
-        // Validate and sanitize the email and password fields
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
         body('email')
@@ -62,14 +52,11 @@ router.post('/forgot-password',
     ],
     forgotPassword);
 
-// Forgot password route
 router.post('/forgot-password-verify-otp',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
-
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
-        // Validate and sanitize the otp
         body('otp')
             .notEmpty().withMessage('OTP is required')
             .isString().withMessage('OTP must be a string')
@@ -77,30 +64,29 @@ router.post('/forgot-password-verify-otp',
             .escape()
             .matches(/^\d{6}$/).withMessage('OTP must be exactly 6 digits and contain only numbers'),
 
-        // Validate and sanitize the email and password fields
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
             .normalizeEmail()
 
-    ], forgotPasswordVerifyOTP);
+    ],
+    forgotPasswordVerifyOTP);
 
 
-// Forgot password route
 router.post('/reset-password',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
-        // Validate and sanitize the email and password fields
+
         body('auth_token')
-            .isString().withMessage('Token must be a valid string') // Ensure the token is a string
-            .trim(), // Trim whitespace from the token
+            .isString().withMessage('Token must be a valid string')
+            .trim(),
 
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
             .normalizeEmail()
-    ], resetPassword);
-
+    ],
+    resetPassword);
 
 module.exports = router;
