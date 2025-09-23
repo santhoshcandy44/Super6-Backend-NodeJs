@@ -1,66 +1,49 @@
-// authUtils.js
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const nodemailer = require('nodemailer');
 
-const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FCM_TOKEN_SECRET, PROFILE_PIC_MEDIA_ENCRYPTION, APP_NAME, 
+const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FCM_TOKEN_SECRET, PROFILE_PIC_MEDIA_ENCRYPTION, APP_NAME,
     OAUTH_GOOGLE_WEB_CLIENT_ID, OAUTH_GOOGLE_ANDROID_CLIENT_ID,
     SMTP_HOST,
     SMTP_USER,
-    SMTP_PASSWORD} = require('../config/config')
+    SMTP_PASSWORD } = require('../config/config')
 
-
-const { OAuth2Client } = require('google-auth-library');
-
-
-// Initialize the OAuth2 client with your web client ID
-const webClientId = OAUTH_GOOGLE_WEB_CLIENT_ID; // Replace with your Web Client ID
-const androidClientId = OAUTH_GOOGLE_ANDROID_CLIENT_ID; // Replace with your Android Client ID
-
-
+const webClientId = OAUTH_GOOGLE_WEB_CLIENT_ID;
+const androidClientId = OAUTH_GOOGLE_ANDROID_CLIENT_ID;
 
 async function verifyIdToken(idToken) {
-    const client = new OAuth2Client(webClientId);
     try {
-
-
+        const client = new OAuth2Client(webClientId);
         const ticket = await client.verifyIdToken({
             idToken: idToken,
-            audience: [webClientId, androidClientId], // Specify both CLIENT_IDs
+            audience: [webClientId, androidClientId],
         });
         const payload = ticket.getPayload();
-
         if (!payload) {
             throw new Error('Invalid token payload');
         }
-
         return payload;
     } catch (error) {
-        console.log(error);
         throw new Error('Failed to verify ID Token');
     }
 }
 
-
-
-
 const generatePepper = async () => {
-    const pepper = crypto.randomBytes(16).toString('hex'); // Generates a random 16-byte salt
+    const pepper = crypto.randomBytes(16).toString('hex');
     return pepper;
 }
-// Function to generate a salt
+
 const generateSalt = async () => {
-    const saltRounds = 10; // You can adjust this for more or less security
+    const saltRounds = 10;
     return await bcrypt.genSalt(saltRounds);
 };
 
-// Function to hash the password with a given salt
 const hashPassword = async (password, salt) => {
     return await bcrypt.hash(password, salt);
 };
 
-// Function to compare a plain password with a hashed password
 const comparePassword = async (password, hashedPassword) => {
     return await bcrypt.compare(password, hashedPassword);
 };
@@ -68,93 +51,72 @@ const comparePassword = async (password, hashedPassword) => {
 function generateForgotPasswordToken(userId, email) {
     return jwt.sign({ userId, email },
         ACCESS_TOKEN_SECRET,
-        { expiresIn: '15m' } // 15 minutes expiration
+        { expiresIn: '15m' }
     );
 }
 
-
 function decodeForgotPasswordToken(token) {
     let decodedToken;
-
     try {
-        decodedToken = jwt.verify(token, ACCESS_TOKEN_SECRET); // Decode the token
+        decodedToken = jwt.verify(token, ACCESS_TOKEN_SECRET); 
     } catch (error) {
         return sendErrorResponse(res, 401, 'Invalid or expired token');
     }
     return decodedToken;
 }
 
-
-// Method to generate access and refresh tokens
 function generateTokens(userId, email, signUpMethod, lastSignInTimestamp, role = 'User') {
     const payload = {
-        sub: userId,            // Subject (user's unique identifier)
-        userId: userId,         // User's unique identifier (redundant with 'sub')
-        email: email,           // User's email
-        lastSignIn: lastSignInTimestamp, // Last sign-in timestamp from the database
-        signUpMethod: signUpMethod, // Method used for signup (e.g., 'google', 'legacy_email')
-        role: role              // User's role (e.g., 'user', 'admin')
+        sub: userId,           
+        userId: userId,        
+        email: email,         
+        lastSignIn: lastSignInTimestamp,
+        signUpMethod: signUpMethod, 
+        role: role        
     };
-
     const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
     const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
     return { accessToken, refreshToken };
 };
 
-
-
-
-// Your FCM token secret (ensure it's stored securely)
-const IV_LENGTH = 16; // For AES, this is always 16
+const IV_LENGTH = 16;
 
 function encrypt(text) {
     const iv = crypto.randomBytes(IV_LENGTH);
-    const key = Buffer.from(FCM_TOKEN_SECRET.padEnd(32, '0').slice(0, 32)); // Ensure key length is 32 bytes
+    const key = Buffer.from(FCM_TOKEN_SECRET.padEnd(32, '0').slice(0, 32)); 
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
     let encrypted = cipher.update(text, 'utf8', 'binary');
     encrypted += cipher.final('binary');
-
-    // Return both iv and encrypted data as hex
     return iv.toString('hex') + ':' + Buffer.from(encrypted, 'binary').toString('hex')
 }
 
 function decrypt(text) {
     const parts = text.split(':');
-    const iv = Buffer.from(parts.shift(), 'hex'); // Extract the IV from the text
-    const encryptedText = Buffer.from(parts.join(':'), 'hex'); // Combine the rest as encrypted text
-    const key = Buffer.from(FCM_TOKEN_SECRET.padEnd(32, '0').slice(0, 32)); // Ensure key length is 32 bytes
+    const iv = Buffer.from(parts.shift(), 'hex'); 
+    const encryptedText = Buffer.from(parts.join(':'), 'hex');
+    const key = Buffer.from(FCM_TOKEN_SECRET.padEnd(32, '0').slice(0, 32));
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-
     let decrypted = decipher.update(encryptedText, 'binary', 'utf8');
     decrypted += decipher.final('utf8');
-
-    return decrypted; // Return the decrypted text as a string
+    return decrypted; 
 }
 
-
-
-// Create a transporter using SMTP configuration
 const transporter = nodemailer.createTransport({
-    host: SMTP_HOST, // Specify your SMTP server
-    port: 587, // Specify the SMTP port
-    secure: false, // Enable SSL
+    host: SMTP_HOST, 
+    port: 587,
+    secure: true, 
     auth: {
-        user: SMTP_USER, // SMTP username
-        pass: SMTP_PASSWORD// SMTP password
+        user: SMTP_USER,
+        pass: SMTP_PASSWORD
     },
     tls: {
-        ciphers: 'SSLv3' // Specify the cipher you want to use
+        ciphers: 'SSLv3'
     },
-    debug: true
+    debug: false
 });
 
-// Function to send OTP verification email
 async function sendOtpEmail(email, otp) {
-
-
-    const currentYear = new Date().getFullYear();  // Get the current year
-
+    const currentYear = new Date().getFullYear(); 
     const mailOptions = {
         from: 'noreply-verification@lts360.com',
         to: email,
@@ -245,78 +207,49 @@ async function sendOtpEmail(email, otp) {
         const info = await transporter.sendMail(mailOptions);
         return { success: true, message: 'OTP sent successfully', info };
     } catch (error) {
-        console.log(error);
         return { success: false, message: 'Failed to send OTP email', error };
     }
 };
 
-
-
-// Function to generate short encrypted token
 function generateShortEncryptedUrl(path) {
     try {
-        // Ensure the key length is 32 bytes (pad if needed and slice to exactly 32 bytes)
         const key = Buffer.from(PROFILE_PIC_MEDIA_ENCRYPTION.padEnd(32, '0').slice(0, 32));
-
-
-        const timestamp = Date.now(); // Current timestamp
+        const timestamp = Date.now(); 
         const data = JSON.stringify({ path, timestamp });
 
-        // Generate a random initialization vector (IV) for AES encryption (16 bytes for AES)
         const iv = crypto.randomBytes(16);
-
-        // Create AES cipher using the secret key and IV in AES-256-CTR mode
         const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
-
-        // Encrypt the data (converting to base64)
         let encrypted = cipher.update(data, 'utf8', 'base64');
         encrypted += cipher.final('base64');
-
-        // Return the IV and encrypted data as a base64-encoded token (URL-safe)
         const token = `${iv.toString('base64')}:${encrypted}`;
         return `images?q=${encodeURIComponent(token)}`;
     } catch (error) {
-        console.error('Error during encryption:', error);
-        return null; // Return null if there is an error
+        return null; 
     }
 }
 
-
-// Function to verify and decrypt the token
 function verifyShortEncryptedUrl(token) {
     if (!token) {
-        return null;  // No token provided, return null
+        return null;  
     }
-
-    // Split the token to get IV and encrypted data
     const [ivBase64, encryptedData] = token.split(':');
     if (!ivBase64 || !encryptedData) {
-        return null;  // Invalid token format, return null
+        return null; 
     }
-
-    // Decode the IV and encrypted data from base64
     const iv = Buffer.from(ivBase64, 'base64');
     const encryptedBuffer = Buffer.from(encryptedData, 'base64');
 
     try {
-        // Ensure the key length is 32 bytes (pad if needed and slice to exactly 32 bytes)
         const key = Buffer.from(PROFILE_PIC_MEDIA_ENCRYPTION.padEnd(32, '0').slice(0, 32));
-
-        // Create AES decipher using the secret key and IV
-        const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);  // AES-256-CTR mode
+        const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv); 
         let decrypted = decipher.update(encryptedBuffer, 'base64', 'utf8');
         decrypted += decipher.final('utf8');
-
-        // Parse the decrypted data into an object
         const extractedData = JSON.parse(decrypted);
-
-        return extractedData;  // Return the extracted mediaId and filename
+        return extractedData; 
     } catch (error) {
-        return null;  // Return null if any error occurs
+        return null;  
     }
 }
-
-
 
 module.exports = {
     verifyIdToken,

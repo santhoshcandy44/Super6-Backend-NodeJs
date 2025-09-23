@@ -1,5 +1,5 @@
 const express = require('express');
-const authenticateToken = require('../middlewares/authMiddleware'); // Import the auth middleware
+const authenticateToken = require('../middlewares/authMiddleware'); 
 const { body, param, query } = require('express-validator');
 const jobsProtectedController = require('../controllers/jobsProtectedController');
 const multer = require('multer');
@@ -43,7 +43,7 @@ router.get('/job-listings',
 
     query('last_timestamp')
       .optional()
-      .isString().withMessage('Last Timestamp must be a valid string format') // Ensures it's a string
+      .isString().withMessage('Last Timestamp must be a valid string format')
       .trim()
       .escape()
       .custom((value, { req }) => {
@@ -55,7 +55,6 @@ router.get('/job-listings',
         }
 
         // req.query.last_timestamp = decodedValue; 
-
         return true;
       })
       .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), 

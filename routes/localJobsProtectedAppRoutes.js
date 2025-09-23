@@ -39,9 +39,9 @@ router.get('/get-local-jobs',
                     throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
                 }
                 // req.query.last_timestamp = decodedValue; 
-                return true; // Indicate successful validation
+                return true; 
             })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), // Check length after conversion
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
         query('last_total_relevance')
             .optional()

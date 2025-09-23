@@ -6,16 +6,12 @@ const { PROFILE_BASE_URL } = require('../config/config.js');
 const kafka = new Kafka({ clientId: 'notification-worker', brokers: ['localhost:9092'] });
 const consumer = kafka.consumer({ groupId: 'notification-workers' });
 
-
-
 async function startConsumer() {
   await consumer.connect();
   await consumer.subscribe({ topic: 'local-job-application-notifications', fromBeginning: false });
 
   await consumer.run({
     eachMessage: async ({ message }) => {
-
-
       const { user_id, candidate_id, applicant_id, local_job_title } = JSON.parse(message.value.toString());
 
       const connection = await db.getConnection();
@@ -27,11 +23,7 @@ async function startConsumer() {
 
 
       await connection.commit();
-
-
       const result = await User.getUserProfile(candidate_id)
-
-
 
       if (results?.[0]?.fcm_token && result) {
 

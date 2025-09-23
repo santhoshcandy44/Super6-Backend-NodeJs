@@ -32,7 +32,7 @@ router.get('/get-services',
             .isString().withMessage('Query string must be a valid string format') 
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
+            .isLength({ min: 0, max: 100 }) 
             .withMessage('Query string must be between 1 and 100 characters long'), 
 
         query('last_timestamp')
@@ -49,7 +49,7 @@ router.get('/get-services',
                 // req.query.last_timestamp = decodedValue; 
                 return true; 
             })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), // Check length after conversion
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
         query('last_total_relevance')
             .optional()
@@ -69,7 +69,7 @@ router.get('/guest-get-services',
                 return res.status(400).json({ error: 'Industries must be an array' });
             }
             const validIndustries = originalValue.map(item => {
-                const numItem = parseInt(item, 10); // Parse each item to an integer
+                const numItem = parseInt(item, 10); 
                 if (!Number.isInteger(numItem) || numItem <= 0) {
                     throw new Error(`Industry ID ${item} is not a valid positive integer`);
                 }
@@ -94,7 +94,7 @@ router.get('/guest-get-services',
             .isString().withMessage('Query string must be a valid string format') 
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) // Adjust the length limit as needed
+            .isLength({ min: 0, max: 100 }) 
             .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
@@ -136,7 +136,7 @@ router.get('/guest-get-services',
                 // req.query.last_timestamp = decodedValue;
                 return true;
             })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), // Check length after conversion
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
         query('last_total_relevance')
             .optional()
@@ -165,14 +165,12 @@ router.get('/get-published-services-feed-user/:user_id(\\d+)',
     servicesProtectedController.getPublishedServicesFeedUser 
 );
 
-// Update Service Route
 router.get('/get-published-services/:user_id(\\d+)',
     authenticateToken, 
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
-
+            .isInt().withMessage('Invalid user id format')
     ],
     servicesProtectedController.getPublishedServices
 );
@@ -191,7 +189,7 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .escape()
             .notEmpty()
             .withMessage('Title cannot be empty')
-            .isLength({ min: 1, max: 100 }) // Adjust max length as needed
+            .isLength({ min: 1, max: 100 }) 
             .withMessage('Title must be between 1 and 100 characters'),
 
         body('short_description')
@@ -201,7 +199,7 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .escape()
             .notEmpty()
             .withMessage('Short Description cannot be empty')
-            .isLength({ min: 1, max: 250 }) // Adjust max length as needed
+            .isLength({ min: 1, max: 250 }) 
             .withMessage('Short Description must be between 1 and 250 characters'),
 
         body('long_description')
@@ -211,7 +209,7 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .escape()
             .notEmpty()
             .withMessage('Long Description cannot be empty')
-            .isLength({ min: 1, max: 5000 }) // Adjust max length as needed
+            .isLength({ min: 1, max: 5000 })
             .withMessage('Long Description must be between 1 and 5000 characters'),
         body('industry').isInt().withMessage('Industry must be a valid integer'),
     ],
@@ -243,8 +241,9 @@ router.patch('/:service_id(\\d+)/update-service-plans',
     },
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
+       
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
-        // Plans validation
+
         body('plans')
             .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')  
             .bail() 
@@ -293,8 +292,7 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     }
 
                     if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); // Custom error for plan_features
-
+                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); 
                     }
 
                     plan.plan_features.forEach((feature, featureIndex) => {
@@ -498,10 +496,9 @@ router.post('/create-service',
                 return true;
             }),
 
-
         body('plans')
             .isArray({ min: 1 }).withMessage('Plans must be a non-empty array') 
-            .bail()  // Stop if the array validation fails
+            .bail() 
             .custom((plans) => {
                 if (plans.length > 3) {
                     throw new Error(`Maximum 3 plans can be created`); 
@@ -520,11 +517,11 @@ router.post('/create-service',
                     }
 
                     if (typeof plan.plan_description !== 'string') {
-                        throw new Error(`Plan description must be a string and cannot exceed 500 characters in plan ${index + 1}`); // Custom error for description
+                        throw new Error(`Plan description must be a string and cannot exceed 500 characters in plan ${index + 1}`);
                     }
 
                     if (plan.plan_description.length > 200) {
-                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`); // Custom error for description   
+                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`); 
                     }
 
                     if (typeof plan.plan_price !== 'number') {
@@ -537,7 +534,7 @@ router.post('/create-service',
                     }
 
                     if (typeof plan.plan_delivery_time !== 'number') {
-                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`); // Custom error for delivery time
+                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`); 
                     }
 
                     const validDurationUnits = ['HR', 'D', 'W', 'M'];
@@ -546,7 +543,7 @@ router.post('/create-service',
                     }
 
                     if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); // Custom error for plan_features
+                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); 
                     }
 
                     plan.plan_features.forEach((feature, featureIndex) => {
@@ -561,7 +558,6 @@ router.post('/create-service',
                 });
                 return true; 
             }),
-
         body('location')
             .isString()
             .withMessage('Location must be a valid string')
