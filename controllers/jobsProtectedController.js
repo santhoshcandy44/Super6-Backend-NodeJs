@@ -3,15 +3,13 @@ const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelp
 const ApplicantProfile = require('../models/ApplicantProfile');
 const Job = require('../models/JobModel');
 const JobModel = require('../models/JobModel');
-const { errorMonitor } = require('nodemailer/lib/xoauth2');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
-
         }
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
@@ -37,75 +35,56 @@ exports.getJobListingsForUser = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
-        console.log(result);
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
 
-
 exports.searchLocationSuggestions = async (req, res) => {
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
-        // const user_id = req.user.user_id; // This will contain the uploaded images
-        const query = req.query.query; // This will contain the uploaded images
+        const query = req.query.query;
         const result = await JobModel.searchLocationSuggestions(query)
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
-
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        console.log(error)
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
 exports.searchRoleSuggestions = async (req, res) => {
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
+            const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
-        // const user_id = req.user.user_id; // This will contain the uploaded images
-        const query = req.query.query; // This will contain the uploaded images
-
-        
+        // const user_id = req.user.user_id;
+        const query = req.query.query; 
         const result = await JobModel.searchRoleSuggestions(query)
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
-
-        console.log(result);
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
-
 
 exports.applyJob= async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
-            return sendErrorResponse(res, 400, firstError, errors.array());
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
         const user_id = req.user.user_id;
         const { job_id } = req.body;
         const result = await Job.applyJob(user_id, job_id);
@@ -114,34 +93,26 @@ exports.applyJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, result.is_applied ? "Job applied successfully" : "Profile not completed" , result);
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
 exports.getApplicantProfile = async (req, res) => {
-    // Validate the request body
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        const firstError = errors.array()[0]; // Get the first error
-        return sendErrorResponse(res, 400, firstError, errors.array());
-    }
-
     try {
-
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0]; 
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
         const userId = req.params.user_id;
         const user = req.user
-
         if (userId != user.user_id) {
             return sendErrorResponse(res, 400, 'Access forbidden');
         }
-
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
-
         if (!result) {
-            return sendErrorResponse(res, 404, 'User profile not found');
+            return sendErrorResponse(res, 404, 'User profile not exist');
         }
-
         return sendJsonResponse(res, 200, "Profile fetched successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
@@ -151,8 +122,8 @@ exports.getApplicantProfile = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList, // <-- return education list here
-            applicant_experience: result.experienceList, // <-- return education list here
+            applicant_education: result.educationList, 
+            applicant_experience: result.experienceList, 
             applicant_skill: result.skillsList,
             applicant_language: result.languagesList,
             applicant_certificate: result.certificateList,
@@ -165,7 +136,6 @@ exports.getApplicantProfile = async (req, res) => {
             } : null,
             next_complete_step: getNextIncompleteStep(result) === 6 ? -1 : getNextIncompleteStep(result)
         });
-
     } catch (err) {
         return sendErrorResponse(res, 500, 'Internal Server error', err.message);
     }
@@ -239,10 +209,8 @@ exports.updateProfile = async (req, res) => {
             } : null,
             next_complete_step: getNextIncompleteStep(result)
         });
-
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -262,7 +230,7 @@ exports.updateEducation = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Education info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -285,10 +253,9 @@ exports.updateEducation = async (req, res) => {
             } : null,
             next_complete_step: getNextIncompleteStep(result)
         });
-
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -308,7 +275,7 @@ exports.updateExperience = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update personal information");
         }
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Experience info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -332,8 +299,7 @@ exports.updateExperience = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -351,7 +317,7 @@ exports.updateNoExperience = async (req, res) => {
             return sendErrorResponse(res, 500, 'Failed to update personal information');
         }
 
-        return sendJsonResponse(res, 200, 'Profile fetched successfully', {
+        return sendJsonResponse(res, 200, 'No exeperince updated successfully', {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -377,7 +343,7 @@ exports.updateNoExperience = async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, 'Internal Server Error', error.toString());
+        return sendErrorResponse(res, 500, 'Internal Server Error', error.message);
     }
 };
 
@@ -388,7 +354,6 @@ exports.updateSkill = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        
         const applicantSkillInfo = req.body;
         if (!applicantSkillInfo) {
             return res.status(400).json({ error: 'Missing  skills' });
@@ -398,7 +363,7 @@ exports.updateSkill = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update skills information");
         }
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Skill info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -422,8 +387,7 @@ exports.updateSkill = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -444,7 +408,7 @@ exports.updateLanguage = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update skills information");
         }
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Language info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -468,42 +432,31 @@ exports.updateLanguage = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
 exports.updateCertificate = async (req, res) => {
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
-            return sendErrorResponse(res, 400, firstError, errors.array());
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
         const applicantCertificateInfoJson = req.body.applicantCertificateInfo;
-
         if (!applicantCertificateInfoJson) {
             return res.status(400).json({ error: 'Missing applicantCertificateInfo part' });
         }
-
         const applicantCertificateInfo = JSON.parse(applicantCertificateInfoJson);
-
-        // 🔒 Limit max 5 certificates
         if (applicantCertificateInfo.length > 5) {
             return res.status(400).json({ error: 'You can only upload up to 5 certificates.' });
         }
-
         const userId = req.user.user_id;
-
         const certificates = applicantCertificateInfo.map((cert) => {
             const id = cert.id;
             const fieldName = id === -1 ? 'certificates-new' : `certificates-${id}`;
             const file = req.files?.find(f => f.fieldname === fieldName);
-
             let image;
-
             if (id === -1) {
                 if (!file) {
                     throw new Error('Missing image for new certificate');
@@ -512,7 +465,6 @@ exports.updateCertificate = async (req, res) => {
             } else {
                 image = file ? file : cert.image;
             }
-
             return {
                 id,
                 issuedBy: cert.issued_by,
@@ -522,14 +474,11 @@ exports.updateCertificate = async (req, res) => {
                 image,
             };
         });
-
         const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
-
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update certificates");
         }
-
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Certificate info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -552,45 +501,31 @@ exports.updateCertificate = async (req, res) => {
             } : null,
             next_complete_step: getNextIncompleteStep(result)
         });
-
     } catch (error) {
         console.error(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
 exports.updateResume = async (req, res) => {
-
     try {
-        // Validate the request body
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; // Get the first error
-            return sendErrorResponse(res, 400, firstError, errors.array());
+            const firstError = errors.array()[0]; 
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
         const applicantResumeInfoJson = req.body.applicantResumeInfo;
-
         if (!applicantResumeInfoJson) {
             return res.status(400).json({ error: 'Missing applicantResumeInfo part' });
         }
-
-        const userId = req.user.user_id; // Assuming `authenticateToken` sets req.user
-
+        const userId = req.user.user_id;
         const applicantResumeInfo = JSON.parse(applicantResumeInfoJson);
-
-        // Access the uploaded profilePic if it exists
         const resume = req.file;
-
-
-
         const result = await ApplicantProfile.updateOrCreateUserResume(userId, resume);
-
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update resume");
         }
-
-        return sendJsonResponse(res, 200, "Profile fetched successfully", {
+        return sendJsonResponse(res, 200, "Resume info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
                 last_name: result.last_name,
@@ -599,8 +534,8 @@ exports.updateResume = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList, // <-- return education list here
-            applicant_experience: result.experienceList, // <-- return education list here
+            applicant_education: result.educationList,
+            applicant_experience: result.experienceList,
             applicant_skill: result.skillsList,
             applicant_language: result.languagesList,
             applicant_certificate: result.certificateList,
@@ -613,11 +548,7 @@ exports.updateResume = async (req, res) => {
             } : null,
             next_complete_step: getNextIncompleteStep(result)
         });
-
-
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
-
 };

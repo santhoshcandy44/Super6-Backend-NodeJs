@@ -1,12 +1,12 @@
 const { validationResult } = require('express-validator');
+const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const sharp = require('sharp');
 const User = require('../models/User');
 const UserLocation = require('../models/UserLocation');
-const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
+const { awsS3Bucket } = require("../config/awsS3.js")
 const { PROFILE_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
 const App = require('../models/App');
-const { awsS3Bucket } = require("../config/awsS3.js")
 
 exports.getUserProfile = async (req, res) => {
     try {
@@ -46,7 +46,6 @@ exports.getUserProfile = async (req, res) => {
             updated_at: result.profile_updated_at,
         })
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error");
     }
 };

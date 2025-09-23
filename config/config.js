@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 
 module.exports = {
     BASE_URL: process.env.BASE_URL,
@@ -33,5 +33,4 @@ module.exports = {
     SMTP_PASSWORD:process.env.SMTP_PASSWORD,
 
     APP_NAME: process.env.APP_NAME
-
 };
