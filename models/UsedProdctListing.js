@@ -125,9 +125,6 @@ class UsedProductListing {
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180`;
 
-
-                const offset = (page - 1) * pageSize;
-
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
 
                 if (lastTimeStamp != null) {
@@ -146,6 +143,8 @@ class UsedProductListing {
                 }
 
                 query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ? OFFSET ?`;
+                const offset = (page - 1) * pageSize;
+            
                 params.push(pageSize, offset);
             } else {
                 query = `
@@ -230,7 +229,6 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
-                const offset = (page - 1) * pageSize;
 
                 params = [userLon, userLat, userId, userLat, userLon];
 
@@ -246,6 +244,8 @@ WHERE
                 params.push(radius);
 
                 query += ` ORDER BY distance LIMIT ? OFFSET ?`;
+
+                const offset = (page - 1) * pageSize;
 
                 params.push(pageSize, offset);
             }
