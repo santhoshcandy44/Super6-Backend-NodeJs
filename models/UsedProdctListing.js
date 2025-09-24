@@ -1837,6 +1837,7 @@ distance LIMIT ? OFFSET ?`;
             // Parameters for levenshtein
             for (const word of words) {
                 for (let i = 0; i < maxWords; i++) params.push(word);
+                for (let i = 0; i < maxWords; i++) params.push(word);
             }
             params.push(lowercaseQuery);
 
