@@ -3,7 +3,7 @@ const { PROFILE_BASE_URL, MEDIA_BASE_URL, BASE_URL } = require('../config/config
 const db = require('../config/database');
 const { encrypt } = require('../utils/authUtils');
 const ServiceModel = require('./ServiceModel ');
-const UsedProductListingModel = require('./UsedProdctListing');
+const UsedProductListing = require('./UsedProdctListing');
 
 class App {
 
@@ -342,7 +342,7 @@ class App {
                 if (!usedProducts[productId]) {
                     try {
                         const publisher_id = row.publisher_id;
-                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
+                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
