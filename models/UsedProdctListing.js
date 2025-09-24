@@ -1815,6 +1815,7 @@ distance LIMIT ? OFFSET ?`;
                     WHERE ${concatenatedLikeConditions}
                     AND search_term NOT LIKE CONCAT(?, '%')
                     AND NOT (${likeConditions})
+                    AND search_term_concatenated NOT LIKE CONCAT(?, '%') 
                     AND popularity > 10
                     ORDER BY popularity DESC
                 )
@@ -1844,12 +1845,13 @@ distance LIMIT ? OFFSET ?`;
             params.push(lowercaseQuery);
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
-
+ 
 
             // Parameters for concatenatedLikeConditions
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
             for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
 
             const [results] = await connection.execute(sql, params);
 
