@@ -4,7 +4,7 @@ const he = require('he');
 const moment = require('moment');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
 const { awsS3Bucket } = require('../config/awsS3.js')
-const { v4: uuidv4 } = require('uuid'); 
+const { v4: uuidv4 } = require('uuid');
 
 class UsedProductListing {
 
@@ -125,41 +125,29 @@ class UsedProductListing {
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180`;
 
+
+                const offset = (page - 1) * pageSize;
+
+                let params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
+
                 if (lastTimeStamp != null) {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
                 if (lastTotalRelevance !== null) {
-                    query += ` GROUP BY product_id HAVING
-                        distance < ? AND (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? AND distance <= ?)  -- Fetch records with the same relevance and within the current distance
-                        OR (total_relevance < ? AND distance <= ?)  -- Fetch records with lower relevance within the current distance
-                    ) `;
+                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
+                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
                 } else {
-                    query += ` GROUP BY product_id HAVING
-                        distance < ? AND (
-                            name_relevance > 0 OR
-                            description_relevance > 0)`
+                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0)`;
+                    params.push(radius);
                 }
 
-                query += ` ORDER BY
-                        distance ASC,
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ? OFFSET ?`;
+                params.push(pageSize, offset);
 
-
-                const offset = (page - 1) * pageSize;
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-                } else {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon, radius, pageSize, offset];
-                }
 
             } else {
                 query = `
@@ -388,7 +376,7 @@ distance LIMIT ? OFFSET ?`;
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-                const offset = (page - 1) * pageSize; 
+                const offset = (page - 1) * pageSize;
 
                 if (lastTotalRelevance != null && lastTimeStamp != null) {
                     params = [queryParam, queryParam, queryParam, queryParam, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
@@ -505,7 +493,7 @@ distance LIMIT ? OFFSET ?`;
             }
         }
 
-        const services = {};  
+        const services = {};
 
         await (async () => {
             for (const row of results) {
@@ -714,7 +702,7 @@ distance LIMIT ? OFFSET ?`;
                     LIMIT ? OFFSET ?`;
 
 
-                const offset = (page - 1) * pageSize; 
+                const offset = (page - 1) * pageSize;
 
                 if (lastTotalRelevance != null && lastTimeStamp != null) {
                     params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
@@ -934,7 +922,7 @@ distance LIMIT ? OFFSET ?`;
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-                const offset = (page - 1) * pageSize; 
+                const offset = (page - 1) * pageSize;
 
                 if (lastTotalRelevance != null && lastTimeStamp != null) {
                     params = [queryParam, queryParam, queryParam, queryParam, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
@@ -1236,7 +1224,7 @@ distance LIMIT ? OFFSET ?`;
 
                     images: row.images ? JSON.parse(row.images).map(image => ({
                         ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url 
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
                     })) : [],
                     location: row.longitude && row.latitude && row.geo && row.location_type
                         ? {
@@ -1366,7 +1354,7 @@ distance LIMIT ? OFFSET ?`;
                             location_type: row.location_type
                         }
                         : null,
-                        is_bookmarked: Boolean(row.is_bookmarked),
+                    is_bookmarked: Boolean(row.is_bookmarked),
 
                 };
             }
@@ -1377,7 +1365,7 @@ distance LIMIT ? OFFSET ?`;
 
     static async createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, files, locationJson, keepImageIdsArray, product_id) {
         let connection;
-        const uploadedFiles = [];  
+        const uploadedFiles = [];
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
@@ -1570,7 +1558,7 @@ distance LIMIT ? OFFSET ?`;
                 GROUP BY upl.product_id`,
                 [product_id]
             );
-            
+
             if (productData.length === 0) {
                 throw new Error("Failed to fetch product details after creation/update.");
             }
@@ -1627,10 +1615,10 @@ distance LIMIT ? OFFSET ?`;
                     console.error('Error deleting S3 files during rollback:', deleteError.message);
                 }
             }
-            throw error; 
+            throw error;
         } finally {
             if (connection) {
-                connection.release(); 
+                connection.release();
             }
         }
     }
@@ -1746,30 +1734,30 @@ distance LIMIT ? OFFSET ?`;
         let connection;
         try {
             connection = await db.getConnection();
-    
+
             const trimmedQuery = query.trim();
             const cleanQuery = trimmedQuery.replace(/\s+/g, ' ');
             const lowercaseQuery = cleanQuery.toLowerCase();
             const words = cleanQuery.split(' ');
-    
+
             const concatenatedQuery = lowercaseQuery.replace(/ /g, '');
-    
+
             const likeConditions = words
                 .map(() => `search_term LIKE CONCAT('%', ?, '%')`)
                 .join(' AND ');
-    
+
             const concatenatedLikeConditions = words
                 .map(() => `search_term_concatenated LIKE CONCAT('%', ?, '%')`)
                 .join(' AND ');
-    
+
             const maxWords = 10;
             const levenshteinConditions = [];
             const matchCounts = [];
-    
+
             for (const _ of words) {
                 const levenshteinCondition = [];
                 const matchCountCondition = [];
-    
+
                 for (let i = 1; i <= maxWords; i++) {
                     levenshteinCondition.push(
                         `levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3`
@@ -1778,14 +1766,14 @@ distance LIMIT ? OFFSET ?`;
                         `IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3, 1, 0)`
                     );
                 }
-    
+
                 levenshteinConditions.push(`(${levenshteinCondition.join(' OR ')})`);
                 matchCounts.push(`(${matchCountCondition.join(' OR ')})`);
             }
-    
+
             const levenshteinSql = levenshteinConditions.join(' OR ');
             const matchCountSql = matchCounts.join(' + ');
-    
+
             const sql = `
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
@@ -1835,16 +1823,16 @@ distance LIMIT ? OFFSET ?`;
                 ORDER BY relevance_score ASC, match_count DESC, popularity DESC
                 LIMIT 10;
             `;
-    
+
             const params = [];
-    
+
             // Parameters for exact match
             params.push(lowercaseQuery);
-    
+
             // Parameters for partial matches
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
-    
+
             // Parameters for concatenated match
             params.push(concatenatedQuery);
             params.push(lowercaseQuery);
@@ -1855,14 +1843,14 @@ distance LIMIT ? OFFSET ?`;
                 for (let i = 0; i < maxWords; i++) params.push(word);
             }
             params.push(lowercaseQuery);
-    
+
             // Parameters for concatenatedLikeConditions
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
             for (const word of words) params.push(word);
-    
+
             const [results] = await connection.execute(sql, params);
-    
+
             return results;
         } catch (error) {
             console.error(error);
@@ -1870,7 +1858,7 @@ distance LIMIT ? OFFSET ?`;
         } finally {
             if (connection) (await connection).release();
         }
-    }    
+    }
 }
 
 module.exports = UsedProductListingModel;
