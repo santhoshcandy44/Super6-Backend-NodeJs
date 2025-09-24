@@ -241,8 +241,7 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query += ` GROUP BY product_id HAVING
-distance < ?`;
+                query += ` GROUP BY product_id HAVING distance < ?`;
 
                 params.push(radius);
 
