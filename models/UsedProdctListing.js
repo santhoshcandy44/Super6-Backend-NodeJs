@@ -1034,7 +1034,7 @@ distance LIMIT ? OFFSET ?`;
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await UsedProductListingModel.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
+                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1857,4 +1857,4 @@ distance LIMIT ? OFFSET ?`;
     }
 }
 
-module.exports = UsedProductListingModel;
+module.exports = UsedProductListing;
