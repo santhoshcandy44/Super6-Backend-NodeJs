@@ -3,8 +3,7 @@ const { PROFILE_BASE_URL, MEDIA_BASE_URL, BASE_URL } = require('../config/config
 const db = require('../config/database');
 const { encrypt } = require('../utils/authUtils');
 const ServiceModel = require('./ServiceModel ');
-const UsedProductListingModel = require('./UsedProdctListingModel');
-
+const UsedProductListingModel = require('./UsedProdctListing');
 
 class App {
 
