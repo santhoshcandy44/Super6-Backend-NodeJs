@@ -147,8 +147,6 @@ class UsedProductListing {
 
                 query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ? OFFSET ?`;
                 params.push(pageSize, offset);
-
-
             } else {
                 query = `
                     SELECT
@@ -251,9 +249,7 @@ distance < ?`;
                 query += ` ORDER BY distance LIMIT ? OFFSET ?`;
 
                 params.push(pageSize, offset);
-
             }
-
         } else {
             if (queryParam) {
                 if (initialRadius == 50) {
