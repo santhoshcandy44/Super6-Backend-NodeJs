@@ -344,42 +344,37 @@ WHERE
                         sl.latitude BETWEEN -90 AND 90
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
+                params = [queryParam, queryParam, queryParam, queryParam, userId];
+
                 if (lastTimeStamp != null) {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
-                        (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? )  -- Fetch records with the same relevance
-                        OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    ) `;
-
+                                (
+                                    name_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                (total_relevance = ? )
+                                OR (total_relevance < ?)
+                            )`;
+                    params.push(lastTotalRelevance, lastTotalRelevance);
                 } else {
                     query += ` GROUP BY product_id HAVING
-                        (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        )`
+                                (
+                                    name_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
                 }
 
-                query += ` ORDER BY
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
-
+                query += ` ORDER BY total_relevance DESC LIMIT ? OFFSET ?`;
                 const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
 
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-                    params = [queryParam, queryParam, queryParam, queryParam, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-
-                } else {
-                    params = [queryParam, queryParam, queryParam, queryParam, userId, pageSize, offset];
-                }
             } else {
                 query = `
                 SELECT
@@ -462,17 +457,14 @@ WHERE
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
 
                 query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
 
                 const offset = (page - 1) * pageSize;
 
-                if (lastTimeStamp) {
-                    params = [userId, lastTimeStamp, pageSize, offset];
-                } else {
-                    params = [userId, pageSize, offset];
-                }
+                params.push(pageSize, offset);
             }
         }
 
@@ -1845,7 +1837,7 @@ distance LIMIT ? OFFSET ?`;
             params.push(lowercaseQuery);
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
- 
+
 
             // Parameters for concatenatedLikeConditions
             for (const word of words) params.push(word);
