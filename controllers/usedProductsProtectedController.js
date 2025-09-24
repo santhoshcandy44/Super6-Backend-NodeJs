@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const UsedProductListing = require('../models/UsedProdctListingModel');
+const UsedProductListing = require('../models/UsedProdctListing');
 
 exports.getUsedProductListingsForUser = async (req, res) => {
     try {
