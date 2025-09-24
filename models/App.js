@@ -12,24 +12,20 @@ class App {
         let connection;
         try {
             connection = await db.getConnection();
-            // Start a transaction
             await connection.beginTransaction();
             const encryptedToken = await encrypt(fcmToken);
-
-            // Prepare the SQL statement
             const sql = `
                 INSERT INTO fcm_tokens (user_id, fcm_token)
                 VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE fcm_token = ?, updated_at = CURRENT_TIMESTAMP
             `;
 
-            // Execute the statement
             const [result] = await connection.execute(sql, [userId, encryptedToken, encryptedToken]);
 
-            //    Check the affected rows 
-            if (result.affectedRows == 0) { throw Error("Error on updating fcm token"); }
+            if (result.affectedRows == 0) {
+                throw Error("Error on updating fcm token");
+            }
 
-            // Commit the transaction
             await connection.commit();
 
             return {
@@ -39,11 +35,9 @@ class App {
             };
         } catch (error) {
             console.log(error);
-            // Rollback transaction in case of an error
             await connection.rollback();
             throw error;
         } finally {
-            // Close the connection
             await connection.release();
         }
     }
@@ -59,7 +53,9 @@ class App {
                 ON DUPLICATE KEY UPDATE encrypted_public_key = ?, key_version = ?, updated_at = CURRENT_TIMESTAMP
             `;
             const [result] = await connection.execute(sql, [userId, publicKey, keyVersion, publicKey, keyVersion]);
-            if (result.affectedRows == 0) { throw Error("Error on updating e2ee public key"); }
+            if (result.affectedRows == 0) {
+                throw Error("Error on updating e2ee public key");
+            }
             await connection.commit();
             return {
                 success: true,
@@ -75,14 +71,13 @@ class App {
         }
     }
 
-
     static async getUserBookmarks(userId) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
         );
         if (userCheckResult.length === 0) {
-            throw new Error('User does not exist.');
+            throw new Error('User is not exist.');
         }
         const [results] = await db.query(`               
         SELECT
@@ -191,7 +186,6 @@ class App {
             ub.user_id = ? 
             GROUP BY service_id
             `, [userId, userId]);
-
         const services = {};
         await (async () => {
             for (const row of results) {
@@ -305,8 +299,6 @@ class App {
                             ), 
                         ']'), '[]') AS images,
             
-            
-            
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
                         u.last_name AS publisher_last_name,
@@ -341,7 +333,6 @@ class App {
                         ub.user_id = ? 
                         GROUP BY product_id
                         `, [userId, userId]);
-
 
         const usedProducts = {};
         await (async () => {
@@ -411,7 +402,6 @@ class App {
                 }
             }
         })();
-
 
         const [localJobResults] = await db.query(`
             SELECT
@@ -487,10 +477,8 @@ class App {
             for (const row of localJobResults) {
                 const localJobId = row.local_job_id;
                 const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
                 if (!localJobs[localJobId]) {
                     try {
-
                         localJobs[localJobId] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -541,7 +529,7 @@ class App {
             }
         })();
 
-        
+
         const [jobResults] = await db.query(`
              SELECT
             j.job_id,
@@ -638,7 +626,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
                 ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
-        
+
         console.log(combinedResults);
         return Object.values(combinedResults);
     }

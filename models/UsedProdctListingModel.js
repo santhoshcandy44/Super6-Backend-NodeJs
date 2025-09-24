@@ -1,17 +1,16 @@
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const db = require('../config/database')
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { awsS3Bucket } = require('../config/awsS3.js')
-const { v4: uuidv4 } = require('uuid');  // For unique file names
-
+const { v4: uuidv4 } = require('uuid'); 
 
 class UsedProductListingModel {
 
     static async createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, files, locationJson, keepImageIdsArray, product_id) {
         let connection;
-        const uploadedFiles = [];  // Array to track uploaded S3 files for rollback
+        const uploadedFiles = [];  
 
 
         try {
@@ -984,8 +983,6 @@ distance LIMIT ? OFFSET ?`;
 
     static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId) {
 
-
-
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -1263,7 +1260,6 @@ distance LIMIT ? OFFSET ?`;
 
         return Object.values(products);
     }
-
 
     static async guestGetUsedProductListings(userId, queryParam, page, pageSize, lastTimeStamp,
         lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
@@ -1909,8 +1905,6 @@ distance LIMIT ? OFFSET ?`;
         return Object.values(products);
     }
 
-
-
     static async bookmarkUsedProductListing(userId, productId) {
         let connection;
         try {
@@ -1984,14 +1978,10 @@ distance LIMIT ? OFFSET ?`;
         }
     }
 
-
-
     static async deleteUsedProductListing(user_id, product_id) {
         let connection;
         try {
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
 
 
@@ -2073,146 +2063,134 @@ distance LIMIT ? OFFSET ?`;
         }
     }
 
-
     static async usedProductListingsSearchQueries(query) {
-
-
-
         let connection;
-
         try {
             connection = await db.getConnection();
-
-            // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
+    
             const trimmedQuery = query.trim();
-            const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-            const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
-
-            // Escape the query to prevent SQL injection
-            const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
-
-            // Split the query into individual words
-            const words = cleanQuery.split(' '); // e.g., ['texi', '2024']
-
-            // Remove spaces from the query to match concatenated search terms
-            const concatenatedQuery = escapedQuery.replace(/ /g, ''); // e.g., 'bluaa2024'
-
-
-
-
-            // Create LIKE conditions for partial match (all words should be present)
-            const likeConditions = words.map(word => {
-                const escapedWord = connection.escape(word);
-                return `search_term LIKE CONCAT('%', ${escapedWord}, '%')`;
-            }).join(' AND ');
-
-            // Create LIKE conditions for concatenated match
-            const concatenatedLikeConditions = words.map(word => {
-                const escapedWord = connection.escape(word);
-                return `search_term_concatenated LIKE CONCAT('%', ${escapedWord}, '%')`;
-            }).join(' AND ');
-
-            const maxWords = 10; // Define a reasonable max number of words to check in search_term
+            const cleanQuery = trimmedQuery.replace(/\s+/g, ' ');
+            const lowercaseQuery = cleanQuery.toLowerCase();
+            const words = cleanQuery.split(' ');
+    
+            const concatenatedQuery = lowercaseQuery.replace(/ /g, '');
+    
+            const likeConditions = words
+                .map(() => `search_term LIKE CONCAT('%', ?, '%')`)
+                .join(' AND ');
+    
+            const concatenatedLikeConditions = words
+                .map(() => `search_term_concatenated LIKE CONCAT('%', ?, '%')`)
+                .join(' AND ');
+    
+            const maxWords = 10;
             const levenshteinConditions = [];
             const matchCounts = [];
-
-            for (const word of words) {
-                const escapedWord = connection.escape(word);
-
+    
+            for (const _ of words) {
                 const levenshteinCondition = [];
                 const matchCountCondition = [];
-
-                // Dynamically build the Levenshtein conditions for each position up to maxWords
+    
                 for (let i = 1; i <= maxWords; i++) {
-                    levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
-                    matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
+                    levenshteinCondition.push(
+                        `levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3`
+                    );
+                    matchCountCondition.push(
+                        `IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3, 1, 0)`
+                    );
                 }
-
-                // Combine the conditions for this word
+    
                 levenshteinConditions.push(`(${levenshteinCondition.join(' OR ')})`);
                 matchCounts.push(`(${matchCountCondition.join(' OR ')})`);
             }
-
-            // Combine the conditions for all query words
+    
             const levenshteinSql = levenshteinConditions.join(' OR ');
             const matchCountSql = matchCounts.join(' + ');
-
-            // Your final SQL query logic stays the same
+    
             const sql = `
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
                     FROM used_product_listing_search_queries 
-                    WHERE search_term LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
-                    AND popularity > 10  -- Ensure popularity is greater than 10
-
+                    WHERE search_term LIKE CONCAT(?, '%')
+                    AND popularity > 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 1 AS relevance_score
                     FROM used_product_listing_search_queries 
-                    WHERE ${likeConditions} -- Partial match (contains all words)
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
-                    AND popularity > 10  -- Ensure popularity is greater than 10
+                    WHERE ${likeConditions}
+                    AND search_term NOT LIKE CONCAT(?, '%')
+                    AND popularity > 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 2 AS relevance_score
                     FROM used_product_listing_search_queries 
-                    WHERE search_term_concatenated LIKE CONCAT(${concatenatedQuery}, '%') -- Concatenated match
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from concatenated results
-                    AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 10
+                    WHERE search_term_concatenated LIKE CONCAT(?, '%')
+                    AND search_term NOT LIKE CONCAT(?, '%')
+                    AND NOT (${likeConditions})
+                    AND popularity > 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, '' AS search_term_concatenated, (${matchCountSql}) AS match_count, 3 AS relevance_score
                     FROM used_product_listing_search_queries 
-                    WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
-                    AND popularity > 10  -- Ensure popularity is greater than 10
+                    WHERE (${levenshteinSql})
+                    AND search_term NOT LIKE CONCAT(?, '%')
+                    AND popularity > 10
                     ORDER BY popularity DESC
                 )
                 UNION ALL
                 (
                     SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 4 AS relevance_score
                     FROM used_product_listing_search_queries 
-                    WHERE ${concatenatedLikeConditions} -- Match each word in the concatenated form
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches
-                    AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 100
+                    WHERE ${concatenatedLikeConditions}
+                    AND search_term NOT LIKE CONCAT(?, '%')
+                    AND NOT (${likeConditions})
+                    AND popularity > 10
                     ORDER BY popularity DESC
                 )
-                ORDER BY
-                    relevance_score ASC, -- Order by relevance score (exact match is highest priority)
-                    match_count DESC, -- Then order by number of matched words based on Levenshtein distance
-                    popularity DESC -- Finally order by popularity 
-
-                    LIMIT 10;
+                ORDER BY relevance_score ASC, match_count DESC, popularity DESC
+                LIMIT 10;
             `;
+    
+            const params = [];
+    
+            // Parameters for exact match
+            params.push(lowercaseQuery);
+    
+            // Parameters for partial matches
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+    
+            // Parameters for concatenated match
+            params.push(concatenatedQuery, lowercaseQuery);
+            for (const word of words) params.push(word);
 
-            // Execute the query
-            const [results] = await connection.execute(sql);
-
+            // Parameters for levenshtein
+            for (const word of words) {
+                for (let i = 0; i < maxWords; i++) params.push(word);
+            }
+            params.push(lowercaseQuery);
+    
+            // Parameters for concatenatedLikeConditions
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+            for (const word of words) params.push(word);
+    
+            const [results] = await connection.execute(sql, params);
+    
             return results;
-
         } catch (error) {
-            console.log(error);
+            console.error(error);
             throw error;
         } finally {
-            if (connection) {
-                // Close the connection
-                (await connection).release();
-            }
+            if (connection) (await connection).release();
         }
-
-    }
-
-
-
-
+    }    
 }
 
 module.exports = UsedProductListingModel;

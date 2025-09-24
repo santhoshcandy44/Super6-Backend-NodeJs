@@ -1,17 +1,10 @@
-// User.js
 const sharp = require('sharp');
 const path = require('path'); 
-const moment = require('moment');
 const db = require('../config/lts360JobsDatabase.js')
-const User = require('./User.js');
 const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils/authUtils.js');
+const User = require('./User.js');
 const { S3_BUCKET_NAME, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { awsS3Bucket } = require('../config/awsS3.js');
-
-const formatToMySQLDate = (millis) => {
-    if (!millis) return null; // If no date provided, return null for MySQL
-    return moment(millis).format('YYYY-MM-DD'); // Convert to 'YYYY-MM-DD' format
-};
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
@@ -21,29 +14,19 @@ class ApplicantProfile {
              WHERE external_user_id = ?`,
             [userId]
         );
-
         if (!profile) return null;
-
         const userProfileId = profile.id;
-
-        
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
              FROM user_profile_experience 
              WHERE user_profile_id = ?`,
             [userProfileId]
         );
-
         let experienceList = [];
-
         if (experienceRows.length === 0) {
-            // If there are no experience rows, return an empty array
             experienceList = [];
         } else {
-            // Check if there's experience data in the first row
             const hasExperience = Boolean(experienceRows[0]?.experienced);
-
-            // If there's experience, map through the experience rows and format them
             experienceList = !hasExperience
                 ? [{
                     company_name: '',
@@ -67,7 +50,6 @@ class ApplicantProfile {
                 }));
         }
 
-       // Education
         const [educationRows] = await db.query(
             `SELECT organization_name AS institution, field_of_study, start_date, end_date, grade, currently_studying 
              FROM user_profile_education_info 
@@ -84,7 +66,6 @@ class ApplicantProfile {
             currently_studying: Boolean(edu.currently_studying)
         }));
 
-        // Languages
         const [languageRows] = await db.query(
             `SELECT language, language_code, proficiency, proficiency_code 
              FROM user_profile_language 
@@ -103,7 +84,6 @@ class ApplicantProfile {
             }
         }));
 
-        // Skills
         const [skillRows] = await db.query(
             `SELECT skill, skill_code 
              FROM user_profile_skill 
@@ -116,7 +96,6 @@ class ApplicantProfile {
             skill_code: row.skill_code
         }));
 
-        // Certificates
         const [certificateRows] = await db.query(
             `SELECT id, issued_by, certificate_download_url AS image, certificate_file_name AS fileName, certificate_size AS fileSize, certificate_type AS type
              FROM user_profile_certificate
@@ -133,7 +112,6 @@ class ApplicantProfile {
             type: row.type
         }));
 
-        // Resume
         const [resumeRows] = await db.query(
             `SELECT resume_file_name, resume_download_url, resume_size, resume_type, last_used 
              FROM user_profile_resume 
@@ -143,7 +121,6 @@ class ApplicantProfile {
         );
 
         const resumeData = resumeRows.length > 0 ? resumeRows[0] : null;
-
         return {
             first_name: profile.first_name,
             last_name: profile.last_name,
@@ -256,7 +233,7 @@ class ApplicantProfile {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        const [[userProfile]] = await db.query(
+        const [userProfile] = await db.query(
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
         );
@@ -271,8 +248,6 @@ class ApplicantProfile {
                     grade,
                     currently_studying
                 } = edu;
-
-                console.log(edu);
 
                 const startDate = formatToMySQLDate(start_year); 
                 const endDate = currently_studying ? null : formatToMySQLDate(end_year);
@@ -344,7 +319,6 @@ class ApplicantProfile {
     }
 
     static async updateExperienceAsNone(userId) {
-        // 1. Delete all existing experiences for the user
         await db.query(
             `DELETE FROM user_profile_experience
            WHERE user_profile_id = (
@@ -353,15 +327,13 @@ class ApplicantProfile {
             [userId]
         );
 
-        // 2. Get the user's profile ID
         const [[userProfile]] = await db.query(
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
         );
 
-        if (!userProfile) return;
+        if (!userProfile) return null;
 
-        // 3. Insert a new row indicating no experience
         await db.query(
             `INSERT INTO user_profile_experience (
               user_profile_id, organization, job_title, employment_type, location,
@@ -369,30 +341,27 @@ class ApplicantProfile {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 userProfile.id,
-                null, // organization
-                null, // job_title
-                null, // employment_type
-                null, // location
-                null, // start_date
-                null, // end_date
-                false, // current_working_here
-                false  // experienced
+                null, 
+                null, 
+                null,
+                null, 
+                null,
+                null, 
+                false,
+                false 
             ]
         );
 
-        // 4. Return the updated profile
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
-        // 1. Delete existing skill records
         await db.query(
             'DELETE FROM user_profile_skill WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
             [userId]
         );
 
-        // 2. Insert new skill entries
         const insertSkillQuery = `
             INSERT INTO user_profile_skill (
                 user_profile_id, skill, skill_code
@@ -408,7 +377,6 @@ class ApplicantProfile {
         if (userProfile && skillList.length > 0) {
             for (const skill of skillList) {
                 const { skill: skillName, skill_code } = skill;
-
                 await db.query(insertSkillQuery, [
                     userProfile.id,
                     skillName,
@@ -417,28 +385,23 @@ class ApplicantProfile {
             }
         }
 
-
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
-
         return result;
     }
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
-        // 1. Delete existing language records
         await db.query(
             'DELETE FROM user_profile_language WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
             [userId]
         );
 
-        // 2. Get user profile ID
         const [[userProfile]] = await db.query(
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
         );
 
-        if (!userProfile) return;
+        if (!userProfile) return null;
 
-        // 3. Insert new language entries
         const insertLanguageQuery = `
             INSERT INTO user_profile_language (
                 user_profile_id, language, language_code, proficiency, proficiency_code
@@ -449,7 +412,6 @@ class ApplicantProfile {
         for (const item of languageList) {
             const language = item.language;
             const proficiency = item.proficiency;
-
             await db.query(insertLanguageQuery, [
                 userProfile.id,
                 language.name,
@@ -458,57 +420,43 @@ class ApplicantProfile {
                 proficiency.value
             ]);
         }
-
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
-
         return result;
     }
 
 
     static async updateOrCreateUserResume(userId, file) {
-
-
-        // 1. Validate user
         const user = await User.getUserMedia(userId);
-        if (!user) return; // Skip if user doesn't exist (ignore silently as per your earlier request)
+        if (!user) return null; 
 
         const mediaId = user.media_id;
-
         const allowedTypes = ["PDF", "DOC", "DOCX"];
-        const fileType = file.mimetype.split('/')[1].toUpperCase(); // Get file type from mimetype
-        if (!allowedTypes.includes(fileType)) return; // Skip if the file type is not allowed (ignore silently)
+        const fileType = file.mimetype.split('/')[1].toUpperCase(); 
+        if (!allowedTypes.includes(fileType)) return null; 
 
         const [[userProfile]] = await db.query(
             `SELECT id FROM user_profile WHERE external_user_id = ?`,
             [userId]
         );
 
-        if (!userProfile) return; // Skip if user profile doesn't exist (ignore silently)
+        if (!userProfile) return null; 
 
-
-        // 2. Get user profile from DB
         const [[exisitngResume]] = await db.query(
             'SELECT resume_download_url FROM user_profile_resume WHERE  user_profile_id =  ?',
             [userProfile.id]
         );
 
-
-        // 3. Delete the old resume if it exists in DB (and potentially in S3)
         if (exisitngResume?.resume_download_url) {
-            // Assuming resume_download_url contains the S3 path to the resume file
-            const oldResumePath = exisitngResume.resume_download_url; // Extract path from URL
+            const oldResumePath = exisitngResume.resume_download_url;
             if (oldResumePath) {
-                // Optionally, you can delete the file from S3 as well if desired
                 await this.deleteS3Keys([oldResumePath]);
             }
         }
 
-        // 4. Upload new resume to S3
-        const fileName = file.originalname; // You should set this from the file object
+        const fileName = file.originalname;
         const s3Key = `media/${mediaId}/careers/resume/${fileName}`;
-        await this.uploadToS3(file.buffer, s3Key, fileType); // Upload the file buffer to S3
+        await this.uploadToS3(file.buffer, s3Key, fileType);
 
-        // 5. Save new resume details to DB
         const resumeDownloadUrl = s3Key;
         const insertResumeQuery = `
             INSERT INTO user_profile_resume 
@@ -518,37 +466,28 @@ class ApplicantProfile {
                 resume_file_name = VALUES(resume_file_name),
                 resume_download_url = VALUES(resume_download_url),
                 resume_size = VALUES(resume_size),
-                resume_type = VALUES(resume_type),
-                last_used = VALUES(last_used)
-        `;
+                resume_type = VALUES(resume_type)
+                `;
         await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
-
-        // 6. Return the updated user profile
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
 
-
     static async updateOrCreateUserCertificates(userId, certificates) {
-        // 1. Validate user exists
         const user = await User.getUserMedia(userId);
         if (!user) {
             throw new Error("Access forbidden");
         }
-
-        // 2. Get user profile ID
         const [[userProfile]] = await db.query(
             'SELECT id FROM user_profile WHERE external_user_id = ?',
             [userId]
         );
-
-        if (!userProfile) return;
+        if (!userProfile) return null;
 
         const userProfileId = userProfile.id;
         const mediaId = user.media_id;
         const allowedTypes = ["JPG", "PNG"];
 
-        // 3. Fetch existing certificates from DB
         const [existingCertificates] = await db.query(
             `SELECT id, certificate_download_url FROM user_profile_certificate WHERE user_profile_id = ?`,
             [userProfileId]
@@ -557,27 +496,19 @@ class ApplicantProfile {
         const existingIds = existingCertificates.map(cert => cert.id);
         const incomingIds = certificates.map(cert => cert.id).filter(id => id !== -1);
 
-        // 4. Determine certificates to delete (those not present in incoming list)
         const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
 
         if (idsToDelete.length > 0) {
-            // 🔹 Get S3 keys for certs to delete
             const s3KeysToDelete = existingCertificates
                 .filter(cert => idsToDelete.includes(cert.id))
                 .map(cert => cert.certificate_download_url);
-
-            // 🔹 Delete from DB
             await db.query(
                 `DELETE FROM user_profile_certificate WHERE id IN (?) AND user_profile_id = ?`,
                 [idsToDelete, userProfileId]
             );
-
-            // 🔹 Delete from S3
             await this.deleteS3Keys(s3KeysToDelete);
         }
 
-
-        // 5. Upsert certificates
         for (const cert of certificates) {
             const { id, issuedBy, image, fileSize, type } = cert;
 
@@ -589,26 +520,15 @@ class ApplicantProfile {
                 throw new Error(`Unsupported certificate file type: ${type}`);
             }
 
-
             if (image.mimetype && image.mimetype.startsWith('image/')) {
-
-
-                // Compress and convert all images to JPEG
                 const compressedImageBuffer = await sharp(image.buffer)
-                    .jpeg({ quality: 80 }) // Adjust quality as needed
+                    .jpeg({ quality: 80 }) 
                     .toBuffer();
-
                 const fileName = image.originalname;
-
-                // Force the file to be saved as a .jpg extension
                 const newFileName = `${path.parse(fileName).name}.jpg`;
                 const s3Key = `media/${mediaId}/careers/certificates/${newFileName}`;
-
                 await this.uploadToS3(compressedImageBuffer, s3Key, image.mimetype);
-
-
                 if (id === -1) {
-                    // INSERT certificate
                     await db.query(
                         `INSERT INTO user_profile_certificate 
                          (user_profile_id, issued_by, certificate_download_url, certificate_file_name, certificate_size, certificate_type) 
@@ -616,15 +536,11 @@ class ApplicantProfile {
                         [userProfileId, issuedBy, s3Key, newFileName, fileSize, type]
                     );
                 } else {
-
-                    //delete old image befroe udpating 
                     const cert = existingCertificates.find(c => c.id === id);
                     if (cert) {
                         const downloadUrl = cert.certificate_download_url;
                         await this.deleteS3Keys([downloadUrl])
                     }
-
-                    // UPDATE certificate with file
                     await db.query(
                         `UPDATE user_profile_certificate 
                          SET issued_by = ?, certificate_download_url = ?, certificate_file_name = ?, certificate_size = ?, certificate_type = ? 
@@ -633,8 +549,6 @@ class ApplicantProfile {
                     );
                 }
             } else {
-
-                // UPDATE certificate without file
                 await db.query(
                     `UPDATE user_profile_certificate 
                      SET issued_by = ? 
@@ -642,11 +556,7 @@ class ApplicantProfile {
                     [issuedBy, id, userProfileId]
                 );
             }
-
-
         }
-
-        // 6. Return updated user profile
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
@@ -654,22 +564,21 @@ class ApplicantProfile {
     static async uploadToS3(buffer, key, contentType) {
         const params = {
             Bucket: S3_BUCKET_NAME,
-            Key: key,  // The S3 path (folder + filename)
+            Key: key,  
             Body: buffer,
-            ContentType: contentType, // MIME type of the file
-            ACL: 'public-read' // Optional: make the file public (if needed)
+            ContentType: contentType,
+            ACL: 'public-read' 
         };
-
         try {
             const data = await awsS3Bucket.upload(params).promise();
-            return data.Location; // This is the public URL to the uploaded file
+            return data.Location;
         } catch (error) {
             throw new Error('Error uploading to S3: ' + error.message);
         }
     }
 
     static async deleteS3Keys(keys) {
-        if (!keys.length) return;
+        if (!keys.length) return null;
         const params = {
             Bucket: S3_BUCKET_NAME,
             Delete: {
@@ -677,14 +586,8 @@ class ApplicantProfile {
                 Quiet: true,
             }
         };
-
         await awsS3Bucket.deleteObjects(params).promise();
     }
-
-
-
-
 }
-
 
 module.exports = ApplicantProfile;
