@@ -128,7 +128,7 @@ class UsedProductListing {
 
                 const offset = (page - 1) * pageSize;
 
-                let params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
+                params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
 
                 if (lastTimeStamp != null) {
                     query += ` AND s.created_at < ?`;
@@ -232,25 +232,26 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
+                const offset = (page - 1) * pageSize;
+
+                params = [userLon, userLat, userId, userLat, userLon];
 
                 if (!lastTimeStamp) {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ? `;
+                    params.push(lastTimeStamp);
                 }
 
                 query += ` GROUP BY product_id HAVING
-    distance < ?
-    ORDER BY
-distance LIMIT ? OFFSET ?`;
+distance < ?`;
 
-                const offset = (page - 1) * pageSize;
+                params.push(radius);
 
-                if (lastTimeStamp) {
-                    params = [userLon, userLat, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
-                } else {
-                    params = [userLon, userLat, userId, userLat, userLon, radius, pageSize, offset];
-                }
+                query += ` ORDER BY distance LIMIT ? OFFSET ?`;
+
+                params.push(pageSize, offset);
+
             }
 
         } else {
