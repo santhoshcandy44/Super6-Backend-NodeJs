@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const UsedProductListingModel = require('../models/UsedProdctListingModel');
+const UsedProductListing = require('../models/UsedProdctListingModel');
 
 exports.getUsedProductListingsForUser = async (req, res) => {
     try {
@@ -17,7 +17,7 @@ exports.getUsedProductListingsForUser = async (req, res) => {
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
-        const result = await UsedProductListingModel.getUsedProductListingsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -42,7 +42,7 @@ exports.guestGetUsedProductListings = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await UsedProductListingModel.guestGetUsedProductListings(user_id, decodedQuery, 
+        const result = await UsedProductListing.guestGetUsedProductListings(user_id, decodedQuery, 
             queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -61,7 +61,7 @@ exports.getUserPublishedUsedProductListingsFeedGuest = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const {user_id} = req.params;
-        const result = await UsedProductListingModel.getPublishedUsedProductListings(user_id)
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
@@ -98,7 +98,7 @@ exports.getPublishedUsedProductListings = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const result = await UsedProductListingModel.getPublishedUsedProductListings(user_id)
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
@@ -120,7 +120,7 @@ exports.createOrUpdateUsedProductListing = async (req, res) => {
         const images = req.files['images[]']; 
         const user_id = req.user.user_id; 
         const keepImageIdsArray = keep_image_ids? keep_image_ids.map(id => Number(id)): [];
-        const result = await UsedProductListingModel.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);
+        const result = await UsedProductListing.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish used product listing");
         }
@@ -139,7 +139,7 @@ exports.bookmarkUsedProductListing = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { product_id } = req.body;
-        const result = await UsedProductListingModel.bookmarkUsedProductListing(user_id, product_id);
+        const result = await UsedProductListing.bookmarkUsedProductListing(user_id, product_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark used product listing");
         }
@@ -158,7 +158,7 @@ exports.removeBookmarkUsedProductListing = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { product_id } = req.body;
-        const result = await UsedProductListingModel.removeBookmarkUsedProductListing(user_id, product_id);
+        const result = await UsedProductListing.removeBookmarkUsedProductListing(user_id, product_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }
@@ -176,7 +176,7 @@ exports.usedProductListingsSearchQueries = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const query = req.query.query;
-        const result = await UsedProductListingModel.usedProductListingsSearchQueries(query)
+        const result = await UsedProductListing.usedProductListingsSearchQueries(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
@@ -195,7 +195,7 @@ exports.deleteUsedProductListing = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { product_id } = req.params;
-        const result = await UsedProductListingModel.deleteUsedProductListing(user_id, product_id);
+        const result = await UsedProductListing.deleteUsedProductListing(user_id, product_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete used product listing");
         }
