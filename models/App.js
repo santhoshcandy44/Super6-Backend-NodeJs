@@ -1,6 +1,7 @@
 
 const { PROFILE_BASE_URL, MEDIA_BASE_URL, BASE_URL } = require('../config/config');
 const db = require('../config/database');
+const jobsDb = require('../config/lts360JobsDatabase');
 const { encrypt } = require('../utils/authUtils');
 const Service = require('./Service');
 const UsedProductListing = require('./UsedProdctListing');
@@ -519,7 +520,7 @@ class App {
             }
         })();
 
-        const [jobResults] = await db.query(`
+        const [jobResults] = await jobsDb.query(`
              SELECT
             j.job_id,
             j.title,
@@ -587,8 +588,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
             c.currency_type AS salary_currency,
                 CURRENT_TIMESTAMP AS initial_check_at,
 
-
-        FROM lts360_jobs AS j
+        FROM jobs AS j
         LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
         LEFT JOIN recruiter_profile u ON j.posted_by_id = u.id
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
