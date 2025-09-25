@@ -36,7 +36,8 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        console.log(error)
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 

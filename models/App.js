@@ -6,7 +6,6 @@ const Service = require('./Service');
 const UsedProductListing = require('./UsedProdctListing');
 
 class App {
-
     static async updateUserFCMToken(userId, fcmToken) {
         let connection;
         try {
