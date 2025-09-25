@@ -3,17 +3,16 @@ const db = require('../config/database.js')
 const { sendFCMNotification, decodeFCMToken } = require('../utils/fcmUtils.js');
 const User = require('../models/User.js');
 const { PROFILE_BASE_URL } = require('../config/config.js');
-const kafka = new Kafka({ clientId: 'notification-worker', brokers: ['localhost:9092'] });
-const consumer = kafka.consumer({ groupId: 'notification-workers' });
+const kafka = new Kafka({ clientId: 'notification-service', brokers: ['localhost:9092'] });
+const consumer = kafka.consumer({ groupId: 'notification-group' });
 
-async function startConsumer() {
+async function startLocalJobNotificationsConsumer() {
   await consumer.connect();
+  console.log("Kaka: startLocalJobNotificationsConsumer started running")
   await consumer.subscribe({ topic: 'local-job-application-notifications', fromBeginning: false });
-
   await consumer.run({
     eachMessage: async ({ message }) => {
       const { user_id, candidate_id, applicant_id, local_job_title } = JSON.parse(message.value.toString());
-
       const connection = await db.getConnection();
       await connection.beginTransaction();
 
@@ -70,4 +69,4 @@ async function startConsumer() {
   });
 }
 
-startConsumer();
+startLocalJobNotificationsConsumer()

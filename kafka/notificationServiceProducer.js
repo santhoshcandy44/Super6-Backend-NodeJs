@@ -16,7 +16,6 @@ async function sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, message
       topic: 'local-job-application-notifications',
       messages: [{ key: kafkaKey, value: JSON.stringify(message) }],
     });
-
     console.log('Message sent:', result);
   } catch (error) {
     console.error('Kafka send failed:', error);
