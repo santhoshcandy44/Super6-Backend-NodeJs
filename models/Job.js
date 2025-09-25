@@ -293,7 +293,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             AND ? BETWEEN -90 AND 90
             AND ? BETWEEN -180 AND 180`;
 
-        let params = [
+        params = [
           userLon,
           userLat,
           userId,
@@ -583,7 +583,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180`;
 
-        let params = [userId, userId];
+        params = [userId, userId];
 
         if (filterWorkModes.length > 0) {
           const placeholders = filterWorkModes.map(() => `?`).join(', ');

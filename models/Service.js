@@ -802,27 +802,15 @@ END AS thumbnail,
 
         const connection = await db.getConnection();
 
-
-
-        // If user coordinates are available, add distance filter
         let query, params;
-        var radius = initialRadius; // You can adjust this as needed
-
-
+        var radius = initialRadius; 
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
-
-
-
             if (queryParam) {
-
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
                     VALUES (?, 1, NOW(), ?)
@@ -833,7 +821,6 @@ END AS thumbnail,
                     );
                 }
 
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                         s.service_id AS service_id,
@@ -901,7 +888,6 @@ END AS thumbnail,
     END AS thumbnail,
 
 
-
                         sl.longitude,
                         sl.latitude,
                         sl.geo,
@@ -961,18 +947,9 @@ END AS thumbnail,
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180 `;
 
-
-
-
-                // Check if industryIds is provided and contains values
                 if (industryIds && industryIds.length > 0) {
-                    // Step 4a: Directly insert the industryIds into the query as a comma-separated list
-                    const industryList = industryIds.join(', ');  // This will join the array into a string (e.g., '1, 2, 3')
-
-                    // Step 4b: Append the industry filter to the query
-                    query += ` AND s.industry IN (${industryList})`;  // Directly insert the industryIds into the query string
-
-
+                    const industryList = industryIds.join(', ');
+                    query += ` AND s.industry IN (${industryList})`; 
                 }
 
 
@@ -1003,29 +980,19 @@ END AS thumbnail,
                         )`
                 }
 
-
-
                 query += ` ORDER BY
                         distance ASC,
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
+                const offset = (page - 1) * pageSize; 
 
                 if (lastTotalRelevance != null && lastTimeStamp != null) {
-
                     params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-
                 } else {
                     params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userLat, userLon, radius, pageSize, offset];
                 }
-
             } else {
-
-
                 query = `
                     SELECT
     s.service_id AS service_id,
@@ -1139,30 +1106,15 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180`
 
-
-
-                // Check if industryIds is provided and contains values
                 if (industryIds && industryIds.length > 0) {
-                    // Step 4a: Directly insert the industryIds into the query as a comma-separated list
-                    const industryList = industryIds.join(', ');  // This will join the array into a string (e.g., '1, 2, 3')
-
-                    // Step 4b: Append the industry filter to the query
-                    query += ` AND s.industry IN (${industryList})`;  // Directly insert the industryIds into the query string
-
-
+                    const industryList = industryIds.join(', '); 
+                    query += ` AND s.industry IN (${industryList})`;  
                 }
 
-
-
-
-
-
                 if (!lastTimeStamp) {
-
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
-
                 }
 
 
@@ -1176,21 +1128,13 @@ distance LIMIT ? OFFSET ?`;
                 if (lastTimeStamp) {
                     params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
                 } else {
-
                     params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
                 }
-
             }
         } else {
-
-
             if (queryParam) {
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -1199,12 +1143,8 @@ distance LIMIT ? OFFSET ?`;
                             last_searched = NOW();`,
                         [queryParam, searchTermConcatenated]
                     );
-
                 }
 
-
-
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                         s.service_id AS service_id,
@@ -1320,20 +1260,10 @@ distance LIMIT ? OFFSET ?`;
                         sl.latitude BETWEEN -90 AND 90
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
-
-                // Check if industryIds is provided and contains values
                 if (industryIds && industryIds.length > 0) {
-                    // Step 4a: Directly insert the industryIds into the query as a comma-separated list
-                    const industryList = industryIds.join(', ');  // This will join the array into a string (e.g., '1, 2, 3')
-
-                    // Step 4b: Append the industry filter to the query
-                    query += ` AND s.industry IN (${industryList})`;  // Directly insert the industryIds into the query string
-
-
+                    const industryList = industryIds.join(', '); 
+                    query += ` AND s.industry IN (${industryList})`; 
                 }
-
-
-
 
                 if (lastTimeStamp != null) {
 
@@ -1365,16 +1295,12 @@ distance LIMIT ? OFFSET ?`;
                         )`
                 }
 
-
-
                 query += ` ORDER BY
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
 
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
+                const offset = (page - 1) * pageSize; 
 
                 if (lastTotalRelevance != null && lastTimeStamp != null) {
 
@@ -1383,8 +1309,6 @@ distance LIMIT ? OFFSET ?`;
                 } else {
                     params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, pageSize, offset];
                 }
-
-
             } else {
 
 
@@ -1498,21 +1422,13 @@ END AS thumbnail,
                     AND sl.longitude BETWEEN -180 AND 180`
 
 
-                // Check if industryIds is provided and contains values
                 if (industryIds && industryIds.length > 0) {
-                    // Step 4a: Directly insert the industryIds into the query as a comma-separated list
-                    const industryList = industryIds.join(', ');  // This will join the array into a string (e.g., '1, 2, 3')
-
-                    // Step 4b: Append the industry filter to the query
-                    query += ` AND s.industry IN (${industryList})`;  // Directly insert the industryIds into the query string
-
+                    const industryList = industryIds.join(', '); 
+                    query += ` AND s.industry IN (${industryList})`; 
 
                 }
 
-
-
                 if (!lastTimeStamp) {
-
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
@@ -1527,56 +1443,33 @@ END AS thumbnail,
                 } else {
                     params = [pageSize, offset];
                 }
-
-
-
             }
-
-
         }
 
-        // Prepare and execute the query
         const [results] = await connection.execute(query, params);
-
-
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
             if (availableResults < pageSize) {
                 if (radius < 200) {
-                    // Increase distance and fetch again
                     radius += 30;
-                    console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
                     await connection.release();
                     return await this.getServicesForGuestUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, industryIds, radius)
-
-                } else {
-                    console.log("Reached maximum distance limit. Returning available results.");
-                    // Process available results as needed, limited to requestedLimit
-                    // const limitedResults = results.slice(0, requestedLimit);
-                    // console.log("Fetched Results:", limitedResults);
                 }
             }
-
         }
-
-        // Initialize an array to hold the structured data
 
         const services = {};
 
-        // Wrap the code in an async IIFE (Immediately Invoked Function Expression)
         await (async () => {
-
             for (const row of results) {
                 const serviceId = row.service_id;
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
 
-                // Initialize service entry if it doesn't exist
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        // Await the async operation
                         const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
@@ -1627,7 +1520,7 @@ END AS thumbnail,
                             short_code: BASE_URL + "/service/" + row.short_code,
                             thumbnail: row.thumbnail ? {
                                 ...JSON.parse(row.thumbnail),
-                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url 
                             } : null,
                             initial_check_at: formattedDate,
                             total_relevance: row.total_relevance,
@@ -1648,31 +1541,17 @@ END AS thumbnail,
                         };
 
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
         })();
 
-
-        // Close the connection
         await connection.release();
-
-
-
-        // Return the services object
         return Object.values(services);
     }
 
     static async getUserBookmarkedServices(userId) {
-
-        // Create a connection to the database
-
-        // Check if user exists
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1682,7 +1561,6 @@ END AS thumbnail,
             throw new Error('User does not exist.');
         }
 
-        // Query to retrieve services, images, plans, and location for the specific user
         const [results] = await db.query(`
                
         SELECT
@@ -1789,31 +1667,16 @@ END AS thumbnail,
             GROUP BY service_id
             `, [userId, userId]);
 
-
-
-
-        // Initialize an object to hold the structured data
         const services = {};
         await (async () => {
-
             for (const row of results) {
-
                 const serviceId = row.service_id;
                 const date = new Date(row.created_at);
 
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
-
-
-                // Initialize service entry if it doesn't exist
                 if (!services[serviceId]) {
                     try {
-
-
                         const publisher_id = row.publisher_id;
-                        // Await the async operation
                         const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
@@ -1880,23 +1743,13 @@ END AS thumbnail,
                         };
 
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
-
         })();
 
-
-
-
-        // Return the services object
         return Object.values(services);
-
     }
 
     static async getUserPublishedServicesFeedUser(userId, serviceOwnerId) {
