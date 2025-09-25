@@ -596,7 +596,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         LEFT JOIN cities ci ON j.city_id = ci.id
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ?
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
-        LEFT JOIN applications a ON j.job_id = a.id AND a.applicant_profile_id = ap.applicant_profile_id
+        LEFT JOIN applications a ON j.job_id = a.id AND a.applicant_id = ap.applicant_id
         
         WHERE ub.user_id = ? GROUP BY j.job_id
                 `, [userId, userId, userId]);
