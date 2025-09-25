@@ -70,6 +70,4 @@ async function startConsumer() {
   });
 }
 
-
 startConsumer();
-

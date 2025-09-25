@@ -5,9 +5,9 @@ const kafka = new Kafka({
   brokers: ['localhost:9092'],
 });
 
-const producer = kafka.producer();
 async function sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, message) {
   try {
+    const producer = kafka.producer();
     console.log('Connecting to Kafka...');
     await producer.connect();
     console.log('Kafka connected.');

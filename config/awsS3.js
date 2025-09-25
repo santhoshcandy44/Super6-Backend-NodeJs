@@ -26,9 +26,9 @@ const enableVersioning = async (bucketName) => {
   try {
     const command = new PutBucketVersioningCommand(params);
     await s3Client.send(command);
-    console.log("✅ S3 bucket versioning enabled.");
+    console.log("S3 bucket versioning enabled.");
   } catch (error) {
-    console.error("❌ Error enabling S3 versioning:", error);
+    console.error("Error enabling S3 versioning:", error);
   }
 };
 
