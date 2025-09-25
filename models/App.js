@@ -257,15 +257,10 @@ class App {
                         };
 
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
-
         })();
 
         const [usedProductResults] = await db.query(`       
@@ -474,7 +469,6 @@ class App {
         await (async () => {
             for (const row of localJobResults) {
                 const localJobId = row.local_job_id;
-                const date = new Date(row.created_at);
                 if (!localJobs[localJobId]) {
                     try {
                         localJobs[localJobId] = {
@@ -518,15 +512,12 @@ class App {
                                 location_type: row.location_type
                             } : null
                         };
-
                     } catch (error) {
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
         })();
-
 
         const [jobResults] = await db.query(`
              SELECT
