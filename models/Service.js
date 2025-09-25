@@ -356,7 +356,6 @@ WHERE
     LIMIT ? OFFSET ?`;
 
                 params.push(radius);
-
                 const offset = (page - 1) * pageSize;
                 params.push(pageSize, offset);
 
@@ -705,7 +704,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
+                        const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
@@ -1578,14 +1577,11 @@ END AS thumbnail,
                     const publisher_id = row.publisher_id;
                     try {
                         // Await the async operation
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
+                        const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
-
-
-
                         services[serviceId] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -1818,7 +1814,7 @@ END AS thumbnail,
 
                         const publisher_id = row.publisher_id;
                         // Await the async operation
-                        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
+                        const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");

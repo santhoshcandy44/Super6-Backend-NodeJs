@@ -792,8 +792,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       const lowercaseQuery = cleanQuery.toLowerCase();
       const words = cleanQuery.split(' ');
 
-      const concatenatedQuery = lowercaseQuery.replace(/ /g, '');
-
       const likeConditions = words
         .map(() => `name LIKE CONCAT('%', ?, '%')`)
         .join(' AND ');
