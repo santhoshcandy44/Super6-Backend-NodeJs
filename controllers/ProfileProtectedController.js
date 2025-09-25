@@ -3,8 +3,8 @@ const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelp
 const sharp = require('sharp');
 const User = require('../models/User');
 const UserLocation = require('../models/UserLocation');
-const { awsS3Bucket } = require("../config/awsS3.js")
-const { PROFILE_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
+const { uploadToS3 } = require("../config/awsS3.js")
+const { PROFILE_BASE_URL } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
 const App = require('../models/App');
 
@@ -115,22 +115,6 @@ exports.updateAbout = async (req, res) => {
         return sendErrorResponse(res, 500, 'Internal server error', error);
     }
 };
-
-async function uploadToS3(buffer, key, contentType) {
-    const params = {
-        Bucket: S3_BUCKET_NAME,
-        Key: key, 
-        Body: buffer,
-        ContentType: contentType, 
-        ACL: 'public-read'
-    };
-    try {
-        const data = await awsS3Bucket.upload(params).promise();
-        return data.Location;
-    } catch (error) {
-        throw new Error('Error uploading to S3: ' + error.message);
-    }
-}
 
 exports.updateProfilePic = async (req, res) => {
     try {

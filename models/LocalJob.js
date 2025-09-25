@@ -2,10 +2,10 @@ const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
-const { awsS3Bucket } = require('../config/awsS3.js')
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/producer.js');
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 
 class LocalJob {
     static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
@@ -1243,7 +1243,7 @@ WHERE
                 const { id, image_url } = image;
                 if (!keepImageIdsArray.includes(id)) {
                     try {
-                        await awsS3Bucket.deleteObject({ Bucket: S3_BUCKET_NAME, Key: image_url }).promise();
+                        await deleteFromS3(image_url);
                     } catch (err) { }
                     await connection.execute(`DELETE FROM local_job_images WHERE id = ?`, [id]);
                 }
@@ -1255,15 +1255,8 @@ WHERE
                 for (const file of files) {
                     const newFileName = `${uuidv4()}-${file.originalname}`;
                     const s3Key = `media/${media_id}/local-jobs/${local_job_id}/${newFileName}`;
-                    const uploadParams = {
-                        Bucket: S3_BUCKET_NAME,
-                        Key: s3Key,
-                        Body: file.buffer,
-                        ContentType: file.mimetype,
-                        ACL: 'public-read',
-                    };
-
-                    const uploadResult = await awsS3Bucket.upload(uploadParams).promise();
+                    
+                    const uploadResult = await uploadToS3(file.buffer, s3Key, file.mimetype);
                     uploadedFiles.push(uploadResult.Key);
 
                     const metadata = await sharp(file.buffer).metadata();
@@ -1425,9 +1418,9 @@ GROUP BY l.local_job_id;
                 await connection.rollback();
                 try {
                     for (const fileKey of uploadedFiles) {
-                        await awsS3Bucket.deleteObject({ Bucket: S3_BUCKET_NAME, Key: fileKey }).promise();
+                        await deleteFromS3(fileKey);
                     }
-                } catch (delError) { }
+                } catch (delError) {}
             }
             throw error;
         } finally {
@@ -1825,20 +1818,8 @@ GROUP BY l.local_job_id;
 
             const s3Key = 'media/' + media_id.toString() + '/local-jobs/' + local_job_id.toString();
 
-            const listedObjects = await awsS3Bucket.listObjectsV2({
-                Bucket: S3_BUCKET_NAME,
-                Prefix: s3Key
-            }).promise();
+            await deleteDirectoryFromS3(s3Key);
 
-            if (listedObjects?.Contents?.length > 0) {
-                const deleteParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Delete: {
-                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
-                    }
-                };
-                await awsS3Bucket.deleteObjects(deleteParams).promise();
-            }
             await connection.commit();
             return { status: 'success', message: 'Local job and related data deleted successfully' };
         } catch (error) {

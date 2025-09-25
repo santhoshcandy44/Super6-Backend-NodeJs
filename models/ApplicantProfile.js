@@ -3,8 +3,8 @@ const path = require('path');
 const db = require('../config/lts360JobsDatabase.js')
 const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils/authUtils.js');
 const User = require('./User.js');
-const { S3_BUCKET_NAME, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
-const { awsS3Bucket } = require('../config/awsS3.js');
+const { PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
+const { uploadToS3, deleteFromS3} = require('../config/awsS3.js')
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
@@ -180,12 +180,12 @@ class ApplicantProfile {
                     const extractedData = verifyShortEncryptedUrl(decodedToken);
                     if (extractedData) {
                         const { path } = extractedData;
-                        await this.deleteS3Keys([path]);
+                        await deleteFromS3(path);
                     }
                 }
             }
 
-            await this.uploadToS3(compressedImageBuffer, s3Key, 'image/jpeg');
+            await uploadToS3(compressedImageBuffer, s3Key, 'image/jpeg');
             profilePicUrl = generateShortEncryptedUrl(s3Key);
         } else if (existingProfile?.profile_picture) {
             profilePicUrl = existingProfile.profile_picture;
@@ -449,13 +449,13 @@ class ApplicantProfile {
         if (exisitngResume?.resume_download_url) {
             const oldResumePath = exisitngResume.resume_download_url;
             if (oldResumePath) {
-                await this.deleteS3Keys([oldResumePath]);
+                await deleteFromS3(oldResumePath);
             }
         }
 
         const fileName = file.originalname;
         const s3Key = `media/${mediaId}/careers/resume/${fileName}`;
-        await this.uploadToS3(file.buffer, s3Key, fileType);
+        await uploadToS3(file.buffer, s3Key, fileType);
 
         const resumeDownloadUrl = s3Key;
         const insertResumeQuery = `
@@ -506,7 +506,10 @@ class ApplicantProfile {
                 `DELETE FROM user_profile_certificate WHERE id IN (?) AND user_profile_id = ?`,
                 [idsToDelete, userProfileId]
             );
-            await this.deleteS3Keys(s3KeysToDelete);
+
+            for (const s3Key of s3KeysToDelete) {
+                await deleteFromS3(s3Key);
+            }
         }
 
         for (const cert of certificates) {
@@ -527,7 +530,7 @@ class ApplicantProfile {
                 const fileName = image.originalname;
                 const newFileName = `${path.parse(fileName).name}.jpg`;
                 const s3Key = `media/${mediaId}/careers/certificates/${newFileName}`;
-                await this.uploadToS3(compressedImageBuffer, s3Key, image.mimetype);
+                await uploadToS3(compressedImageBuffer, s3Key, image.mimetype);
                 if (id === -1) {
                     await db.query(
                         `INSERT INTO user_profile_certificate 
@@ -539,7 +542,7 @@ class ApplicantProfile {
                     const cert = existingCertificates.find(c => c.id === id);
                     if (cert) {
                         const downloadUrl = cert.certificate_download_url;
-                        await this.deleteS3Keys([downloadUrl])
+                        await deleteFromS3(downloadUrl)
                     }
                     await db.query(
                         `UPDATE user_profile_certificate 
@@ -559,34 +562,6 @@ class ApplicantProfile {
         }
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
-    }
-
-    static async uploadToS3(buffer, key, contentType) {
-        const params = {
-            Bucket: S3_BUCKET_NAME,
-            Key: key,  
-            Body: buffer,
-            ContentType: contentType,
-            ACL: 'public-read' 
-        };
-        try {
-            const data = await awsS3Bucket.upload(params).promise();
-            return data.Location;
-        } catch (error) {
-            throw new Error('Error uploading to S3: ' + error.message);
-        }
-    }
-
-    static async deleteS3Keys(keys) {
-        if (!keys.length) return null;
-        const params = {
-            Bucket: S3_BUCKET_NAME,
-            Delete: {
-                Objects: keys.map(key => ({ Key: key })),
-                Quiet: true,
-            }
-        };
-        await awsS3Bucket.deleteObjects(params).promise();
     }
 }
 

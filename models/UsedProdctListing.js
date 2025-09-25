@@ -2,8 +2,8 @@ const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
-const { awsS3Bucket } = require('../config/awsS3.js')
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 
 class UsedProductListing {
@@ -1406,14 +1406,7 @@ distance LIMIT ? OFFSET ?`;
             for (const existingImage of existingImages) {
                 const { id, image_url } = existingImage;
                 if (!keepImageIdsArray.includes(id) && productExists) {
-                    try {
-                        await awsS3Bucket.deleteObject({
-                            Bucket: S3_BUCKET_NAME,
-                            Key: image_url,
-                        }).promise();
-                    } catch (deleteError) {
-                        console.error('Error deleting image from S3 during cleanup:', deleteError.message);
-                    }
+                    await deleteFromS3(image_url)
                     await connection.execute(
                         `DELETE FROM used_product_listing_images WHERE id = ?`,
                         [id]
@@ -1428,15 +1421,7 @@ distance LIMIT ? OFFSET ?`;
                     const newFileName = `${uuidv4()}-${file.originalname}`;
                     const s3Key = `media/${media_id}/used-product-listings/${product_id}/${newFileName}`;
 
-                    const uploadParams = {
-                        Bucket: S3_BUCKET_NAME,
-                        Key: s3Key,
-                        Body: file.buffer,
-                        ContentType: file.mimetype,
-                        ACL: 'public-read',
-                    };
-
-                    const uploadResult = await awsS3Bucket.upload(uploadParams).promise();
+                    const uploadResult = await uploadToS3( file.buffer, s3Key, file.mimetype);
                     uploadedFiles.push(uploadResult.Key);
 
                     const metadata = await sharp(file.buffer).metadata();
@@ -1592,15 +1577,8 @@ distance LIMIT ? OFFSET ?`;
         } catch (error) {
             if (connection) {
                 await connection.rollback();
-                try {
-                    for (const fileKey of uploadedFiles) {
-                        await awsS3Bucket.deleteObject({
-                            Bucket: S3_BUCKET_NAME,
-                            Key: fileKey,
-                        }).promise();
-                    }
-                } catch (deleteError) {
-                    console.error('Error deleting S3 files during rollback:', deleteError.message);
+                for (const fileKey of uploadedFiles) {
+                    await deleteFromS3(fileKey)
                 }
             }
             throw error;
@@ -1689,20 +1667,8 @@ distance LIMIT ? OFFSET ?`;
                 throw new Error("Unable to retrieve media_id.");
             }
             const s3Key = 'media/' + media_id.toString() + '/used-product-listings/' + product_id.toString();
-            const listedObjects = await awsS3Bucket.listObjectsV2({
-                Bucket: S3_BUCKET_NAME,
-                Prefix: s3Key
-            }).promise();
 
-            if (listedObjects?.Contents?.length > 0) {
-                const deleteParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Delete: {
-                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
-                    }
-                };
-                await awsS3Bucket.deleteObjects(deleteParams).promise();
-            }
+            await deleteDirectoryFromS3(s3Key)
 
             await connection.commit();
             return { status: 'success', message: 'Product and related data deleted successfully' };

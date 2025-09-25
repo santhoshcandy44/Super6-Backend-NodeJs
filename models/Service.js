@@ -2,8 +2,8 @@ const db = require('../config/database')
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
-const { awsS3Bucket } = require('../config/awsS3.js')
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config');
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 
 class Service {
@@ -2153,16 +2153,7 @@ END AS thumbnail,
                 const newFileName = `${uuidv4()}-${file.originalname}`;
                 const s3Key = `media/${media_id}/services/${service_id}/${newFileName}`;
 
-                const uploadParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Key: s3Key,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,  
-                    ACL: 'public-read',  
-                };
-
-                const uploadResult = await awsS3Bucket.upload(uploadParams).promise();
-
+                const uploadResult = await uploadToS3(file.buffer, s3Key, file.mimetype);
                 uploadedFiles.push(uploadResult.Key);
 
                 const metadata = await sharp(file.buffer).metadata();
@@ -2179,16 +2170,7 @@ END AS thumbnail,
             const thumbnailFileName = `${uuidv4()}-${thumbnail.originalname}`;
             const thumbnailS3Key = `media/${media_id}/services/${service_id}/${thumbnailFileName}`;
 
-            const thumbnailUploadParams = {
-                Bucket: S3_BUCKET_NAME,
-                Key: thumbnailS3Key,
-                Body: thumbnail.buffer,
-                ContentType: thumbnail.mimetype,
-                ACL: 'public-read',
-            };
-
-            const thumbnailUploadResult = await awsS3Bucket.upload(thumbnailUploadParams).promise();
-
+            const thumbnailUploadResult = await uploadToS3(thumbnail.buffer, thumbnailS3Key, thumbnail.mimetype);
             uploadedFiles.push(thumbnailUploadResult.Key);
 
             const thumbnail_metadata = await sharp(thumbnail.buffer).metadata();
@@ -2253,10 +2235,7 @@ END AS thumbnail,
                 await connection.rollback(); 
                 try {
                     for (const fileKey of uploadedFiles) {
-                        await awsS3Bucket.deleteObject({
-                            Bucket: S3_BUCKET_NAME,
-                            Key: fileKey,
-                        }).promise();
+                        await deleteFromS3(fileKey);
                     }
                 } catch (deleteError) {}
             }
@@ -2489,15 +2468,7 @@ END AS thumbnail,
                     break;
             }
 
-            const uploadParams = {
-                Bucket: S3_BUCKET_NAME,
-                Key: s3Key,
-                Body: file.buffer,
-                ContentType: contentType,
-                ACL: 'public-read'
-            };
-
-            await awsS3Bucket.upload(uploadParams).promise();
+            await uploadToS3(file.buffer, s3Key, contentType);
 
             const image = {
                 url: s3Key,
@@ -2527,10 +2498,7 @@ END AS thumbnail,
                 await connection.rollback();
                 if (s3Key) {
                     try {
-                        await awsS3Bucket.deleteObject({
-                            Bucket: S3_BUCKET_NAME,
-                            Key: s3Key,
-                        }).promise();
+                        await deleteFromS3(s3Key);
                     } catch (err) { }
                 }
             }
@@ -2580,15 +2548,7 @@ END AS thumbnail,
                     break;
             }
 
-            const uploadParams = {
-                Bucket: S3_BUCKET_NAME,
-                Key: s3Key,
-                Body: file.buffer,
-                ContentType: contentType,
-                ACL: 'public-read'
-            };
-
-            await awsS3Bucket.upload(uploadParams).promise();
+            await uploadToS3(file.buffer, s3Key, contentType);
 
             const newImage = {
                 url: s3Key,
@@ -2640,14 +2600,8 @@ END AS thumbnail,
                 await connection.commit();
                 if (oldS3Key) {
                     try {
-                        const deleteParams = {
-                            Bucket: S3_BUCKET_NAME,
-                            Key: oldS3Key
-                        };
-                        await awsS3Bucket.deleteObject(deleteParams).promise();
-                    } catch (err) {
-                        throw new Error('Failed to delete old image from S3.');
-                    }
+                        await deleteFromS3(oldS3Key);
+                    } catch (err) {  }
                 }
 
                 const [output] = await connection.execute(
@@ -2660,12 +2614,8 @@ END AS thumbnail,
             if (connection) {
                 await connection.rollback();
                 if (s3Key) {
-                    const deleteParams = {
-                        Bucket: S3_BUCKET_NAME,
-                        Key: s3Key
-                    };
                     try {
-                        await awsS3Bucket.deleteObject(deleteParams).promise();
+                        await deleteFromS3(s3Key);
                     } catch (err) { }
                 }
             }
@@ -2706,14 +2656,8 @@ END AS thumbnail,
             await connection.commit();
 
             try {
-                const deleteParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Key: s3Key
-                };
-                await awsS3Bucket.deleteObject(deleteParams).promise();
-            } catch (err) {
-                throw new Error('Failed to delete image from S3.');
-            }
+                await deleteFromS3(s3Key);
+            } catch (err) {}
             return {
                 success: true,
                 message: 'Image deleted successfully'
@@ -2764,18 +2708,9 @@ END AS thumbnail,
                         break;
                 }
 
-
                 s3Key = `media/${media_id}/services/${service_id}/${newFileName}`
 
-                const uploadParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Key: s3Key,
-                    Body: file.buffer,
-                    ContentType: contentType,
-                    ACL: 'public-read'
-                };
-
-                await awsS3Bucket.upload(uploadParams).promise();
+                await uploadToS3(file.buffer, s3Key, contentType);
 
                 const newImage = {
                     url: s3Key,
@@ -2842,15 +2777,7 @@ END AS thumbnail,
 
 
                 s3Key = `media/${media_id}/services/${service_id}/${newFileName}`
-                const uploadParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Key: s3Key,
-                    Body: file.buffer,
-                    ContentType: contentType,
-                    ACL: 'public-read' 
-                };
-
-                await awsS3Bucket.upload(uploadParams).promise();
+                await uploadToS3(file.buffer, s3Key, contentType);
 
                 const newImage = {
                     url: s3Key,
@@ -2870,14 +2797,8 @@ END AS thumbnail,
                 await connection.commit();
 
                 try {
-                    const deleteParams = {
-                        Bucket: S3_BUCKET_NAME,
-                        Key: oldS3Key
-                    };
-                    await awsS3Bucket.deleteObject(deleteParams).promise();
-                } catch (err) {
-                    throw new Error('Failed to delete old image from S3.');
-                }
+                    await deleteFromS3(oldS3Key);
+                } catch (err) { }
 
                 const [output] = await connection.execute(
                     `SELECT * FROM service_thumbnail WHERE service_id = ? AND thumbnail_id = ?`,
@@ -2886,19 +2807,12 @@ END AS thumbnail,
 
                 return output.length > 0 ? output[0] : null;
             }
-
         } catch (error) {
-
-            console.log(error);
             if (connection) {
                 await connection.rollback();
                 if (s3Key) {
-                    const deleteParams = {
-                        Bucket: S3_BUCKET_NAME,
-                        Key: s3Key
-                    };
                     try {
-                        await awsS3Bucket.deleteObject(deleteParams).promise();
+                        await deleteFromS3(s3Key);
                     } catch (err) {}
                 }
             }
@@ -2909,7 +2823,6 @@ END AS thumbnail,
             }
         }
     }
-
 
     static async createBookmarkService(userId, serviceId) {
         let connection;
@@ -3136,21 +3049,8 @@ END AS thumbnail,
 
             const s3Key = 'media/' + media_id.toString() + '/services/' + service_id.toString();
 
-            const listedObjects = await awsS3Bucket.listObjectsV2({
-                Bucket: S3_BUCKET_NAME,
-                Prefix: s3Key
-            }).promise();
-
-            if (listedObjects?.Contents?.length > 0) {
-                const deleteParams = {
-                    Bucket: S3_BUCKET_NAME,
-                    Delete: {
-                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
-                    }
-                };
-                await awsS3Bucket.deleteObjects(deleteParams).promise();
-            }
-
+            await deleteDirectoryFromS3(s3Key);
+    
             await connection.commit();
             return { status: 'success', message: 'Service and related data deleted successfully' };
         } catch (error) {
