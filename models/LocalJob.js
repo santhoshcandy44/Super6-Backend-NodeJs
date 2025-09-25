@@ -4,7 +4,7 @@ const he = require('he');
 const moment = require('moment');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
-const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/producer.js');
+const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 
 class LocalJob {
