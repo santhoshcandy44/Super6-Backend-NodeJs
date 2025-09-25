@@ -587,7 +587,7 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
             -- Currency Info
             c.currency_type AS salary_currency,
                 CURRENT_TIMESTAMP AS initial_check_at
-                
+
         FROM jobs AS j
 
         LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
@@ -601,6 +601,8 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         WHERE ub.user_id = ? 
         GROUP BY j.job_id
                 `, [userId, userId]);
+
+        console.log(jobResults)        
 
         const combinedResults = [
             ...Object.values(services).map(s => ({
