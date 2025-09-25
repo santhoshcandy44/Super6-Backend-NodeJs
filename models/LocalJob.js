@@ -1,49 +1,31 @@
-const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
 const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
 const { awsS3Bucket } = require('../config/awsS3.js')
-const { v4: uuidv4 } = require('uuid');  // For unique file names
-const { sendFCMNotification, getAccessToken } = require('../utils/fcmUtils.js');
+const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/producer.js');
-const User = require('./User.js');
-
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
 
 class LocalJobModel {
-
-
-
     static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
-
-
         const connection = await db.getConnection();
-        // Retrieve user coordinates
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
             [userId]
         );
 
         const userCoordsData = userCoords[0];
-
-        // If user coordinates are available, add distance filter
         let query, params;
-        var radius = initialRadius; // You can adjust this as needed
-
-
+        var radius = initialRadius;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
 
             if (queryParam) {
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -54,8 +36,6 @@ class LocalJobModel {
                     );
                 }
 
-
-                // SQL query with Levenshtein distance
                 query = `SELECT
     l.local_job_id AS local_job_id,
     l.title,
@@ -149,51 +129,60 @@ class LocalJobModel {
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180`;
 
+                params = [
+                    userLon,
+                    userLat,
+                    queryParam,
+                    queryParam,
+                    queryParam,
+                    queryParam,
+                    userId,
+                    userId,
+                    userLat,
+                    userLon
+                ];
 
                 if (lastTimeStamp != null) {
-
                     query += ` AND l.created_at < ?`;
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? AND distance <= ?)  -- Fetch records with the same relevance and within the current distance
-                        OR (total_relevance < ? AND distance <= ?)  -- Fetch records with lower relevance within the current distance
-                    ) `;
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                    (total_relevance = ? AND distance <= ?)
+                                    OR (total_relevance < ? AND distance <= ?)
+                                )`;
 
+                    params.push(
+                        radius,
+                        lastTotalRelevance, radius,
+                        lastTotalRelevance, radius
+                    );
                 } else {
                     query += ` GROUP BY local_job_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            description_relevance > 0)`
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
+
+                    params.push(radius);
                 }
 
                 query += ` ORDER BY
-                        distance ASC,
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                            distance ASC,
+                            total_relevance DESC
+                            LIMIT ? OFFSET ?`;
 
+                const offset = (page - 1) * pageSize;
 
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userId, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-
-                } else {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userId, userLat, userLon, radius, pageSize, offset];
-                }
-
+                params.push(pageSize, offset);
             } else {
-
-
                 query = `
                     SELECT
     l.local_job_id AS local_job_id,
@@ -284,42 +273,35 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
+                params = [
+                    userLon,
+                    userLat,
+                    userId,
+                    userId,
+                    userLat,
+                    userLon
+                ];
 
                 if (!lastTimeStamp) {
-
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
-                    query += ` AND l.created_at < ? `;
-
+                    query += ` AND l.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
 
                 query += ` GROUP BY local_job_id HAVING
     distance < ?
-    ORDER BY
-distance LIMIT ? OFFSET ?`;
+    ORDER BY distance
+    LIMIT ? OFFSET ?`;
 
                 const offset = (page - 1) * pageSize;
-
-
-                if (lastTimeStamp) {
-                    params = [userLon, userLat, userId, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
-                } else {
-
-                    params = [userLon, userLat, userId, userId, userLat, userLon, radius, pageSize, offset];
-                }
-
-
+                params.push(radius, pageSize, offset);
             }
-
         } else {
-
             if (queryParam) {
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
 
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -328,12 +310,8 @@ distance LIMIT ? OFFSET ?`;
                             last_searched = NOW();`,
                         [queryParam, searchTermConcatenated]
                     );
-
                 }
 
-
-
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                                    l.local_job_id AS local_job_id,
@@ -422,56 +400,47 @@ distance LIMIT ? OFFSET ?`;
                         ll.latitude BETWEEN -90 AND 90
                         AND ll.longitude BETWEEN -180 AND 180 `;
 
-
+                params = [
+                    queryParam,
+                    queryParam,
+                    queryParam,
+                    queryParam,
+                    userId,
+                    userId
+                ];
 
                 if (lastTimeStamp != null) {
-
                     query += ` AND l.created_at < ?`;
-
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? )  -- Fetch records with the same relevance
-                        OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    ) `;
-
+                                (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                    (total_relevance = ?)
+                                    OR (total_relevance < ?)
+                                )`;
+                    params.push(lastTotalRelevance, lastTotalRelevance);
                 } else {
                     query += ` GROUP BY local_job_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        )`
+                                (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
                 }
-
-
 
                 query += ` ORDER BY
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                                total_relevance DESC
+                            LIMIT ? OFFSET ?`;
 
-
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [queryParam, queryParam, queryParam, queryParam, userId, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-
-                } else {
-                    params = [queryParam, queryParam, queryParam, queryParam, userId, userId, pageSize, offset];
-                }
-
+                const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
             } else {
-
                 query = `
                 SELECT
                    l.local_job_id AS local_job_id,
@@ -505,8 +474,6 @@ distance LIMIT ? OFFSET ?`;
                 ), 
             ']'), '[]') AS images,
 
-
-    
                     ll.longitude,
                     ll.latitude,
                     ll.geo,
@@ -558,6 +525,12 @@ distance LIMIT ? OFFSET ?`;
                     ll.latitude BETWEEN -90 AND 90
                     AND ll.longitude BETWEEN -180 AND 180`
 
+                let query = `
+    SELECT *
+    FROM local_jobs l
+    WHERE l.is_active = 1
+      AND (l.user_id != ? OR ? IS NULL)
+`;
 
                 if (!lastTimeStamp) {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
@@ -565,62 +538,46 @@ distance LIMIT ? OFFSET ?`;
                     query += ` AND l.created_at < ?`;
                 }
 
-                query += ` GROUP BY local_job_id LIMIT ? OFFSET ?`;
+                query += `
+    GROUP BY local_job_id
+    LIMIT ? OFFSET ?
+`;
 
                 const offset = (page - 1) * pageSize;
 
+                let params;
                 if (lastTimeStamp) {
                     params = [userId, userId, lastTimeStamp, pageSize, offset];
-
                 } else {
                     params = [userId, userId, pageSize, offset];
                 }
 
-
             }
-
         }
 
-        // Prepare and execute the query
         const [results] = await connection.execute(query, params);
-
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
             if (availableResults < pageSize) {
                 if (radius < 200) {
-                    // Increase distance and fetch again
                     radius += 30;
-                    console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
                     await connection.release();
                     return await this.getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, radius)
-
-                } else {
-                    console.log("Reached maximum distance limit. Returning available results.");
-                    // Process available results as needed, limited to requestedLimit
-                    // const limitedResults = results.slice(0, requestedLimit);
-                    // console.log("Fetched Results:", limitedResults);
                 }
             }
-
         }
+        const items = {};
 
-        const items = {};  // Assuming services is declared somewhere
-
-        // Wrap the code in an async IIFE (Immediately Invoked Function Expression)
         await (async () => {
-
             for (const row of results) {
                 const local_job_id = row.local_job_id;
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
 
-                // Initialize service entry if it doesn't exist
                 if (!items[local_job_id]) {
                     try {
-
-
                         items[local_job_id] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -664,26 +621,19 @@ distance LIMIT ? OFFSET ?`;
                             } : null,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             is_applied: Boolean(row.is_applied),
-
                             initial_check_at: formattedDate,
                             total_relevance: row.total_relevance,
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
 
                         };
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
         })();
 
-
         await connection.release();
-
         return Object.values(items);
     }
 
@@ -692,21 +642,16 @@ distance LIMIT ? OFFSET ?`;
         lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
 
         const connection = await db.getConnection();
-
-        // If user coordinates are available, add distance filter
         let query, params;
-        var radius = initialRadius; // You can adjust this as needed
+        var radius = initialRadius;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
 
             if (queryParam) {
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                     VALUES (?, 1, NOW(), ?)
@@ -717,7 +662,6 @@ distance LIMIT ? OFFSET ?`;
                     );
                 }
 
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                         l.local_job_id AS local_job_id,
@@ -803,55 +747,42 @@ distance LIMIT ? OFFSET ?`;
                         AND ll.longitude BETWEEN -180 AND 180
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180 `;
-
+                params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
 
                 if (lastTimeStamp != null) {
-                    query += `AND l.created_at < ?`;
+                    query += ` AND l.created_at < ?`;
+                    params.push(lastTimeStamp);
                 } else {
-                    query += `AND l.created_at < CURRENT_TIMESTAMP`;
-
+                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            description_relevance > 0 
-                                                    ) AND (
-                        (total_relevance = ? AND distance <= ?) 
-                        OR (total_relevance < ? AND distance <= ?)  
-                    ) `;
-
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0 
+                                ) AND (
+                                    (total_relevance = ? AND distance <= ?)
+                                    OR (total_relevance < ? AND distance <= ?)
+                                )`;
+                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
                 } else {
                     query += ` GROUP BY local_job_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        )`
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
+                    params.push(radius);
                 }
-
-
 
                 query += ` ORDER BY
-                        distance ASC,
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                                distance ASC,
+                                total_relevance DESC
+                            LIMIT ? OFFSET ?`;
 
-
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-
-                } else {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, radius, pageSize, offset];
-                }
-
+                const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
             } else {
-
                 query = `SELECT
                        l.local_job_id AS local_job_id,
                         l.title,
@@ -933,39 +864,29 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180`
 
+                params = [userLon, userLat, userLat, userLon];
 
                 if (!lastTimeStamp) {
-
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND l.created_at < ?`;
-
+                    params.push(lastTimeStamp);
                 }
-
 
                 query += ` GROUP BY local_job_id HAVING
-    distance < ?
-    ORDER BY
-distance LIMIT ? OFFSET ?`;
+        distance < ?
+        ORDER BY distance
+        LIMIT ? OFFSET ?`;
+
+                params.push(radius);
 
                 const offset = (page - 1) * pageSize;
-
-                if (lastTimeStamp) {
-                    params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
-                } else {
-
-                    params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
-                }
-
+                params.push(pageSize, offset);
             }
         } else {
-
             if (queryParam) {
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO local_job_search_queries  (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -974,10 +895,8 @@ distance LIMIT ? OFFSET ?`;
                             last_searched = NOW();`,
                         [queryParam, searchTermConcatenated]
                     );
-
                 }
 
-                // SQL query with Levenshtein distance
                 query = `SELECT 
                 l.local_job_id AS local_job_id,
                         l.title,
@@ -1055,54 +974,39 @@ distance LIMIT ? OFFSET ?`;
                         ll.latitude BETWEEN -90 AND 90
                         AND ll.longitude BETWEEN -180 AND 180 `;
 
+                params = [queryParam, queryParam, queryParam, queryParam];
 
                 if (lastTimeStamp != null) {
-
                     query += ` AND l.created_at < ?`;
-
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-
                 }
 
                 if (lastTotalRelevance !== null) {
-
                     query += ` GROUP BY local_job_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? )  -- Fetch records with the same relevance
-                        OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    ) `;
-
+                                (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                    (total_relevance = ?)
+                                    OR (total_relevance < ?)
+                                )`;
+                    params.push(lastTotalRelevance, lastTotalRelevance);
                 } else {
                     query += ` GROUP BY local_job_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            description_relevance > 0
-                        )`
+                                (
+                                    title_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
                 }
-
-
 
                 query += ` ORDER BY
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                                total_relevance DESC
+                            LIMIT ? OFFSET ?`;
 
-
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [queryParam, queryParam, queryParam, queryParam, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-
-                } else {
-                    params = [queryParam, queryParam, queryParam, queryParam, pageSize, offset];
-                }
-
+                const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
 
             } else {
                 query = `
@@ -1178,27 +1082,20 @@ distance LIMIT ? OFFSET ?`;
                     ll.latitude BETWEEN -90 AND 90
                     AND ll.longitude BETWEEN -180 AND 180`
 
+                params = [];
 
                 if (!lastTimeStamp) {
-
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND l.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
 
                 query += ` GROUP BY local_job_id LIMIT ? OFFSET ?`;
 
                 const offset = (page - 1) * pageSize;
-                if (lastTimeStamp) {
-                    params = [lastTimeStamp, pageSize, offset];
-
-                } else {
-                    params = [pageSize, offset];
-                }
-
+                params.push(pageSize, offset);
             }
-
-
         }
 
         const [results] = await connection.execute(query, params);
@@ -1207,31 +1104,18 @@ distance LIMIT ? OFFSET ?`;
             const availableResults = results.length;
             if (availableResults < pageSize) {
                 if (radius < 200) {
-                    // Increase distance and fetch again
                     radius += 30;
-                    console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
                     await connection.release();
                     return await this.guestGetLocalJobs(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
-
-                } else {
-                    console.log("Reached maximum distance limit. Returning available results.");
-                    // Process available results as needed, limited to requestedLimit
-                    // const limitedResults = results.slice(0, requestedLimit);
-                    // console.log("Fetched Results:", limitedResults);
                 }
             }
-
         }
-
 
         const items = {};
 
         await (async () => {
-
             for (const row of results) {
-
                 const local_job_id = row.local_job_id;
-
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
@@ -1287,19 +1171,14 @@ distance LIMIT ? OFFSET ?`;
 
                         };
                     } catch (error) {
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
         })();
-
         await connection.release();
-
         return Object.values(items);
     }
-
 
     static async createOrUpdateLocalJob(user_id, title, description, company, age_min, age_max, marital_statuses,
         salary_unit, salary_min, salary_max, country, state, files, locationJson, keepImageIdsArray, local_job_id) {
@@ -1324,7 +1203,6 @@ distance LIMIT ? OFFSET ?`;
             }
 
             if (jobExists) {
-
                 await connection.execute(
                     `UPDATE local_jobs
                      SET title = ?, description = ?, company = ?, age_min = ?, age_max = ?, marital_statuses = ?,
@@ -1348,7 +1226,6 @@ distance LIMIT ? OFFSET ?`;
                 local_job_id = insertResult.insertId;
             }
 
-
             const [userResult] = await connection.execute(
                 'SELECT media_id FROM users WHERE user_id = ?',
                 [user_id]
@@ -1367,10 +1244,7 @@ distance LIMIT ? OFFSET ?`;
                 if (!keepImageIdsArray.includes(id)) {
                     try {
                         await awsS3Bucket.deleteObject({ Bucket: S3_BUCKET_NAME, Key: image_url }).promise();
-                    } catch (err) {
-                        console.error('Error deleting image from S3:', err.message);
-                    }
-
+                    } catch (err) { }
                     await connection.execute(`DELETE FROM local_job_images WHERE id = ?`, [id]);
                 }
             }
@@ -1437,7 +1311,6 @@ distance LIMIT ? OFFSET ?`;
             }
 
             await connection.commit();
-
 
             const [jobData] = await connection.execute(
                 `SELECT 
@@ -1546,10 +1419,7 @@ GROUP BY l.local_job_id;
                     location_type: jobData[0].location_type
                 } : null
             };
-
-
             return job;
-
         } catch (error) {
             if (connection) {
                 await connection.rollback();
@@ -1557,9 +1427,7 @@ GROUP BY l.local_job_id;
                     for (const fileKey of uploadedFiles) {
                         await awsS3Bucket.deleteObject({ Bucket: S3_BUCKET_NAME, Key: fileKey }).promise();
                     }
-                } catch (delError) {
-                    console.error('Error rolling back S3 uploads:', delError.message);
-                }
+                } catch (delError) { }
             }
             throw error;
         } finally {
@@ -1568,8 +1436,6 @@ GROUP BY l.local_job_id;
     }
 
     static async getPublishedLocalJobs(userId) {
-
-
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1578,7 +1444,6 @@ GROUP BY l.local_job_id;
         if (userCheckResult.length === 0) {
             throw new Error('User not exist');
         }
-
 
         const [results] = await db.query(
             `  SELECT
@@ -1614,8 +1479,6 @@ GROUP BY l.local_job_id;
                 ), 
             ']'), '[]') AS images,
    
-
-
                     ll.longitude,
                     ll.latitude,
                     ll.geo,
@@ -1645,11 +1508,9 @@ GROUP BY l.local_job_id;
 
         results.forEach(row => {
             const localJobId = row.local_job_id;
-
             if (!items[localJobId]) {
                 const date = new Date(row.publisher_created_at);
                 const createdAtYear = date.getFullYear().toString();
-
                 items[localJobId] = {
                     user: {
                         user_id: row.publisher_id,
@@ -1692,19 +1553,23 @@ GROUP BY l.local_job_id;
                 };
             }
         });
-
-
         return Object.values(items);
     }
 
-
     static async getLocalJobApplicants(userId, localJobId, page, pageSize, lastTimeStamp) {
+        const [userCheckResult] = await db.query(
+            'SELECT user_id FROM users WHERE user_id = ?',
+            [userId]
+        );
+
+        if (userCheckResult.length === 0) {
+            throw new Error('User not exist');
+        }
 
         const [jobCheckResult] = await db.query(
             'SELECT local_job_id FROM local_jobs WHERE local_job_id = ?',
             [localJobId]
         );
-
 
         if (jobCheckResult.length === 0) {
             throw new Error('Local job not found');
@@ -1738,26 +1603,22 @@ GROUP BY l.local_job_id;
     INNER JOIN users u ON a.candidate_id = u.user_id
     WHERE a.local_job_id = ?`;
 
+        const params = [localJobId];
+
         if (!lastTimeStamp) {
             query += ` AND a.applied_at < CURRENT_TIMESTAMP`;
         } else {
             query += ` AND a.applied_at < ?`;
+            params.push(lastTimeStamp);
         }
 
         query += ` GROUP BY applicant_id 
-        ORDER BY a.is_reviewed ASC, a.reviewed_at ASC
-        LIMIT ? OFFSET ?`;
+               ORDER BY a.is_reviewed ASC, a.reviewed_at ASC
+               LIMIT ? OFFSET ?`;
 
         const offset = (page - 1) * pageSize;
 
-        let params;
-
-        if (lastTimeStamp) {
-            params = [localJobId, lastTimeStamp, pageSize, offset];
-
-        } else {
-            params = [localJobId, pageSize, offset];
-        }
+        params.push(pageSize, offset);
 
         const [results] = await db.query(
             query,
@@ -1765,12 +1626,9 @@ GROUP BY l.local_job_id;
         );
 
         const items = {};
-
-
         results.forEach(row => {
             const applicantId = row.applicant_id;
             const createdAtYear = new Date(row.applicant_created_at).getFullYear().toString();
-
             if (!items[applicantId]) {
                 items[applicantId] = {
                     applicant_id: applicantId,
@@ -1798,21 +1656,14 @@ GROUP BY l.local_job_id;
                 };
             }
         });
-
-
-
         return Object.values(items);
     }
 
-
     static async markAsReviewed(userId, localJobId, applicant_id) {
-
         const [jobCheckResult] = await db.query(
             'SELECT local_job_id FROM local_jobs WHERE local_job_id = ? AND created_by = ?',
             [localJobId, userId]
         );
-
-
         if (jobCheckResult.length === 0) {
             throw new Error('Local job not found');
         }
@@ -1824,17 +1675,14 @@ GROUP BY l.local_job_id;
              WHERE local_job_id = ? AND applicant_id = ?`,
             [localJobId, applicant_id]
         );
-
         return result;
     }
 
     static async unmarkAsReviewed(userId, localJobId, applicant_id) {
-
         const [jobCheckResult] = await db.query(
             'SELECT local_job_id FROM local_jobs WHERE local_job_id = ? AND created_by = ?',
             [localJobId, userId]
         );
-
 
         if (jobCheckResult.length === 0) {
             throw new Error('Local job not found');
@@ -1847,10 +1695,8 @@ GROUP BY l.local_job_id;
              WHERE local_job_id = ? AND applicant_id = ?`,
             [localJobId, applicant_id]
         );
-
         return result;
     }
-
 
     static async applyLocalJob(userId, localJobId) {
         let connection;
@@ -1859,7 +1705,6 @@ GROUP BY l.local_job_id;
                 'SELECT created_by, title FROM local_jobs WHERE local_job_id = ?',
                 [localJobId, userId]
             );
-
 
             if (jobCheckResult.length === 0) {
                 throw new Error('Local job not found');
@@ -1872,7 +1717,6 @@ GROUP BY l.local_job_id;
 
             await connection.beginTransaction();
 
-
             const [rows] = await connection.execute(
                 "INSERT INTO local_job_applicants (candidate_id, local_job_id) VALUES (?, ?)",
                 [userId, localJobId]
@@ -1881,21 +1725,16 @@ GROUP BY l.local_job_id;
             if (rows.affectedRows === 0) {
                 throw new Error('Error on inserting local job');
             }
-
             await connection.commit();
 
-
             const kafkaKey = `${localJobId}:${createdBy}:${userId}`
-
             sendLocalJobApplicantAppliedNotificationToKafka(kafkaKey, {
                 user_id: createdBy,
                 candidate_id: userId,
                 local_job_title: localJobTitle,
                 applicant_id: rows.insertId
             })
-
             return rows.insertId;
-
         } catch (error) {
             (await connection).rollback();
             throw new Error('Failed to create local job: ' + error.message);
@@ -1903,11 +1742,6 @@ GROUP BY l.local_job_id;
             (await connection).release;
         }
     }
-
-
-
-
-
 
     static async bookmarkLocalJob(userId, localJobId) {
         let connection;
@@ -1924,11 +1758,8 @@ GROUP BY l.local_job_id;
             if (rows.affectedRows === 0) {
                 throw new Error('Error on inserting bookmark');
             }
-
             await connection.commit();
-
             return rows.insertId;
-
         } catch (error) {
             (await connection).rollback();
             throw new Error('Failed to create bookmark: ' + error.message);
@@ -1938,7 +1769,6 @@ GROUP BY l.local_job_id;
     }
 
     static async removeBookmarkLocalJob(userId, localJobId) {
-
         let connection;
         try {
             connection = await db.getConnection();
@@ -1949,16 +1779,11 @@ GROUP BY l.local_job_id;
                 [userId, localJobId]
             );
 
-
             if (result.affectedRows === 0) {
                 throw new Error('No bookmark found to delete');
             }
-
             await connection.commit();
-
             return { "Success": true };
-
-
         } catch (error) {
             (await connection).rollback();
             throw new Error('Failed to remove bookmark: ' + error.message);
@@ -1971,16 +1796,12 @@ GROUP BY l.local_job_id;
         let connection;
         try {
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
-
 
             await connection.execute(
                 "DELETE FROM local_job_images WHERE local_job_id = ?",
                 [local_job_id]
             );
-
 
             await connection.execute(
                 "DELETE FROM local_job_location WHERE local_job_id = ?",
@@ -1992,7 +1813,6 @@ GROUP BY l.local_job_id;
                 [local_job_id]
             );
 
-
             const [userResult] = await connection.execute(
                 "SELECT media_id FROM users WHERE user_id = ?",
                 [user_id]
@@ -2003,16 +1823,13 @@ GROUP BY l.local_job_id;
                 throw new Error("Unable to retrieve media_id.");
             }
 
-
             const s3Key = 'media/' + media_id.toString() + '/local-jobs/' + local_job_id.toString();
-
 
             const listedObjects = await awsS3Bucket.listObjectsV2({
                 Bucket: S3_BUCKET_NAME,
                 Prefix: s3Key
             }).promise();
 
-            // Check if there are objects to delete
             if (listedObjects?.Contents?.length > 0) {
                 const deleteParams = {
                     Bucket: S3_BUCKET_NAME,
@@ -2020,21 +1837,14 @@ GROUP BY l.local_job_id;
                         Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
                     }
                 };
-
                 await awsS3Bucket.deleteObjects(deleteParams).promise();
-                console.log(`Deleted all files inside: ${s3Key}`);
-
             }
-
-
             await connection.commit();
-
             return { status: 'success', message: 'Local job and related data deleted successfully' };
         } catch (error) {
             if (connection) {
                 await connection.rollback();
             }
-            console.error('Error during used product deletion:', error.message);
             throw new Error(`Used product deletion failed: ${error.message}`);
         } finally {
             if (connection) {
@@ -2043,139 +1853,142 @@ GROUP BY l.local_job_id;
         }
     }
 
-
-    static async LocalJobsSearchQueries(query) {
-
+    static async localJobsSearchQueries(query) {
         let connection;
-
         try {
             connection = await db.getConnection();
 
-            // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
             const trimmedQuery = query.trim();
-            const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-            const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
+            const cleanQuery = trimmedQuery.replace(/\s+/g, ' ');
+            const lowercaseQuery = cleanQuery.toLowerCase();
+            const words = cleanQuery.split(' ');
 
-            // Escape the query to prevent SQL injection
-            const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
+            const concatenatedQuery = lowercaseQuery.replace(/ /g, '');
 
-            // Split the query into individual words
-            const words = cleanQuery.split(' '); // e.g., ['texi', '2024']
+            const likeConditions = words
+                .map(() => `search_term LIKE CONCAT('%', ?, '%')`)
+                .join(' AND ');
 
-            // Remove spaces from the query to match concatenated search terms
-            const concatenatedQuery = escapedQuery.replace(/ /g, ''); // e.g., 'bluaa2024'
+            const concatenatedLikeConditions = words
+                .map(() => `search_term_concatenated LIKE CONCAT('%', ?, '%')`)
+                .join(' AND ');
 
-
-            // Create LIKE conditions for partial match (all words should be present)
-            const likeConditions = words.map(word => {
-                const escapedWord = connection.escape(word);
-                return `search_term LIKE CONCAT('%', ${escapedWord}, '%')`;
-            }).join(' AND ');
-
-            // Create LIKE conditions for concatenated match
-            const concatenatedLikeConditions = words.map(word => {
-                const escapedWord = connection.escape(word);
-                return `search_term_concatenated LIKE CONCAT('%', ${escapedWord}, '%')`;
-            }).join(' AND ');
-
-            const maxWords = 10; // Define a reasonable max number of words to check in search_term
+            const maxWords = 10;
             const levenshteinConditions = [];
             const matchCounts = [];
 
-            for (const word of words) {
-                const escapedWord = connection.escape(word);
-
+            for (const _ of words) {
                 const levenshteinCondition = [];
                 const matchCountCondition = [];
 
-                // Dynamically build the Levenshtein conditions for each position up to maxWords
                 for (let i = 1; i <= maxWords; i++) {
-                    levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
-                    matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
+                    levenshteinCondition.push(
+                        `levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3`
+                    );
+                    matchCountCondition.push(
+                        `IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(search_term, ' ', ${i}), ' ', -1), ?) < 3, 1, 0)`
+                    );
                 }
 
-                // Combine the conditions for this word
                 levenshteinConditions.push(`(${levenshteinCondition.join(' OR ')})`);
                 matchCounts.push(`(${matchCountCondition.join(' OR ')})`);
             }
 
-            // Combine the conditions for all query words
             const levenshteinSql = levenshteinConditions.join(' OR ');
             const matchCountSql = matchCounts.join(' + ');
 
-            // Your final SQL query logic stays the same
             const sql = `
-                (
-                    SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
-                    FROM local_job_search_queries 
-                    WHERE search_term LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
-                    AND popularity > 10  -- Ensure popularity is greater than 10
-
-                    ORDER BY popularity DESC
-                )
-                UNION ALL
-                (
-                    SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 1 AS relevance_score
-                    FROM local_job_search_queries 
-                    WHERE ${likeConditions} -- Partial match (contains all words)
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
-                    AND popularity > 10  -- Ensure popularity is greater than 10
-                    ORDER BY popularity DESC
-                )
-                UNION ALL
-                (
-                    SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 2 AS relevance_score
-                    FROM local_job_search_queries 
-                    WHERE search_term_concatenated LIKE CONCAT(${concatenatedQuery}, '%') -- Concatenated match
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from concatenated results
-                    AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 10
-                    ORDER BY popularity DESC
-                )
-                UNION ALL
-                (
-                    SELECT search_term, popularity, '' AS search_term_concatenated, (${matchCountSql}) AS match_count, 3 AS relevance_score
-                    FROM local_job_search_queries 
-                    WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
-                    AND popularity > 10  -- Ensure popularity is greater than 10
-                    ORDER BY popularity DESC
-                )
-                UNION ALL
-                (
-                    SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 4 AS relevance_score
-                    FROM local_job_search_queries 
-                    WHERE ${concatenatedLikeConditions} -- Match each word in the concatenated form
-                    AND search_term NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches
-                    AND NOT (${likeConditions}) -- Exclude partial matches containing all words
-                    AND popularity > 10  -- Ensure popularity is greater than 100
-                    ORDER BY popularity DESC
-                )
-                ORDER BY
-                    relevance_score ASC, -- Order by relevance score (exact match is highest priority)
-                    match_count DESC, -- Then order by number of matched words based on Levenshtein distance
-                    popularity DESC -- Finally order by popularity 
-
+                    (
+                        SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
+                        FROM local_job_search_queries 
+                        WHERE search_term LIKE CONCAT(?, '%')
+                        AND popularity > 10
+                        ORDER BY popularity DESC
+                    )
+                    UNION ALL
+                    (
+                        SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 1 AS relevance_score
+                        FROM local_job_search_queries 
+                        WHERE ${likeConditions}
+                        AND search_term NOT LIKE CONCAT(?, '%')
+                        AND popularity > 10
+                        ORDER BY popularity DESC
+                    )
+                    UNION ALL
+                    (
+                        SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 2 AS relevance_score
+                        FROM local_job_search_queries 
+                        WHERE search_term_concatenated LIKE CONCAT(?, '%')
+                        AND search_term NOT LIKE CONCAT(?, '%')
+                        AND NOT (${likeConditions})
+                        AND popularity > 10
+                        ORDER BY popularity DESC
+                    )
+                    UNION ALL
+                    (
+                        SELECT search_term, popularity, '' AS search_term_concatenated, (${matchCountSql}) AS match_count, 3 AS relevance_score
+                        FROM local_job_search_queries 
+                        WHERE (${levenshteinSql})
+                        AND search_term NOT LIKE CONCAT(?, '%')
+                        AND NOT (${likeConditions})
+                        AND search_term_concatenated NOT LIKE CONCAT(?, '%') 
+                        AND popularity > 10
+                        ORDER BY popularity DESC
+                    )
+                    UNION ALL
+                    (
+                        SELECT search_term, popularity, search_term_concatenated, 0 AS match_count, 4 AS relevance_score
+                        FROM local_job_search_queries 
+                        WHERE ${concatenatedLikeConditions}
+                        AND search_term NOT LIKE CONCAT(?, '%')
+                        AND NOT (${likeConditions})
+                        AND search_term_concatenated NOT LIKE CONCAT(?, '%') 
+                        AND popularity > 10
+                        ORDER BY popularity DESC
+                    )
+                    ORDER BY relevance_score ASC, match_count DESC, popularity DESC
                     LIMIT 10;
-            `;
+                `;
 
-            // Execute the query
-            const [results] = await connection.execute(sql);
+            const params = [];
+
+            // Parameters for exact match
+            params.push(lowercaseQuery);
+
+            // Parameters for partial matches
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+
+            // Parameters for concatenated match
+            params.push(concatenatedQuery);
+            params.push(lowercaseQuery);
+            for (const word of words) params.push(word);
+
+            // Parameters for levenshtein
+            for (const word of words) {
+                for (let i = 0; i < maxWords; i++) params.push(word);
+                for (let i = 0; i < maxWords; i++) params.push(word);
+            }
+            params.push(lowercaseQuery);
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+
+
+            // Parameters for concatenatedLikeConditions
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+            for (const word of words) params.push(word);
+            params.push(lowercaseQuery);
+
+            const [results] = await connection.execute(sql, params);
 
             return results;
-
         } catch (error) {
-            console.log(error);
             throw error;
         } finally {
-            if (connection) {
-                // Close the connection
-                (await connection).release();
-            }
+            if (connection) (await connection).release();
         }
-
     }
-
 }
 
-module.exports = LocalJobModel;
+module.exports = LocalJob;

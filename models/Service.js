@@ -1,21 +1,16 @@
-
-const { BASE_URL, MEDIA_ROOT_PATH, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const db = require('../config/database')
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
-const crypto = require('crypto');
+const { BASE_URL, MEDIA_ROOT_PATH, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { awsS3Bucket } = require('../config/awsS3.js')
-const { v4: uuidv4 } = require('uuid');  // For unique file names
-class ServiceModel {
+const { v4: uuidv4 } = require('uuid');
 
+class Service {
     static async getServicesForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
-
-
         const connection = await db.getConnection();
-        // Retrieve user coordinates
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
             [userId]
@@ -23,23 +18,15 @@ class ServiceModel {
 
         const userCoordsData = userCoords[0];
 
-        // If user coordinates are available, add distance filter
         let query, params;
-        var radius = initialRadius; // You can adjust this as needed
-
-
+        var radius = initialRadius;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
-
             if (queryParam) {
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -49,9 +36,6 @@ class ServiceModel {
                         [queryParam, searchTermConcatenated]
                     );
                 }
-
-
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                         s.service_id AS service_id,
@@ -180,59 +164,49 @@ class ServiceModel {
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180`;
 
-
+                params = [
+                    userLon, userLat,
+                    queryParam, queryParam, queryParam, queryParam, queryParam, queryParam,
+                    userId, userLat, userLon
+                ];
 
                 if (lastTimeStamp != null) {
-
                     query += ` AND s.created_at < ?`;
-
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? AND distance <= ?)  -- Fetch records with the same relevance and within the current distance
-                        OR (total_relevance < ? AND distance <= ?)  -- Fetch records with lower relevance within the current distance
-                    ) `;
-
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    short_description_relevance > 0 OR
+                                    long_description_relevance > 0
+                                ) AND (
+                                (total_relevance = ? AND distance <= ?)
+                                OR (total_relevance < ? AND distance <= ?)
+                            )`;
+                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
                 } else {
                     query += ` GROUP BY service_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        )`
+                                distance < ? AND (
+                                    title_relevance > 0 OR
+                                    short_description_relevance > 0 OR
+                                    long_description_relevance > 0
+                                )`;
+                    params.push(radius);
                 }
-
-
 
                 query += ` ORDER BY
-                        distance ASC,
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                            distance ASC,
+                            total_relevance DESC
+                        LIMIT ? OFFSET ?`;
 
-
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-
-                } else {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon, radius, pageSize, offset];
-                }
+                const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
 
             } else {
-
                 query = `
                     SELECT
     s.service_id AS service_id,
@@ -364,45 +338,35 @@ WHERE
       (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
       OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`
 
-
-
+                params = [
+                    userId, userLon, userLat,
+                    userId, userLat, userLon,
+                    userId, userId
+                ];
 
                 if (!lastTimeStamp) {
-
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
-                    query += ` AND s.created_at < ? `;
-
+                    query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
-
-
 
                 query += ` GROUP BY service_id HAVING
-    distance < ?
-    ORDER BY
-distance LIMIT ? OFFSET ?`;
+        distance < ?
+        ORDER BY
+        distance
+    LIMIT ? OFFSET ?`;
+
+                params.push(radius);
 
                 const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
 
-                if (lastTimeStamp) {
-                    params = [userId, userLon, userLat, userId, userLat, userLon, userId, userId, lastTimeStamp, radius, pageSize, offset];
-                } else {
-
-                    params = [userId, userLon, userLat, userId, userLat, userLon, userId, userId, radius, pageSize, offset];
-                }
             }
-
         } else {
-
-
-
             if (queryParam) {
-
-
                 if (initialRadius == 50) {
                     const searchTermConcatenated = queryParam.replace(/\s+/g, '');
-
-                    // Retrieve user coordinates
                     await connection.execute(
                         `INSERT INTO search_queries (search_term, popularity, last_searched, search_term_concatenated)
                         VALUES (?, 1, NOW(), ?)
@@ -411,12 +375,8 @@ distance LIMIT ? OFFSET ?`;
                             last_searched = NOW();`,
                         [queryParam, searchTermConcatenated]
                     );
-
                 }
 
-
-
-                // SQL query with Levenshtein distance
                 query = `
                     SELECT
                         s.service_id AS service_id,
@@ -542,59 +502,48 @@ END AS thumbnail,
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
 
+                params = [
+                    queryParam, queryParam, queryParam,
+                    queryParam, queryParam, queryParam,
+                    userId
+                ];
 
                 if (lastTimeStamp != null) {
-
                     query += ` AND s.created_at < ?`;
-
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-
                 }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? )  -- Fetch records with the same relevance
-                        OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    ) `;
-
+                                (
+                                    title_relevance > 0 OR
+                                    short_description_relevance > 0 OR
+                                    long_description_relevance > 0
+                                ) AND (
+                                    (total_relevance = ?)
+                                    OR (total_relevance < ?)
+                                )`;
+                    params.push(lastTotalRelevance, lastTotalRelevance);
                 } else {
                     query += ` GROUP BY service_id HAVING
-                        (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        )`
+                                (
+                                    title_relevance > 0 OR
+                                    short_description_relevance > 0 OR
+                                    long_description_relevance > 0
+                                )`;
                 }
-
-
 
                 query += ` ORDER BY
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                            total_relevance DESC
+                        LIMIT ? OFFSET ?`;
 
+                const offset = (page - 1) * pageSize;
+                params.push(pageSize, offset);
 
-                const offset = (page - 1) * pageSize; // Calculate the offset for pagination
-
-
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-
-                    params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-
-                } else {
-                    params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userId, pageSize, offset];
-                }
 
             } else {
-
-
-
                 query = `
                 SELECT
                     s.service_id AS service_id,
@@ -719,82 +668,49 @@ END AS thumbnail,
       (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
       OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`
 
-
+                let params = [userId, userId, userId, userId];
 
                 if (!lastTimeStamp) {
-
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
 
                 query += ` GROUP BY service_id LIMIT ? OFFSET ?`;
-
                 const offset = (page - 1) * pageSize;
-                if (lastTimeStamp) {
-                    params = [userId, userId, userId, userId, lastTimeStamp, pageSize, offset];
-
-                } else {
-                    params = [userId, userId, userId, userId, pageSize, offset];
-                }
-
-
+                params.push(pageSize, offset);
             }
-
-
-
         }
 
-        // Prepare and execute the query
         const [results] = await connection.execute(query, params);
-
-
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
             if (availableResults < pageSize) {
                 if (radius < 200) {
-                    // Increase distance and fetch again
                     radius += 30;
-                    console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
                     await connection.release();
                     return await this.getServicesForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, radius)
-
-                } else {
-                    console.log("Reached maximum distance limit. Returning available results.");
-                    // Process available results as needed, limited to requestedLimit
-                    // const limitedResults = results.slice(0, requestedLimit);
-                    // console.log("Fetched Results:", limitedResults);
                 }
             }
-
         }
 
-        const services = {};  // Assuming services is declared somewhere
+        const services = {};
 
-        // Wrap the code in an async IIFE (Immediately Invoked Function Expression)
         await (async () => {
-
             for (const row of results) {
                 const serviceId = row.service_id;
-
-
                 const date = new Date(row.created_at);
                 const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
 
-                // Initialize service entry if it doesn't exist
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        // Await the async operation
                         const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, publisher_id);
-
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
-
-
-                        // Query to get the total comments and replies for the service_id
                         const [commentsResult] = await db.query(`
                     SELECT 
                         (SELECT COUNT(*) FROM service_reviews WHERE service_id = ?) AS comment_count,
@@ -807,11 +723,9 @@ END AS thumbnail,
                         if (commentsResult.length > 0) {
                             const { comment_count, reply_count } = commentsResult[0];
                             total_count = comment_count + reply_count
-
                         } else {
                             total_count = 0;
                         }
-
 
                         services[serviceId] = {
                             user: {
@@ -841,7 +755,7 @@ END AS thumbnail,
                             status: row.status,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url
                             })) : [],
 
                             plans: row.plans
@@ -857,7 +771,7 @@ END AS thumbnail,
 
                             thumbnail: row.thumbnail ? {
                                 ...JSON.parse(row.thumbnail),
-                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
 
                             initial_check_at: formattedDate,
@@ -876,27 +790,15 @@ END AS thumbnail,
                             comments_count: total_count
                         };
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
                         throw new Error("Error processing service data");
                     }
                 }
             }
-
-
         })();
 
-
-        // Close the connection
         await connection.release();
-
-
-
-
-        // Return the services object
         return Object.values(services);
     }
-
 
     static async getServicesForGuestUser(userId, queryParam, page, pageSize, lastTimeStamp,
         lastTotalRelevance = null, userCoordsData = null, industryIds = [], initialRadius = 50) {
@@ -2005,8 +1907,6 @@ END AS thumbnail,
 
     static async getUserPublishedServicesFeedUser(userId, serviceOwnerId) {
 
-
-
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -2215,7 +2115,6 @@ END AS thumbnail,
 
     }
 
-
     static async getUserPublishedServices(userId) {
 
 
@@ -2407,7 +2306,6 @@ END AS thumbnail,
         return Object.values(services);
 
     }
-
 
     static async createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans_json, files, locationJson) {
         let connection;
@@ -2609,10 +2507,7 @@ END AS thumbnail,
         try {
 
             connection = await db.getConnection();
-            // Begin a transaction
             await connection.beginTransaction();
-
-            // Prepare the SQL UPDATE query to update specific fields
             const updateQuery = `
                 UPDATE services
                 SET 
@@ -2673,13 +2568,10 @@ END AS thumbnail,
         }
     }
 
-    // The function to update or insert a service location
     static async updateOrInsertLocation(service_id, longitude, latitude, geo, location_type) {
         let connection;
         try {
             connection = await db.getConnection();
-
-            // Begin a transaction
             await connection.beginTransaction();
 
             const query = `
@@ -2692,14 +2584,11 @@ END AS thumbnail,
                     location_type = VALUES(location_type);
             `;
 
-            // Run the query
             const [result] = await connection.execute(query, [service_id, longitude, latitude, geo, location_type]);
 
-            // Check if the operation affected any rows
-            const isUpdated = result.affectedRows > 0;  // This checks if a row was inserted or updated
-            const isNewInsert = result.insertId > 0;    // This checks if it's a new insert
+            const isUpdated = result.affectedRows > 0;
+            const isNewInsert = result.insertId > 0;
 
-            // Fetch the updated or inserted row (using the service_id)
             let updatedRow = null;
             if (isUpdated || isNewInsert) {
                 const selectQuery = `
@@ -2708,84 +2597,63 @@ END AS thumbnail,
                     WHERE service_id = ?;
                 `;
                 const [rows] = await connection.execute(selectQuery, [service_id]);
-                updatedRow = rows[0];  // There should be exactly one row returned
+                updatedRow = rows[0];
             }
 
-            // Commit the transaction
             await connection.commit();
-
-            // Return the updated or inserted row
             return {
                 success: true,
                 isUpdated,
                 isNewInsert,
-                updatedRow  // This is the updated or inserted row
+                updatedRow
             };
-
         } catch (err) {
-            // Rollback the transaction on error
             if (connection) await connection.rollback();
-            console.error('Error during transaction:', err);
-            throw err;  // Re-throw the error to handle it in the calling code
+            throw err;
         } finally {
-            // Release the connection back to the pool
             if (connection) await connection.release();
         }
     }
 
-
     static async updateServicePlans(serviceId, data) {
         let connection;
-
         try {
             connection = await db.getConnection();
-            // Begin a transaction
             await connection.beginTransaction();
-
-            // Prepare SQL statements for update, insert, and delete operations
             const updateSql = `
                 UPDATE service_plans 
                 SET name = ?, description = ?, price = ?, price_unit = ?, features = ?, delivery_time = ?, duration_unit = ?
                 WHERE id = ?`;
 
-
             const insertSql = `
                 INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-
             const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
 
-            // Fetch all current plan IDs for the service
             const currentPlansSql = `SELECT id FROM service_plans WHERE service_id = ?`;
             const [currentPlansResult] = await connection.execute(currentPlansSql, [serviceId]);
 
-            // Track existing plan IDs
             const existingPlanIds = currentPlansResult.map(row => row.id);
             const planIdsInInput = [];
             const newlyInsertedPlanIds = [];
 
-            // Prepare the update, insert, and delete queries
             for (const plan of data) {
-                const planId = plan.plan_id || -1; // -1 indicates a new plan
+                const planId = plan.plan_id || -1;
                 const name = plan.plan_name || '';
                 const description = plan.plan_description || '';
                 const price = plan.plan_price || 0;
                 const priceUnit = plan.price_unit || '';
-                const features = JSON.stringify(plan.plan_features || {}); // Ensure it's a JSON string
+                const features = JSON.stringify(plan.plan_features || {});
                 const deliveryTime = plan.plan_delivery_time || '';
                 const durationUnit = plan.duration_unit || '';
 
                 if (planId === -1) {
-                    // Insert new plan
                     const [insertResult] = await connection.execute(insertSql, [
                         serviceId, name, description, price, priceUnit, features, deliveryTime, durationUnit
                     ]);
-                    // Get the newly inserted plan ID
                     newlyInsertedPlanIds.push(insertResult.insertId);
                 } else {
-
-                    // Update existing plan
                     await connection.execute(updateSql, [
                         name, description, price, priceUnit, features, deliveryTime, durationUnit, planId
                     ]);
@@ -2793,59 +2661,45 @@ END AS thumbnail,
                 }
             }
 
-            // Combine IDs of plans to keep (those in input or newly inserted)
             const allValidPlanIds = [...planIdsInInput, ...newlyInsertedPlanIds];
 
-            // Delete plans that are not in the input
             for (const existingPlanId of existingPlanIds) {
                 if (!allValidPlanIds.includes(existingPlanId)) {
                     await connection.execute(deleteSql, [existingPlanId]);
                 }
             }
 
-            // SQL query to select plans for a given service_id
             const allPlans = `SELECT id As plan_id, name as plan_name, description as plan_description,
             price as plan_price, price_unit as price_unit, delivery_time as plan_delivery_time, duration_unit as duration_unit, features as plan_features
             FROM service_plans WHERE service_id = ?`;
 
-            // Execute the query
             const [rows] = await connection.execute(allPlans, [serviceId]);
-
-            // Commit the transaction
             await connection.commit();
 
             const result = rows.map(row => {
                 return {
-                    ...row,  // Spread the existing row properties
-                    plan_features: row.plan_features ? JSON.parse(row.plan_features) : []  // Parse JSON or return empty array
+                    ...row,
+                    plan_features: row.plan_features ? JSON.parse(row.plan_features) : []
                 };
             });
 
             return result.length > 0 ? result : null;
-
         } catch (error) {
-            console.log(error);
-            // Rollback the transaction in case of an error
             if (connection) await connection.rollback();
             throw error;
         } finally {
-            // Close the connection
             if (connection) await connection.release();
         }
     }
 
-
-
     static async createImage(user_id, service_id, file) {
-
         let connection;
-        let s3Key = '';  // S3 key for the uploaded file, used to delete it later if necessary
+        let s3Key;
 
         try {
             connection = await db.getConnection();
-            await connection.beginTransaction();   // Start transaction
+            await connection.beginTransaction();
 
-            // Retrieve media_id for the user
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
                 [user_id]
@@ -2856,14 +2710,11 @@ END AS thumbnail,
                 throw new Error("Unable to retrieve media_id.");
             }
 
-            // Generate a unique filename for S3
             const fileName = `${uuidv4()}-${file.originalname}`;
             s3Key = `media/${media_id}/services/${service_id}/${fileName}`;
 
-            // Use Sharp to extract metadata
             const metadata = await sharp(file.buffer).metadata();
 
-            // Determine the MIME type based on the file format
             let contentType;
             switch (metadata.format) {
                 case 'jpeg':
@@ -2876,99 +2727,69 @@ END AS thumbnail,
                     contentType = 'image/gif';
                     break;
                 default:
-                    contentType = file.mimetype;  // Fallback content type
+                    contentType = file.mimetype;
                     break;
             }
 
-            // Upload the file to S3
             const uploadParams = {
                 Bucket: S3_BUCKET_NAME,
                 Key: s3Key,
                 Body: file.buffer,
                 ContentType: contentType,
-                ACL: 'public-read'  // Set public read permissions
+                ACL: 'public-read'
             };
 
             await awsS3Bucket.upload(uploadParams).promise();
 
-            // Save image metadata in the database
             const image = {
-                url: s3Key,  // S3 URL
+                url: s3Key,
                 width: metadata.width,
                 height: metadata.height,
                 size: file.size,
                 format: metadata.format
             };
 
-            // Insert image metadata into the database
             const [result] = await connection.execute(
                 `INSERT INTO service_images (service_id, image_url, width, height, size, format)
                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [service_id, image.url, image.width, image.height, image.size, image.format]
             );
 
-            // Get the ID of the inserted image
             const insertedImageId = result.insertId;
-
-
-            // Commit the transaction
             await connection.commit();
 
-            // Retrieve the inserted image data
             const [rows] = await connection.execute(
                 `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
                 [service_id, insertedImageId]
             );
 
-
-            // Return the inserted image metadata
             return rows.length > 0 ? rows[0] : null;
-
         } catch (error) {
-
-            console.log(error);
-
             if (connection) {
-                await connection.rollback();  // Rollback transaction on error
-
-                // Delete the file from S3 if it was uploaded
+                await connection.rollback();
                 if (s3Key) {
                     try {
                         await awsS3Bucket.deleteObject({
                             Bucket: S3_BUCKET_NAME,
                             Key: s3Key,
                         }).promise();
-                        console.log(`File with S3 Key ${s3Key} has been deleted due to error.`);
-                    } catch (err) {
-                        console.error('Error deleting file from S3 during rollback:', err.message);
-                    }
+                    } catch (err) { }
                 }
-
             }
-
-
-
-            // Rethrow the error to propagate it
             throw error;
         } finally {
             if (connection) {
-                connection.release();  // Release connection back to the pool (no need to await)
+                connection.release();
             }
         }
     }
 
-
-
-
     static async updateImage(user_id, service_id, imageId, file) {
         let connection;
-        let s3Key = '';
-
+        let s3Key;
         try {
             connection = await db.getConnection();
-            await connection.beginTransaction();  // Start transaction
-
-            // Retrieve media_id for the user
+            await connection.beginTransaction();
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
                 [user_id]
@@ -2978,46 +2799,35 @@ END AS thumbnail,
                 throw new Error("Unable to retrieve media_id.");
             }
 
-            // Generate a unique key for the new file in S3
             const fileName = `${uuidv4()}-${file.originalname}`;
             s3Key = `media/${media_id}/services/${service_id}/${fileName}`;
 
-            // Use Sharp to extract metadata
             const metadata = await sharp(file.buffer).metadata();
-
-            // Determine the MIME type based on the file format
             let contentType;
-
 
             switch (metadata.format) {
                 case 'jpeg':
                     contentType = 'image/jpeg';
-
                     break;
+
                 case 'png':
                     contentType = 'image/png';
-
                     break;
+
                 case 'gif':
                     contentType = 'image/gif';
-
                     break;
                 default:
-                    // Fallback content type
                     contentType = file.mimetype;
-
                     break;
             }
 
-
-
-            // Upload the new image to S3
             const uploadParams = {
                 Bucket: S3_BUCKET_NAME,
                 Key: s3Key,
                 Body: file.buffer,
-                ContentType: contentType,  // Correct MIME type
-                ACL: 'public-read'  // Set public read permissions
+                ContentType: contentType,
+                ACL: 'public-read'
             };
 
             await awsS3Bucket.upload(uploadParams).promise();
@@ -3030,10 +2840,7 @@ END AS thumbnail,
                 format: metadata.format
             };
 
-
-
             if (imageId === -1) {
-                // Insert or update the image in the service_images table
                 const [result] = await connection.execute(
                     `INSERT INTO service_images (image_url, width, height, size, format) 
                     VALUES (?, ?, ?, ?, ?)
@@ -3046,28 +2853,16 @@ END AS thumbnail,
                     [newImage.url, newImage.width, newImage.height, newImage.size, newImage.format]
                 );
 
-
-
-                // Commit transaction after all operations are successful
                 await connection.commit();
+                const insertedId = result.insertId;
 
-
-                const insertedId = result.insertId; // Newly inserted thumbnail ID
-
-                // Retrieve the inserted data
                 const [output] = await connection.execute(
                     `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
                     [service_id, insertedId]
                 );
 
-
                 return output.length > 0 ? output[0] : null;
-
-
             } else {
-
-
-                // Case: Updating an existing thumbnail
                 const [rows] = await connection.execute(
                     'SELECT image_url FROM service_images WHERE service_id = ? AND id = ?',
                     [service_id, imageId]
@@ -3077,22 +2872,14 @@ END AS thumbnail,
                     throw new Error('Image not found.');
                 }
                 const oldImageUrl = rows[0].image_url;
-                const oldS3Key = oldImageUrl.replace(BASE_URL, '');  // S3 key is the path without the base UR
-
-                // Update existing image in the service_images table
+                const oldS3Key = oldImageUrl.replace(BASE_URL, '');
                 await connection.execute(
                     `UPDATE service_images
                     SET image_url = ?, width = ?, height = ?, size = ?, format = ?
                     WHERE id = ?`,
                     [newImage.url, newImage.width, newImage.height, newImage.size, newImage.format, imageId]
                 );
-
-
-                // Commit transaction after all operations are successful
                 await connection.commit();
-
-
-                // After commit, delete the old image from S3 if any
                 if (oldS3Key) {
                     try {
                         const deleteParams = {
@@ -3100,31 +2887,20 @@ END AS thumbnail,
                             Key: oldS3Key
                         };
                         await awsS3Bucket.deleteObject(deleteParams).promise();
-                        console.log(`Old image file at ${oldS3Key} has been deleted from S3.`);
                     } catch (err) {
-                        console.error('Error deleting old image from S3:', err.message);
                         throw new Error('Failed to delete old image from S3.');
                     }
                 }
 
-                // Retrieve the inserted data
                 const [output] = await connection.execute(
                     `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
                     [service_id, imageId]
                 );
-
-
                 return output.length > 0 ? output[0] : null;
-
             }
-
-
         } catch (error) {
-            console.log(error);
             if (connection) {
-                await connection.rollback();  // Rollback transaction on error
-
-                // If the image was uploaded to S3, delete it during rollback
+                await connection.rollback();
                 if (s3Key) {
                     const deleteParams = {
                         Bucket: S3_BUCKET_NAME,
@@ -3132,33 +2908,23 @@ END AS thumbnail,
                     };
                     try {
                         await awsS3Bucket.deleteObject(deleteParams).promise();
-                        console.log(`Deleted image at ${deleteParams.Key} from S3 during rollback.`);
-                    } catch (err) {
-                        console.error('Error deleting uploaded image during rollback:', err.message);
-                    }
+                    } catch (err) { }
                 }
             }
-            console.error('Error during image update:', error.message);
             throw error;
         } finally {
             if (connection) {
-                connection.release();  // Release connection back to the pool (no need to await)
+                connection.release();
             }
         }
     }
 
-
     static async deleteServiceImage(serviceId, imageId) {
         let connection;
-        let s3Key = ''; // To store the S3 key for deletion
-
+        let s3Key;
         try {
             connection = await db.getConnection();
-
-            // Start transaction
             await connection.beginTransaction();
-
-            // Retrieve the image URL from the database
             const [rows] = await connection.execute(
                 'SELECT image_url FROM service_images WHERE service_id = ? AND id = ?',
                 [serviceId, imageId]
@@ -3169,11 +2935,7 @@ END AS thumbnail,
             }
 
             const imageUrl = rows[0].image_url;
-
-            // Extract the S3 key from the image URL (remove base URL part)
-            s3Key = imageUrl.replace(BASE_URL, '');  // Adjust BASE_URL as needed
-
-            // Delete the image record from the database
+            s3Key = imageUrl.replace(BASE_URL, '');
             const [deleteResult] = await connection.execute(
                 'DELETE FROM service_images WHERE service_id = ? AND id = ?',
                 [serviceId, imageId]
@@ -3183,41 +2945,29 @@ END AS thumbnail,
                 throw new Error('Failed to delete image record.');
             }
 
-            // Commit transaction
             await connection.commit();
 
-            // After commit, delete the image from S3
             try {
                 const deleteParams = {
                     Bucket: S3_BUCKET_NAME,
                     Key: s3Key
                 };
                 await awsS3Bucket.deleteObject(deleteParams).promise();
-                console.log(`Deleted image file at ${s3Key} from S3.`);
             } catch (err) {
-                console.error('Error deleting image from S3:', err.message);
                 throw new Error('Failed to delete image from S3.');
             }
-
-            // Return success response
             return {
                 success: true,
                 message: 'Image deleted successfully'
             };
 
         } catch (error) {
-
-            // In case of error, rollback transaction
             if (connection) await connection.rollback();
-
-            console.log('Error during deletion process:', error.message);
-            throw error;  // Re-throw the error to propagate it
+            throw error;
         } finally {
-            // Release connection back to the pool
             if (connection) await connection.release();
         }
     }
-
 
     static async updateThumbnail(user_id, service_id, imageId, file) {
         let connection;
@@ -3438,53 +3188,36 @@ END AS thumbnail,
     }
 
 
-
-
-
     static async createBookmarkService(userId, serviceId) {
         let connection;
         try {
-            // Create a connection to the database
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
 
-            // Prepare the SQL statement to insert a bookmark
             const [rows] = await connection.execute(
                 "INSERT INTO user_bookmark_services (user_id, service_id) VALUES (?, ?)",
                 [userId, serviceId]
             );
 
-            // Check if any row was affected
             if (rows.affectedRows === 0) {
                 throw new Error('Error on inserting bookmark');
             }
 
-            // Commit transaction
             await connection.commit();
-
-            // Return the ID of the new bookmark
             return rows.insertId;
 
         } catch (error) {
-            // If there's an error, rollback the transaction
             (await connection).rollback();
             throw new Error('Failed to create bookmark: ' + error.message);
         } finally {
-            // Close the connection
             (await connection).release;
         }
     }
 
     static async removeBookmarkService(userId, serviceId) {
-
         let connection;
         try {
-            // Create a connection to the database
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
 
             const [result] = await connection.execute(
@@ -3492,28 +3225,19 @@ END AS thumbnail,
                 [userId, serviceId]
             );
 
-            // Check if any row was affected
             if (result.affectedRows === 0) {
                 throw new Error('No bookmark found to delete');
             }
-
-
-            // Commit transaction
             await connection.commit();
 
             return { "Success": true };
-
-
         } catch (error) {
-            // If there's an error, rollback the transaction
             (await connection).rollback();
             throw new Error('Failed to remove  bookmark: ' + error.message);
         } finally {
-            // Close the connection
             (await connection).release;
         }
     }
-
 
     static async searchQueries(query) {
         let connection;
@@ -3634,7 +3358,7 @@ END AS thumbnail,
             params.push(lowercaseQuery);
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
- 
+
 
             // Parameters for concatenatedLikeConditions
             for (const word of words) params.push(word);
@@ -3653,131 +3377,70 @@ END AS thumbnail,
         }
     }
 
-
     static async deleteService(user_id, service_id) {
         let connection;
         try {
             connection = await db.getConnection();
-
-            // Begin transaction
             await connection.beginTransaction();
-
-
-            // Delete the images from the database
             await connection.execute(
                 "DELETE FROM service_images WHERE service_id = ?",
                 [service_id]
             );
-
             await connection.execute(
                 "DELETE FROM service_thumbnail WHERE service_id = ?",
                 [service_id]
             );
-
-            // Delete the plans from the database
             await connection.execute(
                 "DELETE FROM service_plans WHERE service_id = ?",
                 [service_id]
             );
-
-            // Delete the service locations from the database
             await connection.execute(
                 "DELETE FROM service_locations WHERE service_id = ?",
                 [service_id]
             );
-
-            // Delete the service itself
             await connection.execute(
                 "DELETE FROM services WHERE service_id = ?",
                 [service_id]
             );
-
-
-            // Retrieve media_id for the user
             const [userResult] = await connection.execute(
                 "SELECT media_id FROM users WHERE user_id = ?",
                 [user_id]
             );
-
             const media_id = userResult[0]?.media_id;
             if (!media_id) {
                 throw new Error("Unable to retrieve media_id.");
             }
 
-            // Construct the base directory path using the retrieved media_id and service_id
-            const base_dir = path.join(MEDIA_ROOT_PATH, 'media', media_id.toString(), 'services', service_id.toString());
+            const s3Key = 'media/' + media_id.toString() + '/services/' + service_id.toString();
 
+            const listedObjects = await awsS3Bucket.listObjectsV2({
+                Bucket: S3_BUCKET_NAME,
+                Prefix: s3Key
+            }).promise();
 
-
-            try {
-                // Delete all files in the base_dir (images, thumbnail)
-                if (fs.existsSync(base_dir)) {
-                    const files = fs.readdirSync(base_dir);
-                    for (const file of files) {
-                        const filePath = path.join(base_dir, file);
-                        await fs.promises.unlink(filePath);
-                        console.log(`Deleted file: ${filePath}`);
+            if (listedObjects?.Contents?.length > 0) {
+                const deleteParams = {
+                    Bucket: S3_BUCKET_NAME,
+                    Delete: {
+                        Objects: listedObjects.Contents.map(obj => ({ Key: obj.Key }))
                     }
-
-                    // Optionally, remove the directory if empty
-                    if (fs.readdirSync(base_dir).length === 0) {
-                        fs.rmdirSync(base_dir);
-                        console.log(`Deleted empty directory: ${base_dir}`);
-                    }
-                }
-
-            } catch (err) {
-                console.error('Error cleaning up files during rollback:', err.message);
+                };
+                await awsS3Bucket.deleteObjects(deleteParams).promise();
             }
 
-
-
-
-            // Commit transaction
             await connection.commit();
-
-            // Return success response
             return { status: 'success', message: 'Service and related data deleted successfully' };
         } catch (error) {
-            // Rollback transaction on error
             if (connection) {
                 await connection.rollback();
             }
-            console.error('Error during service deletion:', error.message);
             throw new Error(`Service deletion failed: ${error.message}`);
         } finally {
-            // Ensure the connection is always released back to the pool
             if (connection) {
                 connection.release();
             }
         }
     }
-
-
-
-
-    static async getImageMetadata(imagePath) {
-        try {
-            // Ensure the file exists
-            if (!fs.existsSync(imagePath)) {
-                throw new Error('Image file does not exist');
-            }
-
-            const metadata = await sharp(imagePath).metadata();
-
-            return {
-                width: metadata.width,
-                height: metadata.height,
-                size: fs.statSync(imagePath).size, // Size in bytes
-                format: metadata.format // Format of the image (e.g., jpeg, png)
-            };
-        } catch (error) {
-            console.error('Error getting image metadata:', error);
-            throw error;
-        }
-    }
-
-
 }
 
-module.exports = ServiceModel;
+module.exports = Service;

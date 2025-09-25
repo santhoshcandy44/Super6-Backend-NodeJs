@@ -3,7 +3,7 @@ const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 
-class JobModel {
+class Job {
   static async getJobPostingsUser(userId, queryParam,
     latitudeParam,
     longitudeParam,
@@ -139,20 +139,39 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     AND ? BETWEEN -180 AND 180
         `;
 
+        params = [
+          userLon,
+          userLat,
+          queryParam,
+          queryParam,
+          queryParam,
+          queryParam,
+          userLat,
+          userLon,
+          userId,
+          userId
+        ];
+
         if (filterWorkModes.length > 0) {
-          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+          const placeholders = filterWorkModes.map(() => `?`).join(', ');
+          query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
+          params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
         }
 
         if (salaryMin !== -1 && salaryMax !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+          params.push(salaryMin, salaryMax);
         } else if (salaryMin !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin}`;
+          query += ` AND j.salary_min >= ?`;
+          params.push(salaryMin);
         } else if (salaryMax !== -1) {
-          query += ` AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_max <= ?`;
+          params.push(salaryMax);
         }
 
         if (lastTimeStamp != null) {
           query += ` AND j.posted_at < ?`;
+          params.push(lastTimeStamp);
         } else {
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         }
@@ -166,28 +185,25 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                         (total_relevance = ? AND distance <= ?) OR
                         (total_relevance < ? AND distance <= ?)
                     )`;
+          params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
         } else {
           query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
                         title_relevance > 0 OR
                         description_relevance > 0
                     )`;
+          params.push(radius);
         }
 
         query += `
-                ORDER BY
-                    distance ASC,
-                    total_relevance DESC
-                LIMIT ? OFFSET ?
-            `;
-
+          ORDER BY
+              distance ASC,
+              total_relevance DESC
+          LIMIT ? OFFSET ?
+      `;
         const offset = (page - 1) * pageSize;
+        params.push(pageSize, offset);
 
-        if (lastTotalRelevance != null && lastTimeStamp != null) {
-          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, userId, userId, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-        } else {
-          params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, userId, userId, radius, pageSize, offset];
-        }
       }
       else {
         query = `
@@ -277,38 +293,51 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             AND ? BETWEEN -90 AND 90
             AND ? BETWEEN -180 AND 180`;
 
+        let params = [
+          userLon,
+          userLat,
+          userId,
+          userId,
+          userLat,
+          userLon
+        ];
+
         if (filterWorkModes.length > 0) {
-          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+          const placeholders = filterWorkModes.map(() => `?`).join(', ');
+          query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
+          params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
         }
 
         if (salaryMin !== -1 && salaryMax !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+          params.push(salaryMin, salaryMax);
         } else if (salaryMin !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin}`;
+          query += ` AND j.salary_min >= ?`;
+          params.push(salaryMin);
         } else if (salaryMax !== -1) {
-          query += ` AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_max <= ?`;
+          params.push(salaryMax);
         }
 
         if (!lastTimeStamp) {
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         } else {
           query += ` AND j.posted_at < ?`;
+          params.push(lastTimeStamp);
         }
 
         query += `
-        GROUP BY j.job_id
-        HAVING distance < ?
-        ORDER BY distance ASC, j.posted_at DESC
-        LIMIT ? OFFSET ?
-    `;
+              GROUP BY j.job_id
+              HAVING distance < ?
+              ORDER BY distance ASC, j.posted_at DESC
+              LIMIT ? OFFSET ?
+          `;
+
+        params.push(radius);
 
         const offset = (page - 1) * pageSize;
+        params.push(pageSize, offset);
 
-        if (lastTimeStamp) {
-          params = [userLon, userLat, userId, userId, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
-        } else {
-          params = [userLon, userLat, userId, userId, userLat, userLon, radius, pageSize, offset];
-        }
       }
     } else {
       if (queryParam) {
@@ -326,7 +355,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         //   );
         // }
 
-        
+
         query = `SELECT
                     j.job_id,
                     j.title,
@@ -415,54 +444,63 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             AND ci.longitude BETWEEN -180 AND 180
         `;
 
+        params = [
+          queryParam,
+          queryParam,
+          queryParam,
+          queryParam,
+          userId,
+          userId
+        ];
+
         if (filterWorkModes.length > 0) {
-          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+          const placeholders = filterWorkModes.map(() => `?`).join(', ');
+          query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
+          params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
         }
 
         if (salaryMin !== -1 && salaryMax !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+          params.push(salaryMin, salaryMax);
         } else if (salaryMin !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin}`;
+          query += ` AND j.salary_min >= ?`;
+          params.push(salaryMin);
         } else if (salaryMax !== -1) {
-          query += ` AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_max <= ?`;
+          params.push(salaryMax);
         }
 
         if (lastTimeStamp != null) {
           query += ` AND j.posted_at < ?`;
+          params.push(lastTimeStamp);
         } else {
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         }
 
         if (lastTotalRelevance !== null) {
-          query += ` GROUP BY j.id HAVING  (
-                        title_relevance > 0 OR
-                        description_relevance > 0
-                    ) AND (
-                        (total_relevance = ?) OR
-                        (total_relevance < ? )
-                    )`;
+          query += ` GROUP BY j.id HAVING (
+                          title_relevance > 0 OR
+                          description_relevance > 0
+                      ) AND (
+                          (total_relevance = ?) OR
+                          (total_relevance < ? )
+                      )`;
+          params.push(lastTotalRelevance, lastTotalRelevance);
         } else {
-          query += ` GROUP BY j.job_id HAVING
-                    (
-                        title_relevance > 0 OR
-                        description_relevance > 0
-                    )`;
+          query += ` GROUP BY j.job_id HAVING (
+                          title_relevance > 0 OR
+                          description_relevance > 0
+                      )`;
         }
 
         query += `
-                ORDER BY
-                    total_relevance DESC
-                LIMIT ? OFFSET ?
-            `;
+          ORDER BY
+              total_relevance DESC
+          LIMIT ? OFFSET ?
+      `;
 
         const offset = (page - 1) * pageSize;
-
-        if (lastTotalRelevance != null && lastTimeStamp != null) {
-          params = [ queryParam, queryParam, queryParam, queryParam, userId, userId, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-        } else {
-          params = [queryParam, queryParam, queryParam, queryParam, userId, userId, pageSize, offset];
-        }
-
+        params.push(pageSize, offset);
       }
       else {
         query = `
@@ -545,35 +583,41 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180`;
 
+        let params = [userId, userId];
+
         if (filterWorkModes.length > 0) {
-          query += ` AND LOWER(j.work_mode) IN (${filterWorkModes.map(mode => `'${mode.toLowerCase()}'`).join(', ')})`;
+          const placeholders = filterWorkModes.map(() => `?`).join(', ');
+          query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
+          params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
         }
 
         if (salaryMin !== -1 && salaryMax !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin} AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+          params.push(salaryMin, salaryMax);
         } else if (salaryMin !== -1) {
-          query += ` AND j.salary_min >= ${salaryMin}`;
+          query += ` AND j.salary_min >= ?`;
+          params.push(salaryMin);
         } else if (salaryMax !== -1) {
-          query += ` AND j.salary_max <= ${salaryMax}`;
+          query += ` AND j.salary_max <= ?`;
+          params.push(salaryMax);
         }
 
         if (!lastTimeStamp) {
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         } else {
           query += ` AND j.posted_at < ?`;
+          params.push(lastTimeStamp);
         }
 
         query += `
-        GROUP BY j.job_id
-        ORDER BY j.posted_at DESC
-        LIMIT ? OFFSET ?
-    `;
+    GROUP BY j.job_id
+    ORDER BY j.posted_at DESC
+    LIMIT ? OFFSET ?
+`;
+
         const offset = (page - 1) * pageSize;
-        if (lastTimeStamp) {
-          params = [userId, userId, lastTimeStamp, pageSize, offset];
-        } else {
-          params = [userId, userId, pageSize, offset];
-        }
+        params.push(pageSize, offset);
+
       }
     }
 
@@ -583,7 +627,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       if (availableResults < pageSize) {
         if (radius < 500) {
           radius += 30;
-          console.log(`Only ${availableResults} results found. Increasing distance to ${radius} km.`);
           await connection.release();
           await rootDbconnection.release();
           return await this.getJobPostingsUser(userId,
@@ -591,11 +634,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             latitudeParam,
             longitudeParam,
             page, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
-        } else {
-          console.log("Reached maximum distance limit. Returning available results.");
-          // Process available results as needed, limited to requestedLimit
-          // const limitedResults = results.slice(0, requestedLimit);
-          // console.log("Fetched Results:", limitedResults);
         }
       }
     }
@@ -696,13 +734,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
           } catch (error) {
-            // Handle the error if the async operation fails
-            console.error(error);
             throw new Error("Error processing job posting data");
           }
         }
       }
-
     })();
 
     await rootDbconnection.release();
@@ -713,33 +748,29 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
   static async searchLocationSuggestions(query) {
     let connection;
     try {
-
-      // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
       const trimmedQuery = query.trim();
-      const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-      const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
-      connection = await db.getConnection();
-      // Escape the query to prevent SQL injection
-      const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
+      const cleanQuery = trimmedQuery.replace(/\s+/g, ' ');
+      const lowercaseQuery = cleanQuery.toLowerCase();
 
-      // Simple SQL to search cities
+      connection = await db.getConnection();
+
       const sql = `
             SELECT id,
-            name, 
-            state_id,
-            country_id,
-            CAST(latitude AS DOUBLE) AS latitude,
-            CAST(longitude AS DOUBLE) AS longitude
+                   name, 
+                   state_id,
+                   country_id,
+                   CAST(latitude AS DOUBLE) AS latitude,
+                   CAST(longitude AS DOUBLE) AS longitude
             FROM cities
-            WHERE country_id = 101 AND name LIKE CONCAT('%', ${escapedQuery}, '%')
-            
+            WHERE country_id = ?
+              AND name LIKE CONCAT('%', ?, '%')
             ORDER BY 
-               name LIKE CONCAT(${escapedQuery}, '%') DESC, 
-             name ASC
+                name LIKE CONCAT(?, '%') DESC, 
+                name ASC
             LIMIT 5;
         `;
 
-      const [results] = await connection.execute(sql);
+      const [results] = await connection.execute(sql, [101, lowercaseQuery, lowercaseQuery]);
       return results;
 
     } catch (error) {
@@ -755,96 +786,102 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     let connection;
     try {
       connection = await db.getConnection();
-      // Trim leading and trailing spaces, remove excessive whitespace, and convert to lowercase
+
       const trimmedQuery = query.trim();
-      const cleanQuery = trimmedQuery.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-      const lowercaseQuery = cleanQuery.toLowerCase(); // Convert query to lowercase
+      const cleanQuery = trimmedQuery.replace(/\s+/g, ' ');
+      const lowercaseQuery = cleanQuery.toLowerCase();
+      const words = cleanQuery.split(' ');
 
-      // Escape the query to prevent SQL injection
-      const escapedQuery = connection.escape(lowercaseQuery); // Escaping directly for use in SQL
+      const concatenatedQuery = lowercaseQuery.replace(/ /g, '');
 
-      // Split the query into individual words
-      const words = cleanQuery.split(' '); // e.g., ['texi', '2024']
-
-      // Remove spaces from the query to match concatenated search terms
-      const concatenatedQuery = escapedQuery.replace(/ /g, ''); // e.g., 'bluaa2024'
+      const likeConditions = words
+        .map(() => `name LIKE CONCAT('%', ?, '%')`)
+        .join(' AND ');
 
 
-      // Create LIKE conditions for partial match (all words should be present)
-      const likeConditions = words.map(word => {
-        const escapedWord = connection.escape(word);
-        return `name LIKE CONCAT('%', ${escapedWord}, '%')`;
-      }).join(' AND ');
-
-      const maxWords = 10; // Define a reasonable max number of words to check in search_term
+      const maxWords = 10;
       const levenshteinConditions = [];
       const matchCounts = [];
 
-      for (const word of words) {
-        const escapedWord = connection.escape(word);
-
+      for (const _ of words) {
         const levenshteinCondition = [];
         const matchCountCondition = [];
 
-        // Dynamically build the Levenshtein conditions for each position up to maxWords
         for (let i = 1; i <= maxWords; i++) {
-          levenshteinCondition.push(`levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ${escapedWord}) < 3`);
-          matchCountCondition.push(`IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ${escapedWord}) < 3, 1, 0)`);
+          levenshteinCondition.push(
+            `levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ?) < 3`
+          );
+          matchCountCondition.push(
+            `IF(levenshtein(SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', ${i}), ' ', -1), ?) < 3, 1, 0)`
+          );
         }
 
-        // Combine the conditions for this word
         levenshteinConditions.push(`(${levenshteinCondition.join(' OR ')})`);
         matchCounts.push(`(${matchCountCondition.join(' OR ')})`);
       }
 
-      // Combine the conditions for all query words
       const levenshteinSql = levenshteinConditions.join(' OR ');
       const matchCountSql = matchCounts.join(' + ');
 
-      // Your final SQL query logic stays the same
       const sql = `
-                  (
-                      SELECT name, 0 AS match_count, 0 AS relevance_score
-                      FROM job_roles 
-                      WHERE name LIKE CONCAT(${escapedQuery}, '%') -- Exact match that starts with the search query
-                      
-                  )
-                  UNION ALL
-                  (
-                      SELECT name, 0 AS match_count, 1 AS relevance_score
-                      FROM job_roles 
-                      WHERE ${likeConditions} -- Partial match (contains all words)
-                      AND name NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from partial results
-                      
-                  )
-                  UNION ALL
-                  (
-                      SELECT name, (${matchCountSql}) AS match_count, 3 AS relevance_score
-                      FROM job_roles 
-                      WHERE (${levenshteinSql}) -- Levenshtein distance match for misspelled words
-                      AND name NOT LIKE CONCAT(${escapedQuery}, '%') -- Exclude exact matches from Levenshtein results
-                  )
-                  ORDER BY
-                      relevance_score ASC, -- Order by relevance score (exact match is highest priority)
-                      match_count DESC -- Then order by number of matched words based on Levenshtein distance  
+                      (
+                          SELECT name, popularity, 0 AS match_count, 0 AS relevance_score
+                          FROM job_roles 
+                          WHERE name LIKE CONCAT(?, '%')
+                          AND popularity > 10
+                          ORDER BY popularity DESC
+                      )
+                      UNION ALL
+                      (
+                          SELECT name, popularity, 0 AS match_count, 1 AS relevance_score
+                          FROM job_roles 
+                          WHERE ${likeConditions}
+                          AND name NOT LIKE CONCAT(?, '%')
+                          AND popularity > 10
+                          ORDER BY popularity DESC
+                      )
+                     
+                      UNION ALL
+                      (
+                          SELECT name, popularity, (${matchCountSql}) AS match_count, 3 AS relevance_score
+                          FROM job_roles 
+                          WHERE (${levenshteinSql})
+                          AND name NOT LIKE CONCAT(?, '%')
+                          AND NOT (${likeConditions})
+                          AND popularity > 10
+                          ORDER BY popularity DESC
+                      )
+                  
+                      ORDER BY relevance_score ASC, match_count DESC, popularity DESC
                       LIMIT 10;
-              `;
+                  `;
 
-      // Execute the query
-      const [results] = await connection.execute(sql);
+      const params = [];
+
+      // Parameters for exact match
+      params.push(lowercaseQuery);
+
+      // Parameters for partial matches
+      for (const word of words) params.push(word);
+      params.push(lowercaseQuery);
+
+      // Parameters for levenshtein
+      for (const word of words) {
+        for (let i = 0; i < maxWords; i++) params.push(word);
+        for (let i = 0; i < maxWords; i++) params.push(word);
+      }
+      params.push(lowercaseQuery);
+      for (const word of words) params.push(word);
+
+
+      const [results] = await connection.execute(sql, params);
 
       return results;
-
     } catch (error) {
-      console.log(error);
       throw error;
     } finally {
-      if (connection) {
-        // Close the connection
-        (await connection).release();
-      }
+      if (connection) (await connection).release();
     }
-
   }
 
   static async isProfileCompleted(result) {
@@ -873,7 +910,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       if (jobCheckResult.length === 0) {
         throw new Error('Job not exist');
       }
-      const createdBy = jobCheckResult[0].created_by;
+      const createdBy = jobCheckResult[0].posted_by_id;
       const title = jobCheckResult[0].title;
 
       applicant_profile = await ApplicantProfile.getApplicantUserProfile(userId)
@@ -954,4 +991,4 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
   }
 }
 
-module.exports = JobModel;
+module.exports = Job;
