@@ -1,8 +1,7 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const ApplicantProfile = require('../models/ApplicantProfile');
-const Job = require('../models/JobModel');
-const JobModel = require('../models/JobModel');
+const Job = require('../models/Job');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
@@ -49,7 +48,7 @@ exports.searchLocationSuggestions = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const query = req.query.query;
-        const result = await JobModel.searchLocationSuggestions(query)
+        const result = await Job.searchLocationSuggestions(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
@@ -68,7 +67,7 @@ exports.searchRoleSuggestions = async (req, res) => {
         }
         // const user_id = req.user.user_id;
         const query = req.query.query; 
-        const result = await JobModel.searchRoleSuggestions(query)
+        const result = await Job.searchRoleSuggestions(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }

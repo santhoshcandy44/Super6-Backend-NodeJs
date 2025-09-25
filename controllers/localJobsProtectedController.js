@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
-const LocalJobModel = require('../models/LocalJobModel');
+const LocalJob = require('../models/LocalJob');
 
 exports.getLocalJobsForUser = async (req, res) => {
     try {
@@ -17,7 +17,7 @@ exports.getLocalJobsForUser = async (req, res) => {
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
-        const result = await LocalJobModel.getLocalJobsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await LocalJob.getLocalJobsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
@@ -42,7 +42,7 @@ exports.guestGetLocalJobs = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await LocalJobModel.guestGetLocalJobs(user_id, decodedQuery, 
+        const result = await LocalJob.guestGetLocalJobs(user_id, decodedQuery, 
             queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -65,7 +65,7 @@ exports.createOrUpdateLocalJob = async (req, res) => {
         const user_id = req.user.user_id;
         const keepImageIdsArray =  keep_image_ids?  keep_image_ids.map(id => Number(id))
         : [];
-        const result = await LocalJobModel.createOrUpdateLocalJob(user_id, title, description, company, age_min,
+        const result = await LocalJob.createOrUpdateLocalJob(user_id, title, description, company, age_min,
             age_max, marital_statuses, salary_unit, salary_min, salary_max, country, state, images, location, keepImageIdsArray, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish service");
@@ -85,7 +85,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const result = await LocalJobModel.getPublishedLocalJobs(user_id)
+        const result = await LocalJob.getPublishedLocalJobs(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
@@ -108,7 +108,7 @@ exports.getLocalJobApplicants = async (req, res) => {
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const PAGE_SIZE = 30;
-        const result = await LocalJobModel.getLocalJobApplicants(user_id, local_job_id, queryPage, PAGE_SIZE, queryLastTimestamp)
+        const result = await LocalJob.getLocalJobApplicants(user_id, local_job_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local job applicants");
         }
@@ -127,7 +127,7 @@ exports.markAsReviewedLocalJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { local_job_id, applicant_id } = req.body;
-        const result = await LocalJobModel.markAsReviewed(user_id, local_job_id, applicant_id);
+        const result = await LocalJob.markAsReviewed(user_id, local_job_id, applicant_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to mark as reviewed local job");
         }
@@ -146,7 +146,7 @@ exports.unmarkReviewedLocalJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { local_job_id,  applicant_id} = req.body;
-        const result = await LocalJobModel.unmarkAsReviewed(user_id, local_job_id, applicant_id);
+        const result = await LocalJob.unmarkAsReviewed(user_id, local_job_id, applicant_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to unmark reviewed local job");
         }
@@ -166,7 +166,7 @@ exports.applyLocalJob= async (req, res) => {
 
         const user_id = req.user.user_id;
         const { local_job_id } = req.body;
-        const result = await LocalJobModel.applyLocalJob(user_id, local_job_id);
+        const result = await LocalJob.applyLocalJob(user_id, local_job_id);
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to apply local job");
@@ -189,7 +189,7 @@ exports.bookmarkLocalJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { local_job_id } = req.body;
-        const result = await LocalJobModel.bookmarkLocalJob(user_id, local_job_id);
+        const result = await LocalJob.bookmarkLocalJob(user_id, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark local job");
         }
@@ -209,7 +209,7 @@ exports.removeBookmarkLocalJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { local_job_id } = req.body;
-        const result = await LocalJobModel.removeBookmarkLocalJob(user_id, local_job_id);
+        const result = await LocalJob.removeBookmarkLocalJob(user_id, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }
@@ -228,7 +228,7 @@ exports.localJobsSearchQueries = async (req, res) => {
         }
         // const user_id = req.user.user_id; 
         const query = req.query.query;
-        const result = await LocalJobModel.LocalJobsSearchQueries(query);
+        const result = await LocalJob.LocalJobsSearchQueries(query);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
@@ -248,7 +248,7 @@ exports.deleteLocalJob = async (req, res) => {
         }
         const user_id = req.user.user_id; 
         const { local_job_id } = req.params;
-        const result = await LocalJobModel.deleteLocalJob(user_id, local_job_id);
+        const result = await LocalJob.deleteLocalJob(user_id, local_job_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete local job");
         }

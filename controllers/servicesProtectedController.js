@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const { MEDIA_BASE_URL } = require('../config/config');
-const ServiceModel = require('../models/ServiceModel ');
+const Service = require('../models/Service');
 const Industries = require('../models/Industries');
 
 exports.getServices = async (req, res) => {
@@ -28,7 +28,7 @@ exports.getServices = async (req, res) => {
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
-        const result = await ServiceModel.getServicesForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await Service.getServicesForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -62,7 +62,7 @@ exports.guestGetServices = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await ServiceModel.getServicesForGuestUser(user_id, decodedQuery, 
+        const result = await Service.getServicesForGuestUser(user_id, decodedQuery, 
             queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates, queryIndustries);            
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -81,7 +81,7 @@ exports.getBookmarkedServices = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const result = await ServiceModel.getUserBookmarkedServices(user_id)
+        const result = await Service.getUserBookmarkedServices(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -99,7 +99,7 @@ exports.getUserPublishedServicesFeedGuest = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const {user_id} = req.params;
-        const result = await ServiceModel.getUserPublishedServices(user_id)
+        const result = await Service.getUserPublishedServices(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -118,7 +118,7 @@ exports.getPublishedServicesFeedUser = async (req, res) => {
         }
         const userId = req.user.user_id;
         const {user_id} =  req.params;
-        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, user_id)
+        const result = await Service.getUserPublishedServicesFeedUser(userId, user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -136,7 +136,7 @@ exports.getPublishedServices = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const result = await ServiceModel.getUserPublishedServices(user_id)
+        const result = await Service.getUserPublishedServices(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -156,7 +156,7 @@ exports.updateServiceInfo = async (req, res) => {
         const user_id = req.user.user_id; 
         const { title, short_description, long_description, industry } = req.body;
         const { service_id } = req.params;
-        const result = await ServiceModel.updateServiceDetails(service_id, user_id, title, short_description, long_description, industry);
+        const result = await Service.updateServiceDetails(service_id, user_id, title, short_description, long_description, industry);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update service info");
         }
@@ -176,7 +176,7 @@ exports.updateServicePlans = async (req, res) => {
         const user_id = req.user.user_id; 
         const { plans } = req.body;
         const { service_id } = req.params;
-        const result = await ServiceModel.updateServicePlans(service_id, plans);
+        const result = await Service.updateServicePlans(service_id, plans);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update plans");
         }
@@ -196,7 +196,7 @@ exports.updateServiceLocation = async (req, res) => {
         const user_id = req.user.user_id; 
         const { service_id } = req.params;
         const { longitude, latitude, geo, location_type } = req.body;
-        const result = await ServiceModel.updateOrInsertLocation(service_id, longitude, latitude, geo, location_type);
+        const result = await Service.updateOrInsertLocation(service_id, longitude, latitude, geo, location_type);
         if (!result && !result.isUpdated && !result.isNewInsert) {
             return sendErrorResponse(res, 400, "Failed to update location");
         }
@@ -222,7 +222,7 @@ exports.deleteServiceImage = async (req, res) => {
         const user_id = req.user.user_id; 
         const { service_id } = req.params;
         const { image_id } = req.query;
-        const result = await ServiceModel.deleteServiceImage(service_id, image_id);
+        const result = await Service.deleteServiceImage(service_id, image_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete service");
         }
@@ -246,7 +246,7 @@ exports.uploadServiceImage = async (req, res) => {
         if (!file) {
             return sendErrorResponse(res, 404, "No file found");
         }
-        const result = await ServiceModel.createImage(user_id, service_id, file);
+        const result = await Service.createImage(user_id, service_id, file);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update service image");
         }
@@ -278,7 +278,7 @@ exports.updateServiceImage = async (req, res) => {
         if (!file) {
             return sendErrorResponse(res, 404, "No file found");
         }
-        const result = await ServiceModel.updateImage(user_id, service_id, image_id, file);
+        const result = await Service.updateImage(user_id, service_id, image_id, file);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update service image");
         }
@@ -310,7 +310,7 @@ exports.updateServiceTumbnail = async (req, res) => {
         if (!file) {
             return sendErrorResponse(res, 400, "No file found");
         }
-        const result = await ServiceModel.updateThumbnail(user_id, service_id, image_id, file);
+        const result = await Service.updateThumbnail(user_id, service_id, image_id, file);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update service image");
         }
@@ -339,7 +339,7 @@ exports.createService = async (req, res) => {
         const images = req.files['images[]']; 
         const user_id = req.user.user_id; 
         const thumbnail = req.files['thumbnail'][0];
-        const result = await ServiceModel.createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans, images, location);
+        const result = await Service.createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans, images, location);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish service");
         }
@@ -358,7 +358,7 @@ exports.bookmarkService = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { service_id } = req.body;
-        const result = await ServiceModel.createBookmarkService(user_id, service_id);
+        const result = await Service.createBookmarkService(user_id, service_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark service");
         }
@@ -377,7 +377,7 @@ exports.removeBookmarkService = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { service_id } = req.body;
-        const result = await ServiceModel.removeBookmarkService(user_id, service_id);
+        const result = await Service.removeBookmarkService(user_id, service_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }
@@ -396,7 +396,7 @@ exports.searchSuggestions = async (req, res) => {
         }
         // const user_id = req.user.user_id;
         const query = req.query.query; 
-        const result = await ServiceModel.searchQueries(query)
+        const result = await Service.searchQueries(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
@@ -415,7 +415,7 @@ exports.deleteService = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { service_id } = req.params;
-        const result = await ServiceModel.deleteService(user_id, service_id);
+        const result = await Service.deleteService(user_id, service_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete service");
         }

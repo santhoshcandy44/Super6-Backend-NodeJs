@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/producer.js');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config.js');
 
-class LocalJobModel {
+class LocalJob {
     static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
         const connection = await db.getConnection();
         const [userCoords] = await connection.execute(

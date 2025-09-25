@@ -1,10 +1,8 @@
 const db = require('../config/database')
-const path = require('path');
-const fs = require('fs');
 const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
-const { BASE_URL, MEDIA_ROOT_PATH, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
+const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL, S3_BUCKET_NAME } = require('../config/config');
 const { awsS3Bucket } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 
