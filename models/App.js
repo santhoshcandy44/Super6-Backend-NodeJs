@@ -590,12 +590,12 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
 
         FROM jobs AS j
 
-        LEFT JOIN organizations_profile o ON j.organization_id = o.organization_id
-        LEFT JOIN recruiter_profile u ON j.posted_by_id = u.id
+        LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+        LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
         LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
         LEFT JOIN cities ci ON j.city_id = ci.id
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.user_id = ?
-        LEFT JOIN applicant_profile ap ON ap.external_user_id = ?
+        LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.id AND a.applicant_profile_id = ap.applicant_profile_id
         
         WHERE ub.user_id = ? GROUP BY j.job_id
