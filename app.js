@@ -25,6 +25,9 @@ const { awsS3Bucket } = require('./config/awsS3.js')
 
 const { sendJsonResponse } = require('./helpers/responseHelper.js');
 
+require('./kafka/notificationServiceConsumer.js'); //start kafka consumer
+
+
 const app = express();
 const port = 3000;
 
