@@ -618,7 +618,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
 
-        console.log(combinedResults);
         return Object.values(combinedResults);
     }
 }
