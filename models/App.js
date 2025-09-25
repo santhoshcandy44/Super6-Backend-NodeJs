@@ -580,8 +580,8 @@ class App {
             ci.latitude,
             ci.longitude,
 
-              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-             ub.created_at As bookmarked_at
+            CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+           ub.created_at As bookmarked_at,
 
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
