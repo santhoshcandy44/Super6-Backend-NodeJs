@@ -598,9 +598,8 @@ CASE WHEN a.applicant_profile_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_appl
         LEFT JOIN applicant_profile ap ON ap.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.id AND a.applicant_profile_id = ap.applicant_profile_id
         
-        WHERE ub.user_id = ? 
-        GROUP BY j.job_id
-                `, [userId, userId]);
+        WHERE ub.user_id = ? GROUP BY j.job_id
+                `, [userId, userId, userId]);
 
         console.log(jobResults)        
 
