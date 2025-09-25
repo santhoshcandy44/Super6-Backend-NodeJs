@@ -1310,9 +1310,6 @@ distance LIMIT ? OFFSET ?`;
                     params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, pageSize, offset];
                 }
             } else {
-
-
-                // BASE QUERY FOR NON LOCATION PROVIDED/ FOR GUEST
                 query = `
                 SELECT
                     s.service_id AS service_id,
@@ -1505,7 +1502,7 @@ END AS thumbnail,
                             status: row.status,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url 
                             })) : [],
 
                             plans: row.plans
@@ -1712,11 +1709,11 @@ END AS thumbnail,
                             short_code: BASE_URL + "/service/" + row.short_code,
                             thumbnail: row.thumbnail ? {
                                 ...JSON.parse(row.thumbnail),
-                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url 
                             } : null,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url 
                             })) : [],
                             plans: row.plans
                                 ? JSON.parse(row.plans).map(plan => ({
@@ -1763,7 +1760,6 @@ END AS thumbnail,
             throw new Error('User not exist');
         }
 
-        // Query to retrieve services, images, plans, and location for the specific user
         const [results] = await db.query(`
                 SELECT
                     s.service_id AS service_id,
@@ -1869,27 +1865,14 @@ END AS thumbnail,
                 WHERE s.created_by = ? GROUP BY service_id
             `, [userId, serviceOwnerId]);
 
-
-
-        // Initialize an object to hold the structured data
         const services = {};
 
-
         results.forEach(row => {
-
-
             const serviceId = row.service_id;
 
-            // Initialize service entry if it doesn't exist
             if (!services[serviceId]) {
-
-
                 const date = new Date(row.created_at);
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
-
 
                 services[serviceId] = {
                     user: {
@@ -1920,13 +1903,13 @@ END AS thumbnail,
                     short_code: BASE_URL + "/service/" + row.short_code,
                     thumbnail: row.thumbnail ? {
                         ...JSON.parse(row.thumbnail),
-                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                     } : null,
                     is_bookmarked: Boolean(row.is_bookmarked),
 
                     images: row.images ? JSON.parse(row.images).map(image => ({
                         ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url 
                     })) : [],
 
                     plans: row.plans
@@ -1938,7 +1921,6 @@ END AS thumbnail,
                         }))
                         : [],
 
-
                     location: row.longitude && row.latitude && row.geo && row.location_type
                         ? {
                             longitude: row.longitude,
@@ -1948,24 +1930,14 @@ END AS thumbnail,
                         }
                         : null,
                     is_bookmarked: Boolean(row.is_bookmarked),
-
                 };
             }
-
-
-            // No need to check for image and plan uniqueness here, since they are already parsed
         });
 
-
-        // Return the structured data as JSON
         return Object.values(services);
-
     }
 
     static async getUserPublishedServices(userId) {
-
-
-        // Check if user exists
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1975,7 +1947,6 @@ END AS thumbnail,
             throw new Error('User not exist');
         }
 
-        // Query to retrieve services, images, plans, and location for the specific user
         const [results] = await db.query(`
                 SELECT
                     s.service_id AS service_id,
@@ -2072,24 +2043,13 @@ END AS thumbnail,
                 WHERE s.created_by = ? GROUP BY service_id
             `, [userId]);
 
-
-
-        // Initialize an object to hold the structured data
         const services = {};
-
 
         results.forEach(row => {
             const serviceId = row.service_id;
-
-            // Initialize service entry if it doesn't exist
             if (!services[serviceId]) {
-
-
                 const date = new Date(row.created_at);
-                // Extract the year
                 const createdAtYear = date.getFullYear().toString();
-
-
 
                 services[serviceId] = {
                     user: {
@@ -2118,12 +2078,12 @@ END AS thumbnail,
                     short_code: BASE_URL + "/service/" + row.short_code,
                     thumbnail: row.thumbnail ? {
                         ...JSON.parse(row.thumbnail),
-                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                     } : null,
 
                     images: row.images ? JSON.parse(row.images).map(image => ({
                         ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url 
                     })) : [],
 
                     plans: row.plans
@@ -2145,26 +2105,19 @@ END AS thumbnail,
                         : null
                 };
             }
-
-
-            // No need to check for image and plan uniqueness here, since they are already parsed
         });
-        // Return the structured data as JSON
         return Object.values(services);
-
     }
 
     static async createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans_json, files, locationJson) {
         let connection;
 
-        const uploadedFiles = [];  // Array to track uploaded S3 files for rollback
-
+        const uploadedFiles = [];
 
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            // Insert the service into the services table
             const [serviceResult] = await connection.execute(
                 `INSERT INTO services(created_by, title, short_description, long_description, industry, country, state)
                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -2172,22 +2125,15 @@ END AS thumbnail,
             );
 
 
-            // Get the auto-incremented 'id' of the newly inserted service
             const insertedId = serviceResult.insertId;
 
-            // Query the services table to get the corresponding service_id
             const [serviceResultById] = await connection.execute(
                 'SELECT service_id FROM services WHERE id = ?',
                 [insertedId]
             );
 
-            // Get the service_id from the result
             const service_id = serviceResultById[0].service_id;
 
-
-
-
-            // Retrieve media_id for the user
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
                 [user_id]
@@ -2198,11 +2144,9 @@ END AS thumbnail,
                 throw new Error("Unable to retrieve media_id.");
             }
 
-            // Handle file uploads for images
             const image_urls = [];
 
 
-            // Process image files (e.g., for service gallery)
             for (const file of files) {
 
 
@@ -2213,32 +2157,25 @@ END AS thumbnail,
                     Bucket: S3_BUCKET_NAME,
                     Key: s3Key,
                     Body: file.buffer,
-                    ContentType: file.mimetype,  // Ensure the content type is set based on the file type
-                    ACL: 'public-read',  // Set the file to be publicly readable
+                    ContentType: file.mimetype,  
+                    ACL: 'public-read',  
                 };
 
-                // Upload the image to S3
                 const uploadResult = await awsS3Bucket.upload(uploadParams).promise();
 
-                // Track the uploaded S3 file for rollback
                 uploadedFiles.push(uploadResult.Key);
 
-                // Use Sharp to extract image metadata
                 const metadata = await sharp(file.buffer).metadata();
-
-                // Push the image URL and metadata to the image_urls array
                 image_urls.push({
-                    url: s3Key,  // S3 URL of the uploaded image
-                    width: metadata.width,       // Extracted width from image metadata
-                    height: metadata.height,     // Extracted height from image metadata
-                    size: file.size,             // Original file size
-                    format: metadata.format,     // Extracted format (e.g., jpeg, png)
+                    url: s3Key,  
+                    width: metadata.width,       
+                    height: metadata.height,     
+                    size: file.size,            
+                    format: metadata.format,    
                 });
 
             }
 
-
-            // Handle the thumbnail upload to S3
             const thumbnailFileName = `${uuidv4()}-${thumbnail.originalname}`;
             const thumbnailS3Key = `media/${media_id}/services/${service_id}/${thumbnailFileName}`;
 
@@ -2252,11 +2189,9 @@ END AS thumbnail,
 
             const thumbnailUploadResult = await awsS3Bucket.upload(thumbnailUploadParams).promise();
 
-            // Track the uploaded thumbnail file for rollback
             uploadedFiles.push(thumbnailUploadResult.Key);
 
             const thumbnail_metadata = await sharp(thumbnail.buffer).metadata();
-
 
             const thumbnailUrl = {
                 url: thumbnailS3Key,
@@ -2266,16 +2201,12 @@ END AS thumbnail,
                 format: thumbnail_metadata.format
             };
 
-
-
-            // Insert thumbnail image metadata into the database
             await connection.execute(
                 `INSERT INTO service_thumbnail (service_id, image_url, width, height, size, format)
                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [service_id, thumbnailUrl.url, thumbnailUrl.width, thumbnailUrl.height, thumbnailUrl.size, thumbnailUrl.format]
             );
 
-            // Insert image URLs into the service_images table
             for (const image of image_urls) {
                 await connection.execute(
                     `INSERT INTO service_images (service_id, image_url, width, height, size, format)
@@ -2284,7 +2215,6 @@ END AS thumbnail,
                 );
             }
 
-            // Insert service plans if provided
             const plans = plans_json;
             if (typeof plans !== 'object') {
                 throw new Error('Invalid JSON format for plans.');
@@ -2299,7 +2229,6 @@ END AS thumbnail,
                 );
             }
 
-            // Insert location if provided
             const decodedLocation = he.decode(locationJson);
 
             if (decodedLocation) {
@@ -2317,34 +2246,24 @@ END AS thumbnail,
                 ]);
             }
 
-            // Commit the transaction if all steps succeed
             await connection.commit();
-
             return { success: true, service_id };
-
         } catch (error) {
             if (connection) {
-                await connection.rollback();  // Rollback transaction on error
-
-                // Rollback S3 file uploads if something goes wrong
+                await connection.rollback(); 
                 try {
                     for (const fileKey of uploadedFiles) {
                         await awsS3Bucket.deleteObject({
                             Bucket: S3_BUCKET_NAME,
                             Key: fileKey,
                         }).promise();
-                        console.log(`Deleted file from S3: ${fileKey}`);
                     }
-                } catch (deleteError) {
-                    console.error('Error deleting S3 files during rollback:', deleteError.message);
-                }
+                } catch (deleteError) {}
             }
-
-
-            throw error;  // Re-throw the error to propagate it
+            throw error; 
         } finally {
             if (connection) {
-                connection.release();  // Release connection back to the pool (no need to await)
+                connection.release();
             }
         }
     }
@@ -2352,7 +2271,6 @@ END AS thumbnail,
     static async updateServiceDetails(service_id, user_id, title, short_description, long_description, industry) {
         let connection;
         try {
-
             connection = await db.getConnection();
             await connection.beginTransaction();
             const updateQuery = `
@@ -2364,7 +2282,6 @@ END AS thumbnail,
                     industry = ?
                 WHERE service_id = ? AND created_by = ?`;
 
-            // Execute the UPDATE query
             const [updateResult] = await connection.execute(updateQuery, [
                 title,
                 short_description,
@@ -2378,7 +2295,6 @@ END AS thumbnail,
                 throw new Error('No rows were updated, service or user not found');
             }
 
-            // Fetch the updated service details
             const selectQuery = `
                 SELECT
                     s.service_id AS service_id,
@@ -2399,18 +2315,13 @@ END AS thumbnail,
                 throw new Error('Service not exist');
             }
 
-            // Commit the transaction
             await connection.commit();
-
-            // Return the updated service details
-            return rows.length > 0 ? rows[0] : null; // Return the first result if rows has length > 0, otherwise return null
+            return rows.length > 0 ? rows[0] : null;
 
         } catch (error) {
-            // Rollback the transaction on error
             if (connection) await connection.rollback();
             throw error;
         } finally {
-            // Close the connection
             if (connection) await connection.release();
         }
     }
@@ -2818,14 +2729,12 @@ END AS thumbnail,
 
     static async updateThumbnail(user_id, service_id, imageId, file) {
         let connection;
-        let s3Key = '';  // Track the S3 key for the old image
-
+        let s3Key;  
 
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            // Retrieve media_id
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
                 [user_id]
@@ -2837,16 +2746,8 @@ END AS thumbnail,
             }
 
             if (imageId === -1) {
-                // Case: Creating a new thumbnail
                 const newFileName = `${uuidv4()}-${file.originalname}`;
-
-
-
-                // Use Sharp to extract metadata
                 const metadata = await sharp(file.buffer).metadata();
-
-
-                // Determine the MIME type based on the file format
                 let contentType;
                 switch (metadata.format) {
                     case 'jpeg':
@@ -2859,25 +2760,22 @@ END AS thumbnail,
                         contentType = 'image/gif';
                         break;
                     default:
-                        contentType = file.mimetype;  // Fallback content type
+                        contentType = file.mimetype;  
                         break;
                 }
 
 
                 s3Key = `media/${media_id}/services/${service_id}/${newFileName}`
 
-                // Upload the image to S3
                 const uploadParams = {
                     Bucket: S3_BUCKET_NAME,
                     Key: s3Key,
                     Body: file.buffer,
                     ContentType: contentType,
-                    ACL: 'public-read' // Make sure to adjust permissions based on your needs
+                    ACL: 'public-read'
                 };
 
                 await awsS3Bucket.upload(uploadParams).promise();
-
-
 
                 const newImage = {
                     url: s3Key,
@@ -2887,7 +2785,6 @@ END AS thumbnail,
                     format: metadata.format
                 };
 
-                // Insert the new thumbnail into the database
                 const [result] = await connection.execute(
                     `INSERT INTO service_thumbnail (service_id, image_url, width, height, size, format) 
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -2900,12 +2797,9 @@ END AS thumbnail,
                     [service_id, newImage.url, newImage.width, newImage.height, newImage.size, newImage.format]
                 );
 
-                // Commit transaction
                 await connection.commit();
+                const insertedId = result.insertId; 
 
-                const insertedId = result.insertId; // Newly inserted thumbnail ID
-
-                // Retrieve the inserted data
                 const [output] = await connection.execute(
                     `SELECT * FROM service_thumbnail WHERE service_id = ? AND thumbnail_id = ?`,
                     [service_id, insertedId]
@@ -2914,7 +2808,6 @@ END AS thumbnail,
                 return output.length > 0 ? output[0] : null;
 
             } else {
-                // Case: Updating an existing thumbnail
                 const [rows] = await connection.execute(
                     'SELECT image_url FROM service_thumbnail WHERE service_id = ? AND thumbnail_id = ?',
                     [service_id, imageId]
@@ -2925,19 +2818,12 @@ END AS thumbnail,
                 }
 
                 const oldImageUrl = rows[0].image_url;
-                const oldS3Key = oldImageUrl.replace(BASE_URL, ''); // S3 key format (remove media base path)
+                const oldS3Key = oldImageUrl.replace(BASE_URL, ''); 
 
-
-                // Case: Creating a new thumbnail
                 const newFileName = `${uuidv4()}-${file.originalname}`;
 
-
-
-                // Use Sharp to extract metadata
                 const metadata = await sharp(file.buffer).metadata();
 
-
-                // Determine the MIME type based on the file format
                 let contentType;
                 switch (metadata.format) {
                     case 'jpeg':
@@ -2950,7 +2836,7 @@ END AS thumbnail,
                         contentType = 'image/gif';
                         break;
                     default:
-                        contentType = file.mimetype;  // Fallback content type
+                        contentType = file.mimetype;  
                         break;
                 }
 
@@ -2961,7 +2847,7 @@ END AS thumbnail,
                     Key: s3Key,
                     Body: file.buffer,
                     ContentType: contentType,
-                    ACL: 'public-read' // Adjust ACL based on your needs
+                    ACL: 'public-read' 
                 };
 
                 await awsS3Bucket.upload(uploadParams).promise();
@@ -2974,7 +2860,6 @@ END AS thumbnail,
                     format: metadata.format
                 };
 
-                // Update the existing thumbnail record in the database
                 await connection.execute(
                     `UPDATE service_thumbnail
                     SET image_url = ?, width = ?, height = ?, size = ?, format = ?
@@ -2982,23 +2867,18 @@ END AS thumbnail,
                     [newImage.url, newImage.width, newImage.height, newImage.size, newImage.format, imageId]
                 );
 
-                // Commit transaction
                 await connection.commit();
 
-                // After commit, delete the old image file from S3
                 try {
                     const deleteParams = {
                         Bucket: S3_BUCKET_NAME,
                         Key: oldS3Key
                     };
                     await awsS3Bucket.deleteObject(deleteParams).promise();
-                    console.log(`Deleted old image from S3 at ${s3Key}`);
                 } catch (err) {
-                    console.error('Error deleting old image from S3:', err.message);
                     throw new Error('Failed to delete old image from S3.');
                 }
 
-                // Retrieve the updated data
                 const [output] = await connection.execute(
                     `SELECT * FROM service_thumbnail WHERE service_id = ? AND thumbnail_id = ?`,
                     [service_id, imageId]
@@ -3019,14 +2899,10 @@ END AS thumbnail,
                     };
                     try {
                         await awsS3Bucket.deleteObject(deleteParams).promise();
-                        console.log(`Deleted image at ${deleteParams.Key} from S3 during rollback.`);
-                    } catch (err) {
-                        console.error('Error deleting uploaded image during rollback:', err.message);
-                    }
+                    } catch (err) {}
                 }
             }
-
-            throw error;  // Rethrow the error to propagate it
+            throw error;  
         } finally {
             if (connection) {
                 await connection.release();
