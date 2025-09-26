@@ -95,7 +95,7 @@ async function deleteDirectoryFromS3(s3Key) {
     }
 }
 
-async function streamS3File(res, key) {
+async function streamS3File(key, res) {
   try {
     const headResult = await s3Client.send(
       new HeadObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key })
