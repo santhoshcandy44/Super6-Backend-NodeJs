@@ -145,9 +145,14 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           queryParam,
           queryParam,
           queryParam,
+          userLat,
+          userLon,
           userId,
           userId
         ];
+
+        console.log(userLat)
+        console.log(userLon)
 
         if (filterWorkModes.length > 0) {
           const placeholders = filterWorkModes.map(() => `?`).join(', ');
