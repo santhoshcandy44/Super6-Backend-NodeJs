@@ -112,9 +112,15 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     ST_Distance_Sphere(
                         POINT(?, ?),
                         POINT(ci.longitude, ci.latitude)
-                    ) * 0.001 AS distance
+                    ) * 0.001 AS distance,
         
-                 
+                    -- Full-text relevance scoring
+                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
+                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
+        
+                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
+                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
+        
                 FROM jobs j
         
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
@@ -129,13 +135,16 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
 
-                  
+                 
         `;
 
         params = [
           userLon,
           userLat,
-        
+          queryParam,
+          queryParam,
+          queryParam,
+          queryParam,
           userId,
           userId
         ];
@@ -164,28 +173,29 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         }
 
-        // if (lastTotalRelevance !== null) {
-        //   query += ` GROUP BY j.job_id HAVING
-        //             distance < ? AND (
-        //                 title_relevance > 0 OR
-        //                 description_relevance > 0
-        //             ) AND (
-        //                 (total_relevance = ? AND distance <= ?) OR
-        //                 (total_relevance < ? AND distance <= ?)
-        //             )`;
-        //   params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
-        // } else {
-        //   query += ` GROUP BY j.job_id HAVING
-        //             distance < ? AND (
-        //                 title_relevance > 0 OR
-        //                 description_relevance > 0
-        //             )`;
-        //   params.push(radius);
-        // }
+        if (lastTotalRelevance !== null) {
+          query += ` GROUP BY j.job_id HAVING
+                    distance < ? AND (
+                        title_relevance > 0 OR
+                        description_relevance > 0
+                    ) AND (
+                        (total_relevance = ? AND distance <= ?) OR
+                        (total_relevance < ? AND distance <= ?)
+                    )`;
+          params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+        } else {
+          query += ` GROUP BY j.job_id HAVING
+                    distance < ? AND (
+                        title_relevance > 0 OR
+                        description_relevance > 0
+                    )`;
+          params.push(radius);
+        }
 
         query += `
           ORDER BY
-              distance ASC
+              distance ASC,
+              total_relevance DESC
           LIMIT ? OFFSET ?
       `;
         const offset = (page - 1) * pageSize;
@@ -606,8 +616,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
     
     const [results] = await connection.execute(query, params);
-    console.log(results)
-    
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
