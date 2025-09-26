@@ -112,7 +112,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     ST_Distance_Sphere(
                         POINT(?, ?),
                         POINT(ci.longitude, ci.latitude)
-                    ) * 0.001 AS distance,
+                    ) * 0.001 AS distance
         
                  
                 FROM jobs j
