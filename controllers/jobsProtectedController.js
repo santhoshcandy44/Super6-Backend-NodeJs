@@ -11,10 +11,8 @@ exports.getJobListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
-        
-        console.log(s);
-        
+        const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;        
+        console.log(req.query)
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
@@ -37,7 +35,6 @@ exports.getJobListingsForUser = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
-        console.log(result)
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
         console.log(error)
