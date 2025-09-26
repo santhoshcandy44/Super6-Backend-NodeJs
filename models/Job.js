@@ -176,24 +176,24 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
         }
 
-        if (lastTotalRelevance !== null) {
-          query += ` GROUP BY j.job_id HAVING
-                    distance < ? AND (
-                        title_relevance > 0 OR
-                        description_relevance > 0
-                    ) AND (
-                        (total_relevance = ? AND distance <= ?) OR
-                        (total_relevance < ? AND distance <= ?)
-                    )`;
-          params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
-        } else {
-          query += ` GROUP BY j.job_id HAVING
-                     (
-                        title_relevance > 0 OR
-                        description_relevance > 0
-                    )`;
-          params.push(radius);
-        }
+        // if (lastTotalRelevance !== null) {
+        //   query += ` GROUP BY j.job_id HAVING
+        //             distance < ? AND (
+        //                 title_relevance > 0 OR
+        //                 description_relevance > 0
+        //             ) AND (
+        //                 (total_relevance = ? AND distance <= ?) OR
+        //                 (total_relevance < ? AND distance <= ?)
+        //             )`;
+        //   params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+        // } else {
+        //   query += ` GROUP BY j.job_id HAVING
+        //             distance < ? AND (
+        //                 title_relevance > 0 OR
+        //                 description_relevance > 0
+        //             )`;
+        //   params.push(radius);
+        // }
 
         query += `
           ORDER BY
@@ -620,7 +620,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     
     const [results] = await connection.execute(query, params);
     console.log(results)
-
+    
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
