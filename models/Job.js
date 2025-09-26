@@ -724,8 +724,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                 years_of_experience: row.years_of_experience,
                 is_verified: !!row.is_verified,
               },
-              is_applied: row.is_applied,
-              is_bookmarked: row.is_bookarked,
+              is_applied: !!row.is_applied,
+              is_bookmarked: !!row.is_bookarked,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
