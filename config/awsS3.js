@@ -110,7 +110,7 @@ async function streamS3File(key, res) {
     }
 
     const getObjectResponse = await s3Client.send(
-      new GetObjectCommand({ Bucket: bucket, Key: key })
+      new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key })
     );
 
     if (getObjectResponse.Body) {
