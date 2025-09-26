@@ -103,31 +103,10 @@ app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes)
 app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes);
 app.use('/api/app/serve/chat', chatProtectedAppRoutes); 
 
-app.get('/media/:folder/services/*', (req, res) => {
+app.get('/media/:folder/services/*', async (req, res) => {
     const { folder } = req.params;
     const s3Key = `media/${folder}/services/${req.params[0]}`;
-    const s3Params = {
-        Bucket: S3_BUCKET_NAME,
-        Key: s3Key,
-    };
-
-    awsS3Bucket.headObject(s3Params, (err, metadata) => {
-        if (err) {
-            return res.status(500).send('Error fetching file');
-        }
-        const contentType = metadata.ContentType;
-        const contentLength = metadata.ContentLength;
-        res.setHeader('Content-Type', contentType); 
-        res.setHeader('Content-Length', contentLength); 
-        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-        s3Stream.pipe(res);
-        s3Stream.on('error', (streamError) => {
-            if (res.headersSent) {
-                return; 
-            }
-            res.status(500).send('Error fetching file');
-        });
-    });
+    await streamS3File(s3Key, res);
 });
 
 app.get('/media/:folder/used-product-listings/*', async (req, res) => {
