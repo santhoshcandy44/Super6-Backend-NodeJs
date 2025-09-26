@@ -97,7 +97,7 @@ async function deleteDirectoryFromS3(s3Key) {
 
 async function streamS3File(res, key) {
   try {
-    const headResult = await s3.send(
+    const headResult = await s3Client.send(
       new HeadObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key })
     );
 
@@ -109,7 +109,7 @@ async function streamS3File(res, key) {
       res.setHeader("Cache-Control", headResult.CacheControl);
     }
 
-    const getObjectResponse = await s3.send(
+    const getObjectResponse = await s3Client.send(
       new GetObjectCommand({ Bucket: bucket, Key: key })
     );
 
