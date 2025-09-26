@@ -140,14 +140,14 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         `;
 
         params = [
-          80.27847,
-          13.08784,
+          userLon,
+          userLat,
           queryParam,
           queryParam,
           queryParam,
           queryParam,
-          13.08784,
-          80.27847,
+          userLat,
+          userLon,
           userId,
           userId
         ];
@@ -188,7 +188,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
         } else {
           query += ` GROUP BY j.job_id HAVING
-                    distance < ? AND (
+                     (
                         title_relevance > 0 OR
                         description_relevance > 0
                     )`;
@@ -620,6 +620,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     
     const [results] = await connection.execute(query, params);
     console.log(results)
+
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
