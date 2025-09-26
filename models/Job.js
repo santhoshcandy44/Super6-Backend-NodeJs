@@ -71,7 +71,6 @@ class Job {
                     j.status,
                     j.approval_status,
                     j.slug,
-                    j.company_id,
                     j.posted_by_id,
         
                   
@@ -177,7 +176,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
 
         if (lastTotalRelevance !== null) {
-          query += ` GROUP BY j.id HAVING
+          query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
                         title_relevance > 0 OR
                         description_relevance > 0
@@ -235,7 +234,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.status,
             j.approval_status,
             j.slug,
-            j.company_id,
             j.posted_by_id,
 
             -- Organization Info
@@ -384,7 +382,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.status,
                     j.approval_status,
                     j.slug,
-                    j.company_id,
                     j.posted_by_id,
         
                   
@@ -478,7 +475,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
 
         if (lastTotalRelevance !== null) {
-          query += ` GROUP BY j.id HAVING (
+          query += ` GROUP BY j.job_id HAVING (
                           title_relevance > 0 OR
                           description_relevance > 0
                       ) AND (
@@ -532,7 +529,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.status,
             j.approval_status,
             j.slug,
-            j.company_id,
             j.posted_by_id,
 
             -- Organization Info
@@ -646,7 +642,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         if (!jobs[job_id]) {
           try {
             jobs[job_id] = {
-              id: row.id,
+              job_id: row.job_id,
               title: row.title,
               work_mode: row.work_mode,
               location: row.location,
@@ -700,7 +696,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
               // approval_status: row.approval_status,
               slug: MEDIA_BASE_URL + '/job/' + row.slug,
 
-              company_id: row.company_id,
+              organization_id: row.organization_id,
 
               organization: {
                 id: row.organization_id,
