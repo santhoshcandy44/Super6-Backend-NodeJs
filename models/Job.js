@@ -114,13 +114,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                         POINT(ci.longitude, ci.latitude)
                     ) * 0.001 AS distance,
         
-                    -- Full-text relevance scoring
-                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS title_relevance,
-                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS description_relevance,
-        
-                    COALESCE(MATCH(j.title) AGAINST(? IN NATURAL LANGUAGE MODE), 0) +
-                    COALESCE(MATCH(j.description) AGAINST(? IN NATURAL LANGUAGE MODE), 0) AS total_relevance
-        
+                 
                 FROM jobs j
         
         LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
@@ -142,10 +136,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         params = [
           userLon,
           userLat,
-          queryParam,
-          queryParam,
-          queryParam,
-          queryParam,
+        
           userLat,
           userLon,
           userId,
@@ -197,8 +188,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         query += `
           ORDER BY
-              distance ASC,
-              total_relevance DESC
+              distance ASC
           LIMIT ? OFFSET ?
       `;
         const offset = (page - 1) * pageSize;
