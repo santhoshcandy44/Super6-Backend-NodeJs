@@ -50,6 +50,7 @@ class LocalJob {
     l.short_code,
         l.country,
                         l.state, 
+                        l.status,
 
                      COALESCE(
             CONCAT('[', 
@@ -456,6 +457,7 @@ WHERE
     l.short_code,
         l.country,
                         l.state, 
+                        l.status,
 
                                      COALESCE(
             CONCAT('[', 
@@ -678,6 +680,7 @@ WHERE
                          l.short_code,
                             l.country,
                         l.state, 
+                        l.status,
 
                      COALESCE(
             CONCAT('[', 
@@ -798,6 +801,8 @@ WHERE
                          l.short_code,
                             l.country,
                         l.state, 
+                         l.status,
+
                  COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -912,7 +917,8 @@ WHERE
                          l.short_code,
                             l.country,
                         l.state, 
-                        
+                        l.status,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1025,6 +1031,8 @@ WHERE
                          l.short_code,
                             l.country,
                         l.state,  
+                         l.status,
+
                                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1454,7 +1462,8 @@ GROUP BY l.local_job_id;
                     l.short_code,
                        l.country,
                         l.state, 
-    
+                    l.status,
+
                  COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
