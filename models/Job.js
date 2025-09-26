@@ -4,7 +4,8 @@ const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 
 class Job {
-  static async getJobPostingsUser(userId, queryParam,
+  static async getJobPostingsUser(userId, 
+    queryParam,
     latitudeParam,
     longitudeParam,
     page,
