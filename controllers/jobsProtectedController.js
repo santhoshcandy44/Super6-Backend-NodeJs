@@ -12,6 +12,9 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
+        
+        console.log(s);
+        
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
