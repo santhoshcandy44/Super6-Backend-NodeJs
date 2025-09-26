@@ -5,7 +5,7 @@ const {
   S3_BUCKET_SECRET_KEY 
 } = require("./config");
 
-const { S3Client, PutBucketVersioningCommand, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutBucketVersioningCommand, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadObjectCommand, GetObjectCommand} = require("@aws-sdk/client-s3");
 
 const s3Client = new S3Client({
   region: S3_BUCKET_REGION,
@@ -95,4 +95,35 @@ async function deleteDirectoryFromS3(s3Key) {
     }
 }
 
-module.exports = { s3Client, PutObjectCommand, buildS3Url, uploadToS3, deleteFromS3, deleteDirectoryFromS3};
+async function streamS3File(res, key) {
+  try {
+    const headResult = await s3.send(
+      new HeadObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key })
+    );
+
+    res.setHeader("Content-Type", headResult.ContentType || "application/octet-stream");
+    if (headResult.ContentLength) {
+      res.setHeader("Content-Length", headResult.ContentLength.toString());
+    }
+    if (headResult.CacheControl) {
+      res.setHeader("Cache-Control", headResult.CacheControl);
+    }
+
+    const getObjectResponse = await s3.send(
+      new GetObjectCommand({ Bucket: bucket, Key: key })
+    );
+
+    if (getObjectResponse.Body) {
+      (getObjectResponse.Body).pipe(res);
+    } else {
+      res.status(404).send("File not found");
+    }
+  } catch (err) {
+    console.error("S3 streaming error:", err);
+    if (!res.headersSent) {
+      res.status(500).send("Error fetching file");
+    }
+  }
+}
+
+module.exports = { s3Client, PutObjectCommand, buildS3Url, uploadToS3, deleteFromS3, deleteDirectoryFromS3, streamS3File};

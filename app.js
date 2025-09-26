@@ -18,10 +18,10 @@ const industriesSettingsProtectedRoutes = require('./routes/industriesSettingsPr
 const boardsSettingsProtectedRoutes = require('./routes/boardsSettingsProtectedAppRoutes');
 const chatProtectedAppRoutes = require('./routes/chatProtectedAppRoutes');
 
-const { MEDIA_ROOT_PATH, S3_BUCKET_NAME } = require('./config/config');
+const { MEDIA_ROOT_PATH } = require('./config/config');
 
 const { verifyShortEncryptedUrl } = require('./utils/authUtils')
-const { awsS3Bucket } = require('./config/awsS3.js')
+const { streamS3File } = require('./config/awsS3.js')
 
 const { sendJsonResponse } = require('./helpers/responseHelper.js');
 
@@ -130,57 +130,43 @@ app.get('/media/:folder/services/*', (req, res) => {
     });
 });
 
-app.get('/media/:folder/used-product-listings/*', (req, res) => {
+app.get('/media/:folder/used-product-listings/*', async (req, res) => {
     const { folder } = req.params; 
     const s3Key = `media/${folder}/used-product-listings/${req.params[0]}`;
-    const s3Params = {
-        Bucket: S3_BUCKET_NAME,
-        Key: s3Key,
-    };
-    awsS3Bucket.headObject(s3Params, (err, metadata) => {
-        if (err) {
-            return res.status(500).send('Error fetching file');
-        }
-        const contentType = metadata.ContentType;
-        const contentLength = metadata.ContentLength;
-        res.setHeader('Content-Type', contentType); 
-        res.setHeader('Content-Length', contentLength);
-        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-        s3Stream.pipe(res);
-        s3Stream.on('error', (streamError) => {
-            if (res.headersSent) {
-                return;
-            }
-            res.status(500).send('Error fetching file');
-        });
-    });
+    await streamS3File(s3Key, res);
 });
 
-app.get('/media/:folder/local-jobs/*', (req, res) => {
+app.get('/media/:folder/local-jobs/*', async (req, res) => {
     const { folder } = req.params; 
     const s3Key = `media/${folder}/local-jobs/${req.params[0]}`;
-    const s3Params = {
-        Bucket: S3_BUCKET_NAME,
-        Key: s3Key,
-    };
-    awsS3Bucket.headObject(s3Params, (err, metadata) => {
-        if (err) {
-            return res.status(500).send('Error fetching file');
-        }
-        const contentType = metadata.ContentType;
-        const contentLength = metadata.ContentLength;
-        res.setHeader('Content-Type', contentType); 
-        res.setHeader('Content-Length', contentLength);
-        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-        s3Stream.pipe(res);
-        s3Stream.on('error', (streamError) => {
-            if (res.headersSent) {
-                return;
-            }
-            res.status(500).send('Error fetching file');
-        });
-    });
+    await streamS3File(s3Key, res);
 });
+
+app.get('/media/:folder/careers/*', async (req, res) => {
+    const { folder } = req.params; 
+    const s3Key = `media/${folder}/careers/${req.params[0]}`;
+    await streamS3File(s3Key, res);
+});
+
+app.get('/images', async (req, res) => {
+    try {
+        const { q: token } = req.query;
+        if (!token) {
+            return res.status(400).send('Bad Request: Missing token');
+        }
+        const extractedData = verifyShortEncryptedUrl(token);
+        if (!extractedData) {
+            return res.status(403).send('Forbidden: Invalid token');
+        }
+        const { path } = extractedData;
+        const s3Key = path;
+        await streamS3File(s3Key, res);
+    } catch (error) {
+        console.log(err);
+        res.status(500).send('Error fetching file');
+    }
+});
+
 
 app.get('/uploads/:folder/*', (req, res, next) => {
     const { folder } = req.params;
@@ -213,72 +199,6 @@ app.get('/uploads/:folder/*', (req, res, next) => {
             res.end(); 
         });
     });
-});
-
-app.get('/media/:folder/careers/*', (req, res) => {
-    const { folder } = req.params; 
-    const s3Key = `media/${folder}/careers/${req.params[0]}`;
-    const s3Params = {
-        Bucket: S3_BUCKET_NAME, 
-        Key: s3Key,
-    };
-    awsS3Bucket.headObject(s3Params, (err, metadata) => {
-        if (err) {
-            return res.status(500).send('Error fetching file');
-        }
-        const contentType = metadata.ContentType;
-        const contentLength = metadata.ContentLength;
-        res.setHeader('Content-Type', contentType); 
-        res.setHeader('Content-Length', contentLength);
-        const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-        s3Stream.pipe(res);
-        s3Stream.on('error', (streamError) => {
-            if (res.headersSent) {
-                return;
-            }
-            res.status(500).send('Error fetching file');
-        });
-    });
-});
-
-app.get('/images', async (req, res) => {
-    try {
-        const { q: token } = req.query;
-        if (!token) {
-            return res.status(400).send('Bad Request: Missing token');
-        }
-        const extractedData = verifyShortEncryptedUrl(token);
-        if (!extractedData) {
-            return res.status(403).send('Forbidden: Invalid token');
-        }
-        const { path } = extractedData;
-        const s3Key = path;
-        const s3Params = {
-            Bucket: S3_BUCKET_NAME,
-            Key: s3Key,
-        };
-        awsS3Bucket.headObject(s3Params, (err, metadata) => {
-            if (err) {
-                return res.status(500).send('Error fetching file');
-            }
-            const contentType = metadata.ContentType;
-            const contentLength = metadata.ContentLength;
-            res.setHeader('Content-Type', contentType); 
-            res.setHeader('Content-Length', contentLength);
-            const s3Stream = awsS3Bucket.getObject(s3Params).createReadStream();
-            s3Stream.pipe(res);
-            s3Stream.on('error', (streamError) => {
-                if (res.headersSent) {
-                    return;
-                }
-                res.status(500).send('Error fetching file');
-            });
-        });
-
-    } catch (error) {
-        console.log(err);
-        res.status(500).send('Error fetching file');
-    }
 });
 
 app.get('/', (req, res) => {
