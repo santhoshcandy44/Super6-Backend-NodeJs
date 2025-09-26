@@ -140,14 +140,14 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         `;
 
         params = [
-          userLon,
-          userLat,
+          80.27847,
+          13.08784,
           queryParam,
           queryParam,
           queryParam,
           queryParam,
-          userLat,
-          userLon,
+          13.08784,
+          80.27847,
           userId,
           userId
         ];
