@@ -553,11 +553,12 @@ exports.updateCertificate = async (req, res) => {
                 image,
             };
         });
+
+        console.log(certificates);
         const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update certificates");
         }
-
         return sendJsonResponse(res, 200, "Certificate info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
