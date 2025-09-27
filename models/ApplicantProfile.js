@@ -5,7 +5,7 @@ const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils
 const User = require('./User.js');
 const { PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { uploadToS3, deleteFromS3} = require('../config/awsS3.js')
-const {formatToMySQLDate} = require('../utils/dateUtils.js');
+const {formatToMySQLDate} = require('./utils/dateUtils.js');
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
