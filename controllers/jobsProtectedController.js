@@ -476,12 +476,7 @@ exports.updateResume = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const applicantResumeInfoJson = req.body.applicantResumeInfo;
-        if (!applicantResumeInfoJson) {
-            return sendErrorResponse(res, 400, "Missing resume info part");
-        }
         const userId = req.user.user_id;
-        const applicantResumeInfo = JSON.parse(applicantResumeInfoJson);
         const resume = req.file;
         const result = await ApplicantProfile.updateOrCreateUserResume(userId, resume);
         if (!result) {
