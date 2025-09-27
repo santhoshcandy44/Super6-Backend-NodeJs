@@ -10,7 +10,7 @@ class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
         const [profile] = await db.query(
             `SELECT id, first_name, last_name, gender, email, phone, intro, profile_picture 
-             FROM applicant_profile 
+             FROM applicant_profiles 
              WHERE external_user_id = ?`,
             [userId]
         );
@@ -148,7 +148,7 @@ class ApplicantProfile {
         let id, exists = true;
         while (exists) {
             id = Math.floor(10000000000 + Math.random() * 90000000000);
-            const [rows] = await db.query("SELECT id FROM applicant_profile WHERE id = ? LIMIT 1", [id]);
+            const [rows] = await db.query("SELECT id FROM applicant_profiles WHERE id = ? LIMIT 1", [id]);
             exists = rows.length > 0;
         }
         return id;
@@ -161,7 +161,7 @@ class ApplicantProfile {
         if (!user) throw new Error("Access forbidden");
         const mediaId = user.media_id;
         const [[existingProfile]] = await db.query(
-            `SELECT profile_picture FROM applicant_profile WHERE external_user_id = ?`,
+            `SELECT profile_picture FROM applicant_profiles WHERE external_user_id = ?`,
             [userId]
         );
         if (profilePic) {
@@ -193,7 +193,7 @@ class ApplicantProfile {
 
         const unique_user_id = await this.generateUnique11DigitId()
         const query = `
-            INSERT INTO applicant_profile (applicant_id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, is_verified, created_at, updated_at)
+            INSERT INTO applicant_profiles (applicant_id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, is_verified, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
             ON DUPLICATE KEY UPDATE
                 id = VALUES(id),
@@ -224,7 +224,7 @@ class ApplicantProfile {
 
     static async updateOrCreateEducationInfo(userId, educationList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_education_info WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_education_info WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
         const insertEducationQuery = `
@@ -234,7 +234,7 @@ class ApplicantProfile {
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const [userProfile] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -268,7 +268,7 @@ class ApplicantProfile {
 
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_experience WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_experience WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
@@ -281,7 +281,7 @@ class ApplicantProfile {
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -322,13 +322,13 @@ class ApplicantProfile {
         await db.query(
             `DELETE FROM applicant_profile_experience
            WHERE applicant_id = (
-             SELECT id FROM applicant_profile WHERE external_user_id = ?
+             SELECT id FROM applicant_profiles WHERE external_user_id = ?
            )`,
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -358,7 +358,7 @@ class ApplicantProfile {
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_skill WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_skill WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
@@ -370,7 +370,7 @@ class ApplicantProfile {
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -391,12 +391,12 @@ class ApplicantProfile {
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_language WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_language WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -435,7 +435,7 @@ class ApplicantProfile {
         if (!allowedTypes.includes(fileType)) return null; 
 
         const [[userProfile]] = await db.query(
-            `SELECT id FROM applicant_profile WHERE external_user_id = ?`,
+            `SELECT id FROM applicant_profiles WHERE external_user_id = ?`,
             [userId]
         );
 
@@ -479,7 +479,7 @@ class ApplicantProfile {
             throw new Error("Access forbidden");
         }
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
         if (!userProfile) return null;
