@@ -79,8 +79,6 @@ router.get('/job-listings',
   jobsProtectedController.getJobListingsForUser
 );
 
-
-
 router.post(
     '/bookmark-job',
     authenticateToken,
@@ -174,7 +172,7 @@ router.post(
     fileFilter: profilePicFileFilter
   }).single('profile_pic'),
   [
-    body('first_name')
+    body('applicantProfessionalInfo.first_name')
     .trim()
     .notEmpty().withMessage('First name is required')
     .isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
