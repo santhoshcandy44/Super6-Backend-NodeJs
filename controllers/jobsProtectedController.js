@@ -531,9 +531,9 @@ exports.updateCertificate = async (req, res) => {
             return sendErrorResponse(res, 400, 'You can only upload up to 5 certificates.');
         }
         const userId = req.user.user_id;
-        const certificates = applicantCertificateInfo.map((cert) => {
+        const certificates = applicantCertificateInfo.map((cert, index) => {
             const id = cert.id;
-            const fieldName = id === -1 ? 'certificates-new' : `certificates-${id}`;
+            const fieldName = id === -1 ? `certificates-new-${index}` : `certificates-${id}`;
             const file = req.files?.find(f => f.fieldname === fieldName);
             let image;
             if (id === -1) {
