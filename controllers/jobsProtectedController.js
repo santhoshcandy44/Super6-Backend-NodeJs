@@ -216,10 +216,7 @@ exports.updateProfile = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const jobProfessionalInfoJson = req.body.applicantProfessionalInfo;
-        if (!jobProfessionalInfoJson) {
-            return sendErrorResponse(res, 400, 'Missing jobProfessionalInfo part');
-        }
+        const jobProfessionalInfoJson = req.body;
         const userId = req.user.user_id;
         const jobProfessionalInfo = JSON.parse(jobProfessionalInfoJson);
         const profilePic = req.file;
