@@ -454,6 +454,48 @@ router.post(
   '/update-applicant-certificate',
   authenticateToken,
   certificatesUpload.any(),
+    (req, res, next) => {
+      try {
+        if (req.body.applicantCertificateInfo) {
+          try {
+            req.body.applicantCertificateInfo = JSON.parse(req.body.applicantCertificateInfo);
+          } catch (err) {
+            throw Error('Invalid JSON in applicantCertificateInfo')
+          }
+        }
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+  
+    body('applicantCertificateInfo')
+      .isArray({ min: 1, max:5 })
+      .withMessage('Certificates must be an array with at least one item and max five items.'),
+  
+    body('applicantCertificateInfo.*.id')
+      .notEmpty().withMessage('Certificate id is required')
+      .isInt().withMessage('Certificate id must be a number'),
+  
+    body('applicantCertificateInfo.*.issued_by')
+      .notEmpty().withMessage('issued_by is required')
+      .isString().withMessage('issued_by must be a string'),
+  
+    body('applicantCertificateInfo.*.file_name')
+      .notEmpty().withMessage('file_name is required')
+      .isString().withMessage('file_name must be a string'),
+  
+    body('applicantCertificateInfo.*.file_size')
+      .notEmpty().withMessage('file_size is required')
+      .isInt({ min: 1 }).withMessage('file_size must be a positive number'),
+  
+    body('applicantCertificateInfo.*.type')
+      .notEmpty().withMessage('type is required')
+      .isString().withMessage('type must be a string'),
+  
+    body('applicantCertificateInfo.*.image')
+      .optional(),
+
   (req, res, next) => {
     req.files = req.files.filter(file =>
       /^certificates-new-\d+$/.test(file.fieldname)

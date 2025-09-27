@@ -534,7 +534,6 @@ exports.updateCertificate = async (req, res) => {
         const certificates = applicantCertificateInfo.map((cert, index) => {
             const id = cert.id;
             const fieldName = `certificates-new-${index}`;
-            console.log(req.files);
             const file = req.files?.find(f => f.fieldname === fieldName);
             let image;
             if (id === -1) {
@@ -555,7 +554,6 @@ exports.updateCertificate = async (req, res) => {
             };
         });
 
-        console.log(certificates);
         const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update certificates");
