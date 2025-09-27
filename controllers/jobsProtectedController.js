@@ -50,7 +50,7 @@ exports.bookmarkJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { job_id } = req.body;
-        const result = await LocalJob.bookmarkLocalJob(user_id, local_job_id);
+        const result = await LocalJob.bookmarkLocalJob(user_id, job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark local job");
         }
@@ -69,7 +69,7 @@ exports.removeBookmarkJob= async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { job_id } = req.body;
-        const result = await LocalJob.removeBookmarkLocalJob(user_id, local_job_id);
+        const result = await LocalJob.removeBookmarkLocalJob(user_id, job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }
@@ -531,6 +531,7 @@ exports.updateCertificate = async (req, res) => {
             return res.status(400).json({ error: 'You can only upload up to 5 certificates.' });
         }
         const userId = req.user.user_id;
+        cosole.log(applicantCertificateInfo);
         const certificates = applicantCertificateInfo.map((cert) => {
             const id = cert.id;
             const fieldName = id === -1 ? 'certificates-new' : `certificates-${id}`;
