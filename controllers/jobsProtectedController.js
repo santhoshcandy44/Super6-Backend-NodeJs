@@ -553,7 +553,6 @@ exports.updateCertificate = async (req, res) => {
                 image,
             };
         });
-
         const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update certificates");

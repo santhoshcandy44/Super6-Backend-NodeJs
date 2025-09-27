@@ -1,5 +1,5 @@
 const express = require('express');
-const authenticateToken = require('../middlewares/authMiddleware'); 
+const authenticateToken = require('../middlewares/authMiddleware');
 const { body, param, query } = require('express-validator');
 const jobsProtectedController = require('../controllers/jobsProtectedController');
 const multer = require('multer');
@@ -56,11 +56,11 @@ router.get('/job-listings',
         // req.query.last_timestamp = decodedValue; 
         return true;
       })
-      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), 
-  
+      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
+
     query('last_total_relevance')
       .optional()
-      .isFloat().withMessage('Last total relevance must be a valid float format'), 
+      .isFloat().withMessage('Last total relevance must be a valid float format'),
 
     query('work_modes')
       .optional()
@@ -79,32 +79,32 @@ router.get('/job-listings',
 );
 
 router.post(
-    '/bookmark-job',
-    authenticateToken,
-    [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
-        body('local_job_id')
-            .isInt().withMessage('Invalid local job id format')
-    ],
-    jobsProtectedController.bookmarkJob
+  '/bookmark-job',
+  authenticateToken,
+  [
+    body('user_id')
+      .isInt().withMessage('Invalid user id format'),
+    body('local_job_id')
+      .isInt().withMessage('Invalid local job id format')
+  ],
+  jobsProtectedController.bookmarkJob
 );
 
 router.post(
-    '/remove-bookmark-job',
-    authenticateToken,
-    [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
+  '/remove-bookmark-job',
+  authenticateToken,
+  [
+    body('user_id')
+      .isInt().withMessage('Invalid user id format'),
 
-        body('local_job_id')
-            .isInt().withMessage('Invalid local job id format')
-    ],
-    jobsProtectedController.removeBookmarkJob
+    body('local_job_id')
+      .isInt().withMessage('Invalid local job id format')
+  ],
+  jobsProtectedController.removeBookmarkJob
 );
 
-router.get('/job-search-location-suggestions/:user_id(\\d+)', 
-  authenticateToken, 
+router.get('/job-search-location-suggestions/:user_id(\\d+)',
+  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('Invalid user id format'),
@@ -113,11 +113,11 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)',
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
   ],
-  jobsProtectedController.searchLocationSuggestions 
+  jobsProtectedController.searchLocationSuggestions
 );
 
-router.get('/job-search-role-suggestions/:user_id(\\d+)', 
-  authenticateToken, 
+router.get('/job-search-role-suggestions/:user_id(\\d+)',
+  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('Invalid user id format'),
@@ -126,7 +126,7 @@ router.get('/job-search-role-suggestions/:user_id(\\d+)',
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
   ],
-  jobsProtectedController.searchRoleSuggestions 
+  jobsProtectedController.searchRoleSuggestions
 );
 
 router.post(
@@ -172,28 +172,28 @@ router.post(
   }).single('profile_pic'),
   [
     body('first_name')
-    .trim()
-    .notEmpty().withMessage('First name is required')
-    .isLength({ min: 1 }).withMessage('First name must be at least 2 characters'),
+      .trim()
+      .notEmpty().withMessage('First name is required')
+      .isLength({ min: 1 }).withMessage('First name must be at least 2 characters'),
 
-  body('last_name')
-    .trim()
-    .notEmpty().withMessage('Last name is required')
-    .isLength({ min: 1 }).withMessage('Last name must be at least 2 characters'),
+    body('last_name')
+      .trim()
+      .notEmpty().withMessage('Last name is required')
+      .isLength({ min: 1 }).withMessage('Last name must be at least 2 characters'),
 
-  body('email')
-    .trim()
-    .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Must be a valid email'),
+    body('email')
+      .trim()
+      .notEmpty().withMessage('Email is required')
+      .isEmail().withMessage('Must be a valid email'),
 
-  body('gender')
-    .notEmpty().withMessage('Gender is required')
-    .isIn(['Male', 'Female', 'Other']).withMessage('Gender must be male, female, or other'),
+    body('gender')
+      .notEmpty().withMessage('Gender is required')
+      .isIn(['Male', 'Female', 'Other']).withMessage('Gender must be male, female, or other'),
 
-  body('intro')
-    .trim()
-    .notEmpty().withMessage('Intro is required')
-    .isLength({ min:10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
+    body('intro')
+      .trim()
+      .notEmpty().withMessage('Intro is required')
+      .isLength({ min: 10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
   ],
   (req, res, next) => {
     if (!req.file) {
@@ -323,7 +323,7 @@ router.post(
 
 router.post(
   '/update-applicant-skill',
-  authenticateToken, 
+  authenticateToken,
   jobsProtectedController.updateSkill
 );
 
@@ -400,7 +400,7 @@ router.post(
 
 router.post(
   '/update-applicant-language',
-  authenticateToken, 
+  authenticateToken,
   jobsProtectedController.updateLanguage
 );
 
@@ -419,7 +419,7 @@ router.post(
   authenticateToken,
   multer({
     limits: {
-      fileSize: 2 * 1024 * 1024, 
+      fileSize: 2 * 1024 * 1024,
     },
     fileFilter: resumeFileFilter
   }).single('resume'),
@@ -445,7 +445,7 @@ const certificatesFileFilter = (req, file, cb) => {
 
 const certificatesUpload = multer({
   limits: {
-    fileSize: 2 * 1024 * 1024, 
+    fileSize: 2 * 1024 * 1024,
   },
   fileFilter: certificatesFileFilter
 });
@@ -454,47 +454,47 @@ router.post(
   '/update-applicant-certificate',
   authenticateToken,
   certificatesUpload.any(),
-    (req, res, next) => {
-      try {
-        if (req.body.applicantCertificateInfo) {
-          try {
-            req.body.applicantCertificateInfo = JSON.parse(req.body.applicantCertificateInfo);
-          } catch (err) {
-            throw Error('Invalid JSON in applicantCertificateInfo')
-          }
+  (req, res, next) => {
+    try {
+      if (req.body.applicantCertificateInfo) {
+        try {
+          req.body.applicantCertificateInfo = JSON.parse(req.body.applicantCertificateInfo);
+        } catch (err) {
+          throw Error('Invalid JSON in applicantCertificateInfo')
         }
-        next();
-      } catch (err) {
-        next(err);
       }
-    },
-  
-    body('applicantCertificateInfo')
-      .isArray({ min: 1, max:5 })
-      .withMessage('Certificates must be an array with at least one item and max five items.'),
-  
-    body('applicantCertificateInfo.*.id')
-      .notEmpty().withMessage('Certificate id is required')
-      .isInt().withMessage('Certificate id must be a number'),
-  
-    body('applicantCertificateInfo.*.issued_by')
-      .notEmpty().withMessage('issued_by is required')
-      .isString().withMessage('issued_by must be a string'),
-  
-    body('applicantCertificateInfo.*.file_name')
-      .notEmpty().withMessage('file_name is required')
-      .isString().withMessage('file_name must be a string'),
-  
-    body('applicantCertificateInfo.*.file_size')
-      .notEmpty().withMessage('file_size is required')
-      .isInt({ min: 1 }).withMessage('file_size must be a positive number'),
-  
-    body('applicantCertificateInfo.*.type')
-      .notEmpty().withMessage('type is required')
-      .isString().withMessage('type must be a string'),
-  
-    body('applicantCertificateInfo.*.image')
-      .optional(),
+      next();
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  body('applicantCertificateInfo')
+    .isArray({ min: 1, max: 5 })
+    .withMessage('Certificates must be an array with at least one item and max five items.'),
+
+  body('applicantCertificateInfo.*.id')
+    .notEmpty().withMessage('Certificate id is required')
+    .isInt().withMessage('Certificate id must be a number'),
+
+  body('applicantCertificateInfo.*.issued_by')
+    .notEmpty().withMessage('issued_by is required')
+    .isString().withMessage('issued_by must be a string'),
+
+  body('applicantCertificateInfo.*.file_name')
+    .notEmpty().withMessage('file_name is required')
+    .isString().withMessage('file_name must be a string'),
+
+  body('applicantCertificateInfo.*.file_size')
+    .notEmpty().withMessage('file_size is required')
+    .isInt({ min: 1 }).withMessage('file_size must be a positive number'),
+
+  body('applicantCertificateInfo.*.type')
+    .notEmpty().withMessage('type is required')
+    .isString().withMessage('type must be a string'),
+
+  body('applicantCertificateInfo.*.image')
+    .optional(),
 
   (req, res, next) => {
     req.files = req.files.filter(file =>
