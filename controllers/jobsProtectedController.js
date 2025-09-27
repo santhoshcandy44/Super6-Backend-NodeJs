@@ -527,7 +527,7 @@ exports.updateCertificate = async (req, res) => {
             return sendErrorResponse(res, 400, "Missing certificate info part");
         }
         if (applicantCertificateInfo.length > 5) {
-            return res.status(400).json({ error: 'You can only upload up to 5 certificates.' });
+            return sendErrorResponse(res, 400, 'You can only upload up to 5 certificates.');
         }
         const userId = req.user.user_id;
         console.log(applicantCertificateInfo);
