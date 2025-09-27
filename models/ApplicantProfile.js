@@ -196,7 +196,7 @@ class ApplicantProfile {
             INSERT INTO applicant_profiles (applicant_id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, is_verified, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
             ON DUPLICATE KEY UPDATE
-                id = VALUES(id),
+                applicant_id = VALUES(applicant_id),
                 first_name = VALUES(first_name),
                 last_name = VALUES(last_name),
                 email = VALUES(email),
