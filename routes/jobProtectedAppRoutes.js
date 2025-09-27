@@ -196,6 +196,7 @@ router.post(
       .isLength({ min: 10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
   ],
   (req, res, next) => {
+    console.log(req.file)
     if (!req.file) {
       throw Error("Profile pic image is required")
     }
@@ -311,7 +312,6 @@ router.post(
       return true;
     })
   ],
-
   jobsProtectedController.updateExperience
 );
 
@@ -395,12 +395,6 @@ router.post(
       return true;
     })
   ],
-  jobsProtectedController.updateLanguage
-);
-
-router.post(
-  '/update-applicant-language',
-  authenticateToken,
   jobsProtectedController.updateLanguage
 );
 
