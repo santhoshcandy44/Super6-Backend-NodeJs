@@ -15,7 +15,7 @@ class ApplicantProfile {
             [userId]
         );
         if (!profile) return null;
-        const userProfileId = profile.id;
+        const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
              FROM applicant_profile_experience 
@@ -148,7 +148,7 @@ class ApplicantProfile {
         let id, exists = true;
         while (exists) {
             id = Math.floor(10000000000 + Math.random() * 90000000000);
-            const [rows] = await db.query("SELECT id FROM applicant_profiles WHERE id = ? LIMIT 1", [id]);
+            const [rows] = await db.query("SELECT applicant_id FROM applicant_profiles WHERE id = ? LIMIT 1", [id]);
             exists = rows.length > 0;
         }
         return id;
