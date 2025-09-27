@@ -235,7 +235,7 @@ class ApplicantProfile {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        const [userProfile] = await db.query(
+        const [[userProfile]] = await db.query(
             'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
