@@ -10,7 +10,7 @@ class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
         const [profile] = await db.query(
             `SELECT id, first_name, last_name, gender, email, phone, intro, profile_picture 
-             FROM user_profile 
+             FROM applicant_profile 
              WHERE external_user_id = ?`,
             [userId]
         );
@@ -18,8 +18,8 @@ class ApplicantProfile {
         const userProfileId = profile.id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
-             FROM user_profile_experience 
-             WHERE user_profile_id = ?`,
+             FROM applicant_profile_experience 
+             WHERE applicant_id = ?`,
             [userProfileId]
         );
         let experienceList = [];
@@ -52,8 +52,8 @@ class ApplicantProfile {
 
         const [educationRows] = await db.query(
             `SELECT organization_name AS institution, field_of_study, start_date, end_date, grade, currently_studying 
-             FROM user_profile_education_info 
-             WHERE user_profile_id = ?`,
+             FROM applicant_profile_education_info 
+             WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -68,8 +68,8 @@ class ApplicantProfile {
 
         const [languageRows] = await db.query(
             `SELECT language, language_code, proficiency, proficiency_code 
-             FROM user_profile_language 
-             WHERE user_profile_id = ?`,
+             FROM applicant_profile_language 
+             WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -86,8 +86,8 @@ class ApplicantProfile {
 
         const [skillRows] = await db.query(
             `SELECT skill, skill_code 
-             FROM user_profile_skill 
-             WHERE user_profile_id = ?`,
+             FROM applicant_profile_skill 
+             WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -98,8 +98,8 @@ class ApplicantProfile {
 
         const [certificateRows] = await db.query(
             `SELECT id, issued_by, certificate_download_url AS image, certificate_file_name AS fileName, certificate_size AS fileSize, certificate_type AS type
-             FROM user_profile_certificate
-             WHERE user_profile_id = ?`,
+             FROM applicant_profile_certificate
+             WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -114,8 +114,8 @@ class ApplicantProfile {
 
         const [resumeRows] = await db.query(
             `SELECT resume_file_name, resume_download_url, resume_size, resume_type, last_used 
-             FROM user_profile_resume 
-             WHERE user_profile_id = ? 
+             FROM applicant_profile_resume 
+             WHERE applicant_id = ? 
              LIMIT 1`,
             [userProfileId]
         );
@@ -148,7 +148,7 @@ class ApplicantProfile {
         let id, exists = true;
         while (exists) {
             id = Math.floor(10000000000 + Math.random() * 90000000000);
-            const [rows] = await db.query("SELECT id FROM user_profile WHERE id = ? LIMIT 1", [id]);
+            const [rows] = await db.query("SELECT id FROM applicant_profile WHERE id = ? LIMIT 1", [id]);
             exists = rows.length > 0;
         }
         return id;
@@ -161,7 +161,7 @@ class ApplicantProfile {
         if (!user) throw new Error("Access forbidden");
         const mediaId = user.media_id;
         const [[existingProfile]] = await db.query(
-            `SELECT profile_picture FROM user_profile WHERE external_user_id = ?`,
+            `SELECT profile_picture FROM applicant_profile WHERE external_user_id = ?`,
             [userId]
         );
         if (profilePic) {
@@ -193,7 +193,7 @@ class ApplicantProfile {
 
         const unique_user_id = await this.generateUnique11DigitId()
         const query = `
-            INSERT INTO user_profile (id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, is_verified, created_at, updated_at)
+            INSERT INTO applicant_profile (applicant_id, external_user_id, first_name, last_name, email, gender, intro, profile_picture, is_verified, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
             ON DUPLICATE KEY UPDATE
                 id = VALUES(id),
@@ -224,17 +224,17 @@ class ApplicantProfile {
 
     static async updateOrCreateEducationInfo(userId, educationList = []) {
         await db.query(
-            'DELETE FROM user_profile_education_info WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_education_info WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
             [userId]
         );
         const insertEducationQuery = `
-            INSERT INTO user_profile_education_info (
-                user_profile_id, organization_name, field_of_study, start_date, end_date, grade, currently_studying
+            INSERT INTO applicant_profile_education_info (
+                applicant_id, organization_name, field_of_study, start_date, end_date, grade, currently_studying
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const [userProfile] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
 
@@ -268,20 +268,20 @@ class ApplicantProfile {
 
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
         await db.query(
-            'DELETE FROM user_profile_experience WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_experience WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
             [userId]
         );
 
         const insertExperienceQuery = `
-            INSERT INTO user_profile_experience (
-                user_profile_id, organization, job_title, employment_type, location,
+            INSERT INTO applicant_profile_experience (
+                applicant_id, organization, job_title, employment_type, location,
                 start_date, end_date, current_working_here, experienced
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
 
@@ -320,23 +320,23 @@ class ApplicantProfile {
 
     static async updateExperienceAsNone(userId) {
         await db.query(
-            `DELETE FROM user_profile_experience
-           WHERE user_profile_id = (
-             SELECT id FROM user_profile WHERE external_user_id = ?
+            `DELETE FROM applicant_profile_experience
+           WHERE applicant_id = (
+             SELECT id FROM applicant_profile WHERE external_user_id = ?
            )`,
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
 
         if (!userProfile) return null;
 
         await db.query(
-            `INSERT INTO user_profile_experience (
-              user_profile_id, organization, job_title, employment_type, location,
+            `INSERT INTO applicant_profile_experience (
+              applicant_id, organization, job_title, employment_type, location,
               start_date, end_date, current_working_here, experienced
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -358,19 +358,19 @@ class ApplicantProfile {
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
         await db.query(
-            'DELETE FROM user_profile_skill WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_skill WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
             [userId]
         );
 
         const insertSkillQuery = `
-            INSERT INTO user_profile_skill (
-                user_profile_id, skill, skill_code
+            INSERT INTO applicant_profile_skill (
+                applicant_id, skill, skill_code
             )
             VALUES (?, ?, ?)
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
 
@@ -391,20 +391,20 @@ class ApplicantProfile {
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
         await db.query(
-            'DELETE FROM user_profile_language WHERE user_profile_id = (SELECT id FROM user_profile WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_language WHERE applicant_id = (SELECT id FROM applicant_profile WHERE external_user_id = ?)',
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
 
         if (!userProfile) return null;
 
         const insertLanguageQuery = `
-            INSERT INTO user_profile_language (
-                user_profile_id, language, language_code, proficiency, proficiency_code
+            INSERT INTO applicant_profile_language (
+                applicant_id, language, language_code, proficiency, proficiency_code
             )
             VALUES (?, ?, ?, ?, ?)
         `;
@@ -435,14 +435,14 @@ class ApplicantProfile {
         if (!allowedTypes.includes(fileType)) return null; 
 
         const [[userProfile]] = await db.query(
-            `SELECT id FROM user_profile WHERE external_user_id = ?`,
+            `SELECT id FROM applicant_profile WHERE external_user_id = ?`,
             [userId]
         );
 
         if (!userProfile) return null; 
 
         const [[exisitngResume]] = await db.query(
-            'SELECT resume_download_url FROM user_profile_resume WHERE  user_profile_id =  ?',
+            'SELECT resume_download_url FROM applicant_profile_resume WHERE  applicant_id =  ?',
             [userProfile.id]
         );
 
@@ -459,8 +459,8 @@ class ApplicantProfile {
 
         const resumeDownloadUrl = s3Key;
         const insertResumeQuery = `
-            INSERT INTO user_profile_resume 
-            (user_profile_id, resume_file_name, resume_download_url, resume_size, resume_type)
+            INSERT INTO applicant_profile_resume 
+            (applicant_id, resume_file_name, resume_download_url, resume_size, resume_type)
             VALUES (?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 resume_file_name = VALUES(resume_file_name),
@@ -479,7 +479,7 @@ class ApplicantProfile {
             throw new Error("Access forbidden");
         }
         const [[userProfile]] = await db.query(
-            'SELECT id FROM user_profile WHERE external_user_id = ?',
+            'SELECT id FROM applicant_profile WHERE external_user_id = ?',
             [userId]
         );
         if (!userProfile) return null;
@@ -489,7 +489,7 @@ class ApplicantProfile {
         const allowedTypes = ["JPG", "PNG"];
 
         const [existingCertificates] = await db.query(
-            `SELECT id, certificate_download_url FROM user_profile_certificate WHERE user_profile_id = ?`,
+            `SELECT id, certificate_download_url FROM applicant_profile_certificate WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -503,7 +503,7 @@ class ApplicantProfile {
                 .filter(cert => idsToDelete.includes(cert.id))
                 .map(cert => cert.certificate_download_url);
             await db.query(
-                `DELETE FROM user_profile_certificate WHERE id IN (?) AND user_profile_id = ?`,
+                `DELETE FROM applicant_profile_certificate WHERE id IN (?) AND applicant_id = ?`,
                 [idsToDelete, userProfileId]
             );
 
@@ -533,8 +533,8 @@ class ApplicantProfile {
                 await uploadToS3(compressedImageBuffer, s3Key, image.mimetype);
                 if (id === -1) {
                     await db.query(
-                        `INSERT INTO user_profile_certificate 
-                         (user_profile_id, issued_by, certificate_download_url, certificate_file_name, certificate_size, certificate_type) 
+                        `INSERT INTO applicant_profile_certificate 
+                         (applicant_id, issued_by, certificate_download_url, certificate_file_name, certificate_size, certificate_type) 
                          VALUES (?, ?, ?, ?, ?, ?)`,
                         [userProfileId, issuedBy, s3Key, newFileName, fileSize, type]
                     );
@@ -545,17 +545,17 @@ class ApplicantProfile {
                         await deleteFromS3(downloadUrl)
                     }
                     await db.query(
-                        `UPDATE user_profile_certificate 
+                        `UPDATE applicant_profile_certificate 
                          SET issued_by = ?, certificate_download_url = ?, certificate_file_name = ?, certificate_size = ?, certificate_type = ? 
-                         WHERE id = ? AND user_profile_id = ?`,
+                         WHERE id = ? AND applicant_id = ?`,
                         [issuedBy, s3Key, newFileName, fileSize, type, id, userProfileId]
                     );
                 }
             } else {
                 await db.query(
-                    `UPDATE user_profile_certificate 
+                    `UPDATE applicant_profile_certificate 
                      SET issued_by = ? 
-                     WHERE id = ? AND user_profile_id = ?`,
+                     WHERE id = ? AND applicant_id = ?`,
                     [issuedBy, id, userProfileId]
                 );
             }
