@@ -254,7 +254,7 @@ class ApplicantProfile {
                 const startDate = formatToMySQLDate(start_year); 
                 const endDate = currently_studying ? null : formatToMySQLDate(end_year);
                 await db.query(insertEducationQuery, [
-                    userProfile.id,
+                    userProfile.applicant_id,
                     institution,
                     field_of_study,
                     startDate,
