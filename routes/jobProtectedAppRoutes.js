@@ -4,7 +4,6 @@ const { body, param, query } = require('express-validator');
 const jobsProtectedController = require('../controllers/jobsProtectedController');
 const multer = require('multer');
 const path = require('path');
-const { sendErrorResponse } = require('../helpers/responseHelper');
 
 const router = express.Router();
 
@@ -175,12 +174,12 @@ router.post(
     body('applicantProfessionalInfo.first_name')
     .trim()
     .notEmpty().withMessage('First name is required')
-    .isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
+    .isLength({ min: 1 }).withMessage('First name must be at least 2 characters'),
 
   body('last_name')
     .trim()
     .notEmpty().withMessage('Last name is required')
-    .isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
+    .isLength({ min: 1 }).withMessage('Last name must be at least 2 characters'),
 
   body('email')
     .trim()
@@ -196,6 +195,12 @@ router.post(
     .notEmpty().withMessage('Intro is required')
     .isLength({ min:10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
   ],
+  (req, res, next) => {
+    if (!req.file) {
+      throw Error("Profile pic image is required")
+    }
+    next();
+  },
   jobsProtectedController.updateProfile
 );
 
@@ -420,7 +425,7 @@ router.post(
   }).single('resume'),
   (req, res, next) => {
     if (!req.file) {
-      return sendErrorResponse(res, 404, message)
+      throw Error("Resume file is required")
     }
     next();
   },
