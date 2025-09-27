@@ -52,7 +52,7 @@ class ApplicantProfile {
 
         const [educationRows] = await db.query(
             `SELECT organization_name AS institution, field_of_study, start_date, end_date, grade, currently_studying 
-             FROM applicant_profile_education_info 
+             FROM applicant_profile_education_infos 
              WHERE applicant_id = ?`,
             [userProfileId]
         );
@@ -68,7 +68,7 @@ class ApplicantProfile {
 
         const [languageRows] = await db.query(
             `SELECT language, language_code, proficiency, proficiency_code 
-             FROM applicant_profile_language 
+             FROM applicant_profile_languages 
              WHERE applicant_id = ?`,
             [userProfileId]
         );
@@ -86,7 +86,7 @@ class ApplicantProfile {
 
         const [skillRows] = await db.query(
             `SELECT skill, skill_code 
-             FROM applicant_profile_skill 
+             FROM applicant_profile_skills 
              WHERE applicant_id = ?`,
             [userProfileId]
         );
@@ -98,7 +98,7 @@ class ApplicantProfile {
 
         const [certificateRows] = await db.query(
             `SELECT id, issued_by, certificate_download_url AS image, certificate_file_name AS fileName, certificate_size AS fileSize, certificate_type AS type
-             FROM applicant_profile_certificate
+             FROM applicant_profile_certificates
              WHERE applicant_id = ?`,
             [userProfileId]
         );
@@ -114,7 +114,7 @@ class ApplicantProfile {
 
         const [resumeRows] = await db.query(
             `SELECT resume_file_name, resume_download_url, resume_size, resume_type, last_used 
-             FROM applicant_profile_resume 
+             FROM applicant_profile_resumes 
              WHERE applicant_id = ? 
              LIMIT 1`,
             [userProfileId]
