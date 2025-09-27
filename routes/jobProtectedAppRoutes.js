@@ -171,7 +171,7 @@ router.post(
     fileFilter: profilePicFileFilter
   }).single('profile_pic'),
   [
-    body('applicantProfessionalInfo.first_name')
+    body('first_name')
     .trim()
     .notEmpty().withMessage('First name is required')
     .isLength({ min: 1 }).withMessage('First name must be at least 2 characters'),
