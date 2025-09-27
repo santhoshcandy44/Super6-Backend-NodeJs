@@ -562,6 +562,9 @@ exports.updateCertificate = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update certificates");
         }
+
+        console.log(result);
+
         return sendJsonResponse(res, 200, "Certificate info updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
