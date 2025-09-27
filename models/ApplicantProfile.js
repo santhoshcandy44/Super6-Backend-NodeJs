@@ -8,14 +8,14 @@ const { uploadToS3, deleteFromS3} = require('../config/awsS3.js')
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
-        const [profile] = await db.query(
+        const [profileResult] = await db.query(
             `SELECT applicant_id, first_name, last_name, gender, email, phone, intro, profile_picture 
              FROM applicant_profiles 
              WHERE external_user_id = ?`,
             [userId]
         );
-        if (!profile || profile.length == 0) return null;
-        profile =  profile[0];
+        if (!profileResult || profileResult.length == 0) return null;
+        const profile =  profileResult[0];
         const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
