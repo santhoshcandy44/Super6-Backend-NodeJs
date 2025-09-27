@@ -18,7 +18,7 @@ class ApplicantProfile {
         const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
-             FROM applicant_profile_experience 
+             FROM applicant_profile_experiences 
              WHERE applicant_id = ?`,
             [userProfileId]
         );
@@ -224,11 +224,11 @@ class ApplicantProfile {
 
     static async updateOrCreateEducationInfo(userId, educationList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_education_info WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_education_infos WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
         const insertEducationQuery = `
-            INSERT INTO applicant_profile_education_info (
+            INSERT INTO applicant_profile_education_infos (
                 applicant_id, organization_name, field_of_study, start_date, end_date, grade, currently_studying
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -268,12 +268,12 @@ class ApplicantProfile {
 
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_experience WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_experiences WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
         const insertExperienceQuery = `
-            INSERT INTO applicant_profile_experience (
+            INSERT INTO applicant_profile_experiences (
                 applicant_id, organization, job_title, employment_type, location,
                 start_date, end_date, current_working_here, experienced
             )
@@ -320,7 +320,7 @@ class ApplicantProfile {
 
     static async updateExperienceAsNone(userId) {
         await db.query(
-            `DELETE FROM applicant_profile_experience
+            `DELETE FROM applicant_profile_experiences
            WHERE applicant_id = (
              SELECT id FROM applicant_profiles WHERE external_user_id = ?
            )`,
@@ -335,7 +335,7 @@ class ApplicantProfile {
         if (!userProfile) return null;
 
         await db.query(
-            `INSERT INTO applicant_profile_experience (
+            `INSERT INTO applicant_profile_experiences (
               applicant_id, organization, job_title, employment_type, location,
               start_date, end_date, current_working_here, experienced
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -358,12 +358,12 @@ class ApplicantProfile {
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_skill WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_skills WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
         const insertSkillQuery = `
-            INSERT INTO applicant_profile_skill (
+            INSERT INTO applicant_profile_skills (
                 applicant_id, skill, skill_code
             )
             VALUES (?, ?, ?)
@@ -391,7 +391,7 @@ class ApplicantProfile {
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_language WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_languages WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
@@ -403,7 +403,7 @@ class ApplicantProfile {
         if (!userProfile) return null;
 
         const insertLanguageQuery = `
-            INSERT INTO applicant_profile_language (
+            INSERT INTO applicant_profile_languages (
                 applicant_id, language, language_code, proficiency, proficiency_code
             )
             VALUES (?, ?, ?, ?, ?)
@@ -442,7 +442,7 @@ class ApplicantProfile {
         if (!userProfile) return null; 
 
         const [[exisitngResume]] = await db.query(
-            'SELECT resume_download_url FROM applicant_profile_resume WHERE  applicant_id =  ?',
+            'SELECT resume_download_url FROM applicant_profile_resumes WHERE  applicant_id =  ?',
             [userProfile.id]
         );
 
@@ -459,7 +459,7 @@ class ApplicantProfile {
 
         const resumeDownloadUrl = s3Key;
         const insertResumeQuery = `
-            INSERT INTO applicant_profile_resume 
+            INSERT INTO applicant_profile_resumes
             (applicant_id, resume_file_name, resume_download_url, resume_size, resume_type)
             VALUES (?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
@@ -489,7 +489,7 @@ class ApplicantProfile {
         const allowedTypes = ["JPG", "PNG"];
 
         const [existingCertificates] = await db.query(
-            `SELECT id, certificate_download_url FROM applicant_profile_certificate WHERE applicant_id = ?`,
+            `SELECT id, certificate_download_url FROM applicant_profile_certificates WHERE applicant_id = ?`,
             [userProfileId]
         );
 
@@ -503,7 +503,7 @@ class ApplicantProfile {
                 .filter(cert => idsToDelete.includes(cert.id))
                 .map(cert => cert.certificate_download_url);
             await db.query(
-                `DELETE FROM applicant_profile_certificate WHERE id IN (?) AND applicant_id = ?`,
+                `DELETE FROM applicant_profile_certificates WHERE id IN (?) AND applicant_id = ?`,
                 [idsToDelete, userProfileId]
             );
 
@@ -533,7 +533,7 @@ class ApplicantProfile {
                 await uploadToS3(compressedImageBuffer, s3Key, image.mimetype);
                 if (id === -1) {
                     await db.query(
-                        `INSERT INTO applicant_profile_certificate 
+                        `INSERT INTO applicant_profile_certificates 
                          (applicant_id, issued_by, certificate_download_url, certificate_file_name, certificate_size, certificate_type) 
                          VALUES (?, ?, ?, ?, ?, ?)`,
                         [userProfileId, issuedBy, s3Key, newFileName, fileSize, type]
@@ -545,7 +545,7 @@ class ApplicantProfile {
                         await deleteFromS3(downloadUrl)
                     }
                     await db.query(
-                        `UPDATE applicant_profile_certificate 
+                        `UPDATE applicant_profile_certificates 
                          SET issued_by = ?, certificate_download_url = ?, certificate_file_name = ?, certificate_size = ?, certificate_type = ? 
                          WHERE id = ? AND applicant_id = ?`,
                         [issuedBy, s3Key, newFileName, fileSize, type, id, userProfileId]
@@ -553,7 +553,7 @@ class ApplicantProfile {
                 }
             } else {
                 await db.query(
-                    `UPDATE applicant_profile_certificate 
+                    `UPDATE applicant_profile_certificates 
                      SET issued_by = ? 
                      WHERE id = ? AND applicant_id = ?`,
                     [issuedBy, id, userProfileId]
