@@ -179,6 +179,7 @@ exports.getApplicantProfile = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result) === 6 ? -1 : getNextIncompleteStep(result)
         });
     } catch (err) {
+        console.log(err);
         return sendErrorResponse(res, 500, 'Internal Server error', err.message);
     }
 };
