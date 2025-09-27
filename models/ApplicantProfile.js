@@ -270,7 +270,7 @@ class ApplicantProfile {
 
     static async updateOrCreateExperienceInfo(userId, experienceList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_experiences WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_experiences WHERE applicant_id = (SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
@@ -283,7 +283,7 @@ class ApplicantProfile {
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -324,13 +324,13 @@ class ApplicantProfile {
         await db.query(
             `DELETE FROM applicant_profile_experiences
            WHERE applicant_id = (
-             SELECT id FROM applicant_profiles WHERE external_user_id = ?
+             SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?
            )`,
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -360,7 +360,7 @@ class ApplicantProfile {
 
     static async updateOrCreateSkillInfo(userId, skillList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_skills WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_skills WHERE applicant_id = (SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
@@ -372,7 +372,7 @@ class ApplicantProfile {
         `;
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -393,12 +393,12 @@ class ApplicantProfile {
 
     static async updateOrCreateLanguageInfo(userId, languageList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_languages WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_languages WHERE applicant_id = (SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
 
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
@@ -426,62 +426,14 @@ class ApplicantProfile {
         return result;
     }
 
-
-    static async updateOrCreateUserResume(userId, file) {
-        const user = await User.getUserMedia(userId);
-        if (!user) return null; 
-
-        const mediaId = user.media_id;
-        const allowedTypes = ["PDF", "DOC", "DOCX"];
-        const fileType = file.mimetype.split('/')[1].toUpperCase(); 
-        if (!allowedTypes.includes(fileType)) return null; 
-
-        const [[userProfile]] = await db.query(
-            `SELECT id FROM applicant_profiles WHERE external_user_id = ?`,
-            [userId]
-        );
-
-        if (!userProfile) return null; 
-
-        const [[exisitngResume]] = await db.query(
-            'SELECT resume_download_url FROM applicant_profile_resumes WHERE  applicant_id =  ?',
-            [userProfile.id]
-        );
-
-        if (exisitngResume?.resume_download_url) {
-            const oldResumePath = exisitngResume.resume_download_url;
-            if (oldResumePath) {
-                await deleteFromS3(oldResumePath);
-            }
-        }
-
-        const fileName = file.originalname;
-        const s3Key = `media/${mediaId}/careers/resume/${fileName}`;
-        await uploadToS3(file.buffer, s3Key, fileType);
-
-        const resumeDownloadUrl = s3Key;
-        const insertResumeQuery = `
-            INSERT INTO applicant_profile_resumes
-            (applicant_id, resume_file_name, resume_download_url, resume_size, resume_type)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                resume_file_name = VALUES(resume_file_name),
-                resume_download_url = VALUES(resume_download_url),
-                resume_size = VALUES(resume_size),
-                resume_type = VALUES(resume_type)
-                `;
-        await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
-        const result = await ApplicantProfile.getApplicantUserProfile(userId);
-        return result;
-    }
-
+    
     static async updateOrCreateUserCertificates(userId, certificates) {
         const user = await User.getUserMedia(userId);
         if (!user) {
             throw new Error("Access forbidden");
         }
         const [[userProfile]] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
         if (!userProfile) return null;
@@ -562,6 +514,54 @@ class ApplicantProfile {
                 );
             }
         }
+        const result = await ApplicantProfile.getApplicantUserProfile(userId);
+        return result;
+    }
+
+    static async updateOrCreateUserResume(userId, file) {
+        const user = await User.getUserMedia(userId);
+        if (!user) return null; 
+
+        const mediaId = user.media_id;
+        const allowedTypes = ["PDF", "DOC", "DOCX"];
+        const fileType = file.mimetype.split('/')[1].toUpperCase(); 
+        if (!allowedTypes.includes(fileType)) return null; 
+
+        const [[userProfile]] = await db.query(
+            `SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?`,
+            [userId]
+        );
+
+        if (!userProfile) return null; 
+
+        const [[exisitngResume]] = await db.query(
+            'SELECT resume_download_url FROM applicant_profile_resumes WHERE  applicant_id =  ?',
+            [userProfile.id]
+        );
+
+        if (exisitngResume?.resume_download_url) {
+            const oldResumePath = exisitngResume.resume_download_url;
+            if (oldResumePath) {
+                await deleteFromS3(oldResumePath);
+            }
+        }
+
+        const fileName = file.originalname;
+        const s3Key = `media/${mediaId}/careers/resume/${fileName}`;
+        await uploadToS3(file.buffer, s3Key, fileType);
+
+        const resumeDownloadUrl = s3Key;
+        const insertResumeQuery = `
+            INSERT INTO applicant_profile_resumes
+            (applicant_id, resume_file_name, resume_download_url, resume_size, resume_type)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                resume_file_name = VALUES(resume_file_name),
+                resume_download_url = VALUES(resume_download_url),
+                resume_size = VALUES(resume_size),
+                resume_type = VALUES(resume_type)
+                `;
+        await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
