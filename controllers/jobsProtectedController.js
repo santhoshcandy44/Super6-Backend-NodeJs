@@ -251,6 +251,7 @@ exports.updateProfile = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
+        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
