@@ -188,7 +188,7 @@ router.post(
 
   body('gender')
     .notEmpty().withMessage('Gender is required')
-    .isIn(['male', 'female', 'other']).withMessage('Gender must be male, female, or other'),
+    .isIn(['Male', 'Female', 'Other']).withMessage('Gender must be male, female, or other'),
 
   body('intro')
     .trim()
