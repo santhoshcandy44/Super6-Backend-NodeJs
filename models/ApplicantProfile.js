@@ -148,7 +148,7 @@ class ApplicantProfile {
         let id, exists = true;
         while (exists) {
             id = Math.floor(10000000000 + Math.random() * 90000000000);
-            const [rows] = await db.query("SELECT applicant_id FROM applicant_profiles WHERE id = ? LIMIT 1", [id]);
+            const [rows] = await db.query("SELECT applicant_id FROM applicant_profiles WHERE applicant_id = ? LIMIT 1", [id]);
             exists = rows.length > 0;
         }
         return id;
