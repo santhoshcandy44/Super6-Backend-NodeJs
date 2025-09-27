@@ -491,6 +491,7 @@ class ApplicantProfile {
                          VALUES (?, ?, ?, ?, ?, ?)`,
                         [userProfileId, issuedBy, s3Key, newFileName, fileSize, type]
                     );
+                    console.log("Updated certifciate")
                 } else {
                     const cert = existingCertificates.find(c => c.id === id);
                     if (cert) {
