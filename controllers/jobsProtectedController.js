@@ -155,7 +155,6 @@ exports.getApplicantProfile = async (req, res) => {
             return sendErrorResponse(res, 404, 'User profile not exist');
         }
 
-        console.log(result)
         return sendJsonResponse(res, 200, "Profile fetched successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,

@@ -14,8 +14,8 @@ class ApplicantProfile {
              WHERE external_user_id = ?`,
             [userId]
         );
-        if (!profile) return null;
-        console.log(profile)
+        if (!profile || profile.length == 0) return null;
+        profile =  profile[0];
         const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
