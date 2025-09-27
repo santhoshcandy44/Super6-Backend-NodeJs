@@ -465,7 +465,10 @@ class ApplicantProfile {
             }
         }
 
+        console.log(certificates)
+
         for (const cert of certificates) {
+
             const { id, issuedBy, image, fileSize, type } = cert;
 
             if (!issuedBy || !image) {

@@ -12,7 +12,6 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;        
-        console.log(req.query)
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
@@ -37,7 +36,6 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
-        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -58,7 +56,6 @@ exports.bookmarkJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
@@ -336,7 +333,6 @@ exports.updateExperience = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -380,7 +376,6 @@ exports.updateNoExperience = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, 'Internal Server Error', error.message);
     }
 };
@@ -562,8 +557,6 @@ exports.updateCertificate = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update certificates");
         }
-
-        console.log(result);
 
         return sendJsonResponse(res, 200, "Certificate info updated successfully", {
             applicant_professional_info: {
