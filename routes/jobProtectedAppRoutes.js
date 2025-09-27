@@ -456,7 +456,7 @@ router.post(
   certificatesUpload.any(),
   (req, res, next) => {
     req.files = req.files.filter(file =>
-      /^certificates-(new|\d+)$/.test(file.fieldname)
+      /^certificates-new-\d+$/.test(file.fieldname)
     );
     next();
   },

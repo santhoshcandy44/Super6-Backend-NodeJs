@@ -431,6 +431,9 @@ class ApplicantProfile {
         if (!user) {
             throw new Error("Access forbidden");
         }
+        
+        const mediaId = user.media_id;
+
         const [[userProfile]] = await db.query(
             'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
@@ -438,7 +441,7 @@ class ApplicantProfile {
         if (!userProfile) return null;
 
         const userProfileId = userProfile.applicant_id;
-        const mediaId = user.media_id;
+
         const allowedTypes = ["JPG", "PNG"];
 
         const [existingCertificates] = await db.query(
@@ -466,7 +469,6 @@ class ApplicantProfile {
         }
 
         for (const cert of certificates) {
-
             const { id, issuedBy, image, fileSize, type } = cert;
 
             if (!issuedBy || !image) {
@@ -477,7 +479,7 @@ class ApplicantProfile {
                 throw new Error(`Unsupported certificate file type: ${type}`);
             }
 
-            if (image.mimetype && image.mimetype.startsWith('image/')) {
+            if (image.mimetype && image.mimetype.startsWith('image/')) { 
                 const compressedImageBuffer = await sharp(image.buffer)
                     .jpeg({ quality: 80 }) 
                     .toBuffer();
@@ -492,7 +494,6 @@ class ApplicantProfile {
                          VALUES (?, ?, ?, ?, ?, ?)`,
                         [userProfileId, issuedBy, s3Key, newFileName, fileSize, type]
                     );
-                    console.log("Updated certifciate")
                 } else {
                     const cert = existingCertificates.find(c => c.id === id);
                     if (cert) {

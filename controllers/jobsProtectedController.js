@@ -533,7 +533,8 @@ exports.updateCertificate = async (req, res) => {
         const userId = req.user.user_id;
         const certificates = applicantCertificateInfo.map((cert, index) => {
             const id = cert.id;
-            const fieldName = id === -1 ? `certificates-new-${index}` : `certificates-${id}`;
+            const fieldName = `certificates-new-${index}`;
+            console.log(req.files);
             const file = req.files?.find(f => f.fieldname === fieldName);
             let image;
             if (id === -1) {
