@@ -173,6 +173,31 @@ router.post(
     },
     fileFilter: profilePicFileFilter
   }).single('profile_pic'),
+  [
+    body('first_name')
+    .trim()
+    .notEmpty().withMessage('First name is required')
+    .isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
+
+  body('last_name')
+    .trim()
+    .notEmpty().withMessage('Last name is required')
+    .isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
+
+  body('email')
+    .trim()
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Must be a valid email'),
+
+  body('gender')
+    .notEmpty().withMessage('Gender is required')
+    .isIn(['male', 'female', 'other']).withMessage('Gender must be male, female, or other'),
+
+  body('intro')
+    .trim()
+    .notEmpty().withMessage('Intro is required')
+    .isLength({ min:10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
+  ],
   jobsProtectedController.updateProfile
 );
 
