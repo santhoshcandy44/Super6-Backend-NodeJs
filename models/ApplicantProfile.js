@@ -5,6 +5,7 @@ const { generateShortEncryptedUrl, verifyShortEncryptedUrl } = require('../utils
 const User = require('./User.js');
 const { PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { uploadToS3, deleteFromS3} = require('../config/awsS3.js')
+const {formatToMySQLDate} = require('../utils/dateUtils.js');
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
@@ -225,7 +226,7 @@ class ApplicantProfile {
 
     static async updateOrCreateEducationInfo(userId, educationList = []) {
         await db.query(
-            'DELETE FROM applicant_profile_education_infos WHERE applicant_id = (SELECT id FROM applicant_profiles WHERE external_user_id = ?)',
+            'DELETE FROM applicant_profile_education_infos WHERE applicant_id = (SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?)',
             [userId]
         );
         const insertEducationQuery = `
@@ -235,7 +236,7 @@ class ApplicantProfile {
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const [userProfile] = await db.query(
-            'SELECT id FROM applicant_profiles WHERE external_user_id = ?',
+            'SELECT applicant_id FROM applicant_profiles WHERE external_user_id = ?',
             [userId]
         );
 
