@@ -218,14 +218,14 @@ exports.updateProfile = async (req, res) => {
         }
         const jobProfessionalInfoJson = req.body.applicantProfessionalInfo;
         if (!jobProfessionalInfoJson) {
-            return res.status(400).json({ error: 'Missing jobProfessionalInfo part' });
+            return sendErrorResponse(res, 400, 'Missing jobProfessionalInfo part');
         }
         const userId = req.user.user_id;
         const jobProfessionalInfo = JSON.parse(jobProfessionalInfoJson);
         const profilePic = req.file;
         const result = await ApplicantProfile.updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update personal information");
+            return sendErrorResponse(res, 400, "Failed to update personal information");
         }
         return sendJsonResponse(res, 200, "Personal information updated successfully", {
             applicant_professional_info: {
@@ -265,12 +265,12 @@ exports.updateEducation = async (req, res) => {
         }
         const applicantEducationInfo = req.body;
         if (!applicantEducationInfo) {
-            return res.status(400).json({ error: 'Missing  jobProfessionalInfo' });
+            return sendErrorResponse(res, 400, "Missing  education info");
         }
         const userId = req.user.user_id; 
         const result = await ApplicantProfile.updateOrCreateEducationInfo(userId, applicantEducationInfo);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update personal information");
+            return sendErrorResponse(res, 400, "Failed to update education information");
         }
         return sendJsonResponse(res, 200, "Education info updated successfully", {
             applicant_professional_info: {
@@ -310,12 +310,12 @@ exports.updateExperience = async (req, res) => {
         }
         const applicantExperienceInfo = req.body;
         if (!applicantExperienceInfo) {
-            return res.status(400).json({ error: 'Missing  jobProfessionalInfo' });
+            return sendErrorResponse(res, 400, "Missing experience Info");
         }
         const userId = req.user.user_id; 
         const result = await ApplicantProfile.updateOrCreateExperienceInfo(userId, applicantExperienceInfo);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update personal information");
+            return sendErrorResponse(res, 400, "Failed to update experience information");
         }
         return sendJsonResponse(res, 200, "Experience info updated successfully", {
             applicant_professional_info: {
@@ -356,7 +356,7 @@ exports.updateNoExperience = async (req, res) => {
         const result = await ApplicantProfile.updateExperienceAsNone(userId);
 
         if (!result) {
-            return sendErrorResponse(res, 500, 'Failed to update personal information');
+            return sendErrorResponse(res, 400, 'Failed to update no experience information');
         }
 
         return sendJsonResponse(res, 200, 'No exeperince updated successfully', {
@@ -398,12 +398,12 @@ exports.updateSkill = async (req, res) => {
         }
         const applicantSkillInfo = req.body;
         if (!applicantSkillInfo) {
-            return res.status(400).json({ error: 'Missing  skills' });
+            return sendErrorResponse(res, 400, "Missing  skills info");
         }
         const userId = req.user.user_id;
         const result = await ApplicantProfile.updateOrCreateSkillInfo(userId, applicantSkillInfo);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update skills information");
+            return sendErrorResponse(res, 400, "Failed to update skills information");
         }
         return sendJsonResponse(res, 200, "Skill info updated successfully", {
             applicant_professional_info: {
@@ -443,12 +443,12 @@ exports.updateLanguage = async (req, res) => {
         }
         const applicantLanguageInfo = req.body;
         if (!applicantLanguageInfo || applicantLanguageInfo.length === 0) {
-            return res.status(400).json({ error: 'Missing  languages' });
+            return sendErrorResponse(res, 400, "Missing language");
         }
         const userId = req.user.user_id; 
         const result = await ApplicantProfile.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update skills information");
+            return sendErrorResponse(res, 400, "Failed to update language information");
         }
         return sendJsonResponse(res, 200, "Language info updated successfully", {
             applicant_professional_info: {
@@ -487,7 +487,7 @@ exports.updateCertificate = async (req, res) => {
         }
         const applicantCertificateInfoJson = req.body.applicantCertificateInfo;
         if (!applicantCertificateInfoJson) {
-            return res.status(400).json({ error: 'Missing applicantCertificateInfo part' });
+            return sendErrorResponse(res, 400, "Missing certificate info part");
         }
         const applicantCertificateInfo = JSON.parse(applicantCertificateInfoJson);
         if (applicantCertificateInfo.length > 5) {
@@ -518,7 +518,7 @@ exports.updateCertificate = async (req, res) => {
         });
         const result = await ApplicantProfile.updateOrCreateUserCertificates(userId, certificates);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update certificates");
+            return sendErrorResponse(res, 400, "Failed to update certificates");
         }
         return sendJsonResponse(res, 200, "Certificate info updated successfully", {
             applicant_professional_info: {
@@ -558,14 +558,14 @@ exports.updateResume = async (req, res) => {
         }
         const applicantResumeInfoJson = req.body.applicantResumeInfo;
         if (!applicantResumeInfoJson) {
-            return res.status(400).json({ error: 'Missing applicantResumeInfo part' });
+            return sendErrorResponse(res, 400, "Missing resume info part");
         }
         const userId = req.user.user_id;
         const applicantResumeInfo = JSON.parse(applicantResumeInfoJson);
         const resume = req.file;
         const result = await ApplicantProfile.updateOrCreateUserResume(userId, resume);
         if (!result) {
-            return sendErrorResponse(res, 500, "Failed to update resume");
+            return sendErrorResponse(res, 400, "Failed to update resume");
         }
         return sendJsonResponse(res, 200, "Resume info updated successfully", {
             applicant_professional_info: {
