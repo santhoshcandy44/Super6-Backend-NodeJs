@@ -14,7 +14,6 @@ class ApplicantProfile {
              WHERE external_user_id = ?`,
             [userId]
         );
-        console.log(profile);
         if (!profile) return null;
         const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(

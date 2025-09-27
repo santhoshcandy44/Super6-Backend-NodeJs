@@ -154,6 +154,8 @@ exports.getApplicantProfile = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 404, 'User profile not exist');
         }
+
+        console.log(result)
         return sendJsonResponse(res, 200, "Profile fetched successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
@@ -223,6 +225,7 @@ exports.updateProfile = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update personal information");
         }
+
         return sendJsonResponse(res, 200, "Personal information updated successfully", {
             applicant_professional_info: {
                 first_name: result.first_name,
