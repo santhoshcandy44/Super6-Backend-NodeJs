@@ -342,7 +342,7 @@ class ApplicantProfile {
               start_date, end_date, current_working_here, experienced
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                userProfile.id,
+                userProfile.applicant_id,
                 null, 
                 null, 
                 null,
@@ -380,7 +380,7 @@ class ApplicantProfile {
             for (const skill of skillList) {
                 const { skill: skillName, skill_code } = skill;
                 await db.query(insertSkillQuery, [
-                    userProfile.id,
+                    userProfile.applicant_id,
                     skillName,
                     skill_code
                 ]);
@@ -415,7 +415,7 @@ class ApplicantProfile {
             const language = item.language;
             const proficiency = item.proficiency;
             await db.query(insertLanguageQuery, [
-                userProfile.id,
+                userProfile.applicant_id,
                 language.name,
                 language.code,
                 proficiency.name,
@@ -425,7 +425,6 @@ class ApplicantProfile {
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
-
     
     static async updateOrCreateUserCertificates(userId, certificates) {
         const user = await User.getUserMedia(userId);
@@ -438,7 +437,7 @@ class ApplicantProfile {
         );
         if (!userProfile) return null;
 
-        const userProfileId = userProfile.id;
+        const userProfileId = userProfile.applicant_id;
         const mediaId = user.media_id;
         const allowedTypes = ["JPG", "PNG"];
 
@@ -536,7 +535,7 @@ class ApplicantProfile {
 
         const [[exisitngResume]] = await db.query(
             'SELECT resume_download_url FROM applicant_profile_resumes WHERE  applicant_id =  ?',
-            [userProfile.id]
+            [userProfile.applicant_id]
         );
 
         if (exisitngResume?.resume_download_url) {
@@ -561,7 +560,7 @@ class ApplicantProfile {
                 resume_size = VALUES(resume_size),
                 resume_type = VALUES(resume_type)
                 `;
-        await db.query(insertResumeQuery, [userProfile.id, fileName, resumeDownloadUrl, file.size, fileType]);
+        await db.query(insertResumeQuery, [userProfile.applicant_id, fileName, resumeDownloadUrl, file.size, fileType]);
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         return result;
     }
