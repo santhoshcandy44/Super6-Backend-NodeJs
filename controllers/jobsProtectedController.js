@@ -42,6 +42,46 @@ exports.getJobListingsForUser = async (req, res) => {
     }
 };
 
+
+exports.bookmarkJob= async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0]; 
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const user_id = req.user.user_id;
+        const { job_id } = req.body;
+        const result = await LocalJob.bookmarkLocalJob(user_id, local_job_id);
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to bookmark local job");
+        }
+        return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
+    } catch (error) {
+        console.log(error);
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+};
+
+exports.removeBookmarkJob= async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const user_id = req.user.user_id;
+        const { job_id } = req.body;
+        const result = await LocalJob.removeBookmarkLocalJob(user_id, local_job_id);
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to remove bookmark");
+        }
+        return sendJsonResponse(res, 200, "Bookmark removed successfully");
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
+    }
+};
+
 exports.searchLocationSuggestions = async (req, res) => {
     try {
         const errors = validationResult(req);

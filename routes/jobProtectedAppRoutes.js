@@ -79,6 +79,33 @@ router.get('/job-listings',
   jobsProtectedController.getJobListingsForUser
 );
 
+
+
+router.post(
+    '/bookmark-job',
+    authenticateToken,
+    [
+        body('user_id')
+            .isInt().withMessage('Invalid user id format'),
+        body('local_job_id')
+            .isInt().withMessage('Invalid local job id format')
+    ],
+    jobsProtectedController.bookmarkJob
+);
+
+router.post(
+    '/remove-bookmark-job',
+    authenticateToken,
+    [
+        body('user_id')
+            .isInt().withMessage('Invalid user id format'),
+
+        body('local_job_id')
+            .isInt().withMessage('Invalid local job id format')
+    ],
+    jobsProtectedController.removeBookmarkJob
+);
+
 router.get('/job-search-location-suggestions/:user_id(\\d+)', 
   authenticateToken, 
   [

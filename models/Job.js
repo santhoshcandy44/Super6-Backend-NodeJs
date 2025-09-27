@@ -742,6 +742,55 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     return Object.values(jobs);
   }
 
+  static async bookmarkJob(userId, jobId) {
+    let connection;
+    try {
+        connection = await db.getConnection();
+
+        await connection.beginTransaction();
+
+        const [rows] = await connection.execute(
+            "INSERT INTO user_bookmark_jobs (external_user_id, job_id) VALUES (?, ?)",
+            [userId, jobId]
+        );
+
+        if (rows.affectedRows === 0) {
+            throw new Error('Error on inserting bookmark');
+        }
+        await connection.commit();
+        return rows.insertId;
+    } catch (error) {
+        (await connection).rollback();
+        throw new Error('Failed to create bookmark: ' + error.message);
+    } finally {
+        (await connection).release;
+    }
+}
+
+static async removeBookmarkLocalJob(userId, jobId) {
+    let connection;
+    try {
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const [result] = await connection.execute(
+            "DELETE FROM user_bookmark_jobs WHERE user_id = ? AND job_id = ?",
+            [userId, jobId]
+        );
+
+        if (result.affectedRows === 0) {
+            throw new Error('No bookmark found to delete');
+        }
+        await connection.commit();
+        return { "Success": true };
+    } catch (error) {
+        (await connection).rollback();
+        throw new Error('Failed to remove bookmark: ' + error.message);
+    } finally {
+        (await connection).release;
+    }
+}
+
   static async searchLocationSuggestions(query) {
     let connection;
     try {
