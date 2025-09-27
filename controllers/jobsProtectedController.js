@@ -531,7 +531,7 @@ exports.updateCertificate = async (req, res) => {
             return res.status(400).json({ error: 'You can only upload up to 5 certificates.' });
         }
         const userId = req.user.user_id;
-        cosole.log(applicantCertificateInfo);
+        console.log(applicantCertificateInfo);
         const certificates = applicantCertificateInfo.map((cert) => {
             const id = cert.id;
             const fieldName = id === -1 ? 'certificates-new' : `certificates-${id}`;
