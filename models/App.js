@@ -549,7 +549,6 @@ class App {
             j.status,
             j.approval_status,
             j.slug,
-            j.company_id,
             j.posted_by_id,
 
             -- Organization Info
