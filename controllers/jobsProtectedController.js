@@ -216,11 +216,9 @@ exports.updateProfile = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const jobProfessionalInfoJson = req.body;
+        const jobProfessionalInfo = req.body;
         const userId = req.user.user_id;
-        const jobProfessionalInfo = JSON.parse(jobProfessionalInfoJson);
         const profilePic = req.file;
-        console.log(req.file);
         const result = await ApplicantProfile.updateOrCreateUserProfile(userId, jobProfessionalInfo, profilePic);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update personal information");
