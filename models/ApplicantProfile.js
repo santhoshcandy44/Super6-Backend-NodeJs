@@ -304,7 +304,7 @@ class ApplicantProfile {
                 const endDate = is_current_job ? null : formatToMySQLDate(end_date);
 
                 await db.query(insertExperienceQuery, [
-                    userProfile.id,
+                    userProfile.applicant_id,
                     company_name,
                     job_title,
                     employment_type,
