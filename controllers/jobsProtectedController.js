@@ -321,11 +321,11 @@ exports.updateExperience = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList, 
-            applicant_experience: result.experienceList, 
-            applicant_skill: result.skillsList,
-            applicant_language: result.languagesList,
-            applicant_certificate: result.certificateList,
+            applicant_educations: result.educationList, 
+            applicant_experiences: result.experienceList, 
+            applicant_skills: result.skillsList,
+            applicant_languages: result.languagesList,
+            applicant_certificates: result.certificateList,
             applicant_resume: result.resume ? {
                 resume: result.resume.resume_download_url,
                 file_name: result.resume.file_name,
@@ -364,11 +364,11 @@ exports.updateNoExperience = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList,
-            applicant_experience: result.experienceList,
-            applicant_skill: result.skillsList,
-            applicant_language: result.languagesList,
-            applicant_certificate: result.certificateList,
+            applicant_educations: result.educationList,
+            applicant_experiences: result.experienceList,
+            applicant_skills: result.skillsList,
+            applicant_languages: result.languagesList,
+            applicant_certificates: result.certificateList,
             applicant_resume: result.resume ? {
                 resume: result.resume.resume_download_url,
                 file_name: result.resume.file_name,
@@ -410,11 +410,11 @@ exports.updateSkill = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_education: result.educationList, 
-            applicant_experience: result.experienceList, 
-            applicant_skill: result.skillsList,
-            applicant_language: result.languagesList,
-            applicant_certificate: result.certificateList,
+            applicant_educations: result.educationList, 
+            applicant_experiences: result.experienceList, 
+            applicant_skills: result.skillsList,
+            applicant_languages: result.languagesList,
+            applicant_certificates: result.certificateList,
             applicant_resume: result.resume ? {
                 resume: result.resume.resume_download_url,
                 file_name: result.resume.file_name,
@@ -425,6 +425,7 @@ exports.updateSkill = async (req, res) => {
             next_complete_step: getNextIncompleteStep(result)
         });
     } catch (error) {
+        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
