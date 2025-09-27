@@ -6,17 +6,17 @@ const User = require('./User.js');
 const { PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { uploadToS3, deleteFromS3} = require('../config/awsS3.js')
 const {formatToMySQLDate} = require('./utils/dateUtils.js');
+const moment = require('moment');
 
 class ApplicantProfile {
     static async getApplicantUserProfile(userId) {
-        const [profileResult] = await db.query(
+        const [[profile]] = await db.query(
             `SELECT applicant_id, first_name, last_name, gender, email, phone, intro, profile_picture 
              FROM applicant_profiles 
              WHERE external_user_id = ?`,
             [userId]
         );
-        if (!profileResult || profileResult.length == 0) return null;
-        const profile =  profileResult[0];
+        if (!profile) return null;
         const userProfileId = profile.applicant_id;
         const [experienceRows] = await db.query(
             `SELECT organization, job_title, employment_type, location, start_date, end_date, current_working_here, experienced
