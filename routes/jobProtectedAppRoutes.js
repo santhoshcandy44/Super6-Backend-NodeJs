@@ -449,7 +449,7 @@ router.post(
   '/update-applicant-certificate',
   authenticateToken,
   certificatesUpload.any(),
-  
+
   body('applicantCertificateInfo')
     .customSanitizer((value) => {
       try {
@@ -485,7 +485,6 @@ router.post(
 
   body('applicantCertificateInfo.*.image')
     .optional(),
-
   (req, res, next) => {
     req.files = req.files.filter(file =>
       /^certificates-new-\d+$/.test(file.fieldname)
