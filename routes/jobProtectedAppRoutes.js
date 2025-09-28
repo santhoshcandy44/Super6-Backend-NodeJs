@@ -451,25 +451,12 @@ router.post(
   certificatesUpload.any(),
   
   body('applicantCertificateInfo')
-    .custom((value, { req }) => {
-      if (!value) {
-        throw new Error('applicantCertificateInfo is required');
-      }
-
-      let parsed;
+    .customSanitizer((value) => {
       try {
-        parsed = JSON.parse(value);
+        return JSON.parse(value);
       } catch (err) {
-        throw new Error('Invalid JSON in applicantCertificateInfo');
+        return null
       }
-
-      if (!Array.isArray(parsed)) {
-        throw new Error('applicantCertificateInfo must be an array');
-      }
-
-      req.body.applicantCertificateInfo = parsed;
-
-      return true;
     }),
 
   body('applicantCertificateInfo')
