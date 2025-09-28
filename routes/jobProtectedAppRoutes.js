@@ -198,7 +198,7 @@ router.post(
     body('profile_pic')
       .custom((value, { req }) => {
         if (!req.file || req.file.length === 0) {
-          throw new Error('At least one image is required');
+          throw new Error('Profile pic is required');
         }
         return true;
       }),
