@@ -194,6 +194,14 @@ router.post(
       .trim()
       .notEmpty().withMessage('Intro is required')
       .isLength({ min: 10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
+
+    body('profile_pic')
+      .custom((value, { req }) => {
+        if (!req.file || req.file.length === 0) {
+          throw new Error('At least one image is required');
+        }
+        return true;
+      }),
   ],
   (req, res, next) => {
     console.log(req.file)
