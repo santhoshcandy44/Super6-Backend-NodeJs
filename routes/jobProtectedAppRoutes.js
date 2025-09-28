@@ -203,13 +203,6 @@ router.post(
         return true;
       }),
   ],
-  (req, res, next) => {
-    console.log(req.file)
-    if (!req.file) {
-      throw Error("Profile pic image is required")
-    }
-    next();
-  },
   jobsProtectedController.updateProfile
 );
 
