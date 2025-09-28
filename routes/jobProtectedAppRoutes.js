@@ -201,7 +201,7 @@ router.post(
           throw new Error('Profile pic is required');
         }
         return true;
-      }),
+      })
   ],
   jobsProtectedController.updateProfile
 );
@@ -449,20 +449,28 @@ router.post(
   '/update-applicant-certificate',
   authenticateToken,
   certificatesUpload.any(),
-  (req, res, next) => {
-    try {
-      if (req.body.applicantCertificateInfo) {
-        try {
-          req.body.applicantCertificateInfo = JSON.parse(req.body.applicantCertificateInfo);
-        } catch (err) {
-          throw Error('Invalid JSON in applicantCertificateInfo')
-        }
+  
+  body('applicantCertificateInfo')
+    .custom((value, { req }) => {
+      if (!value) {
+        throw new Error('applicantCertificateInfo is required');
       }
-      next();
-    } catch (err) {
-      next(err);
-    }
-  },
+
+      let parsed;
+      try {
+        parsed = JSON.parse(value);
+      } catch (err) {
+        throw new Error('Invalid JSON in applicantCertificateInfo');
+      }
+
+      if (!Array.isArray(parsed)) {
+        throw new Error('applicantCertificateInfo must be an array');
+      }
+
+      req.body.applicantCertificateInfo = parsed;
+
+      return true;
+    }),
 
   body('applicantCertificateInfo')
     .isArray({ min: 1, max: 5 })
