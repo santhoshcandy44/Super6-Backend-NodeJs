@@ -193,15 +193,7 @@ router.post(
     body('intro')
       .trim()
       .notEmpty().withMessage('Intro is required')
-      .isLength({ min: 10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters'),
-
-    body('profile_pic')
-      .custom((value, { req }) => {
-        if (!req.file || req.file.length === 0) {
-          throw new Error('Profile pic is required');
-        }
-        return true;
-      })
+      .isLength({ min: 10, max: 300 }).withMessage('Intro must be min 10 and max 300 characters')
   ],
   jobsProtectedController.updateProfile
 );
@@ -262,9 +254,9 @@ router.post(
       .isArray({ min: 1, max: 5 })
       .withMessage('Expected an array of experiences (min 1 and max 5 allowed).'),
 
-    body('*.company_name')
-      .notEmpty()
-      .withMessage('company_name is required.'),
+    body('*.experienced')
+      .isBoolean()
+      .withMessage('experienced must be a boolean.'),
 
     body('*.job_title')
       .notEmpty()
@@ -274,21 +266,27 @@ router.post(
       .notEmpty()
       .withMessage('employment_type is required.'),
 
-    body('*.location')
+    body('*.company_name')
       .notEmpty()
-      .withMessage('location is required.'),
-
-    body('*.start_date')
-      .isInt()
-      .withMessage('start_date must be an integer.'),
+      .withMessage('company_name is required.'),
 
     body('*.is_current_job')
       .isBoolean()
       .withMessage('is_current_job must be a boolean.'),
 
-    body('*.experienced')
-      .isBoolean()
-      .withMessage('experienced must be a boolean.'),
+    body('*.start_date')
+      .isInt()
+      .withMessage('start_date must be an integer.'),
+
+    body('*.end_date')
+      .optional()
+      .isInt()
+      .withMessage('end date must be an integer.'),
+
+    body('*.location')
+      .notEmpty()
+      .withMessage('location is required.'),
+
 
     body().custom((experienceList) => {
       for (let i = 0; i < experienceList.length; i++) {
@@ -418,12 +416,14 @@ router.post(
     },
     fileFilter: resumeFileFilter
   }).single('resume'),
-  (req, res, next) => {
-    if (!req.file) {
-      throw Error("Resume file is required")
-    }
-    next();
-  },
+
+  body('resume')
+    .custom((value, { req }) => {
+      if (!req.file || req.file.length === 0) {
+        throw new Error('Resume file is required');
+      }
+      return true;
+    }),
   jobsProtectedController.updateResume
 );
 
