@@ -980,17 +980,15 @@ static async removeBookmarkLocalJob(userId, jobId) {
         [userProfileId, jobId]
       );
 
-       
       if (existing.length > 0)  throw new Error("You have already applied for this job");
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(
-        `INSERT INTO applications (applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at ) VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
+        `INSERT INTO applications (applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at )
+         VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
         [userProfileId, jobId]
       );
-      if (rows.affectedRows === 0) {
-        throw new Error('Error on inserting application');
-      }
+      if (rows.affectedRows === 0) throw new Error('Error on inserting application');
       await connection.commit();
 
       // const kafkaKey = `${localJobId}:${createdBy}:${userId}`
