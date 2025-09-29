@@ -1013,7 +1013,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       const [rows] = await connection.execute(
         `INSERT INTO applications (application_id, applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at )
          VALUES (?, ?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
-        [this.generateUniqueApplicationId(), userProfileId, jobId]
+        [await this.generateUniqueApplicationId(), userProfileId, jobId]
       );
       if (rows.affectedRows === 0) throw new Error('Error on inserting application');
       await connection.commit();
