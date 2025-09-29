@@ -976,13 +976,12 @@ static async removeBookmarkLocalJob(userId, jobId) {
       const userProfileId = userResult.applicant_id;
 
       const [existing] = await connection.execute(
-        `SELECT 1 FROM applications WHERE applicant_id = ? AND job_listing_id = ? LIMIT 1`,
+        `SELECT 1 FROM applications WHERE applicant_id = ? AND job_id = ? LIMIT 1`,
         [userProfileId, jobId]
       );
 
-      if (existing.length > 0) {
-        throw new Error("You have already applied for this job");
-      }
+       
+      if (existing.length > 0)  throw new Error("You have already applied for this job");
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(
@@ -990,7 +989,7 @@ static async removeBookmarkLocalJob(userId, jobId) {
         [userProfileId, jobId]
       );
       if (rows.affectedRows === 0) {
-        throw new Error('Error on inserting job');
+        throw new Error('Error on inserting application');
       }
       await connection.commit();
 

@@ -129,7 +129,7 @@ exports.applyJob= async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to apply job");
         }
-        return sendJsonResponse(res, 200, result.is_applied ? "Job applied successfully" : "Profile not completed" , result);
+        return sendJsonResponse(res, 200, result.is_applied && result.is_profile_completed ? "Job applied successfully" : "Failed to apply job", result);
     } catch (error) {
         console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
