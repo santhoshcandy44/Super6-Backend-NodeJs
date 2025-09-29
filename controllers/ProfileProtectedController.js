@@ -284,7 +284,7 @@ exports.logOut = async (req, res) => {
         if (!deactivatedResult) {
             return sendErrorResponse(res, 404, "Fauied to deactivate account");
         }
-        const result = await App.invalidateUserFCMToken(userId, null);
+        const result = await User.invalidateUserFCMToken(userId);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update fcm token");
         }

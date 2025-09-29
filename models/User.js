@@ -168,15 +168,6 @@ class User {
         return { success: true, message: "ok", data: rows.length > 0 ? rows[0] : null };
     }
 
-    static async getUserMedia(userId) {
-        const query = `
-        SELECT media_id FROM users 
-        WHERE user_id = ?`; 
-        const [rows] = await db.query(query, [userId]);
-        return rows.length > 0 ? rows[0] : null;
-    }
-
-
     static async updateProfilePic(userId, profilePicUrl, profilePicUrl96by96) {
         const query = `
         UPDATE users
@@ -192,7 +183,6 @@ class User {
             return null;
         }
 
-        // Fetch the updated user details
         const [rows] = await db.query(
             'SELECT * FROM users WHERE user_id = ?',
             [userId]
@@ -220,27 +210,20 @@ class User {
         return rows.length > 0 ? rows[0] : null;
     }
 
+    static async getUserMedia(userId) {
+        const query = `
+        SELECT media_id FROM users 
+        WHERE user_id = ?`; 
+        const [rows] = await db.query(query, [userId]);
+        return rows.length > 0 ? rows[0] : null;
+    }
+
     static async findUserById(user_id) {
         const query = `
                 SELECT * FROM users 
                 WHERE user_id = ?`;
         const [rows] = await db.query(query, [user_id]);
         return rows.length > 0 ? rows[0] : null;
-    }
-
-    static async userAsDeactivated(user_id) {
-        const query = `
-        UPDATE users 
-        SET account_status = 'deactivated' 
-        WHERE user_id = ?`; 
-
-        try {
-            const [result] = await db.query(query, [user_id]);
-            return result;
-        } catch (error) {
-            console.error('Error updating account status:', error.message);
-            throw error;
-        }
     }
 
     static async getUserProfile(user_id) {
@@ -273,6 +256,56 @@ class User {
         }
         return null;
     }
+    
+    static async userAsDeactivated(user_id) {
+        const query = `
+        UPDATE users 
+        SET account_status = 'deactivated' 
+        WHERE user_id = ?`; 
+
+        try {
+            const [result] = await db.query(query, [user_id]);
+            return result;
+        } catch (error) {
+            console.error('Error updating account status:', error.message);
+            throw error;
+        }
+    }
+
+    static async invalidateUserFCMToken(userId) {
+        let connection;
+        try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+    
+            const sql = `
+                UPDATE fcm_tokens
+                SET fcm_token = NULL, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            `;
+    
+            const [result] = await connection.execute(sql, [userId]);
+    
+            if (result.affectedRows === 0) {
+                throw new Error("No FCM token found to invalidate for this user.");
+            }
+    
+            await connection.commit();
+    
+            return {
+                success: true,
+                message: "FCM token invalidated successfully.",
+                result: result
+            };
+    
+        } catch (error) {
+            console.error(error);
+            if (connection) await connection.rollback();
+            throw error;
+        } finally {
+            if (connection) await connection.release();
+        }
+    }    
 }
 
 module.exports = User;

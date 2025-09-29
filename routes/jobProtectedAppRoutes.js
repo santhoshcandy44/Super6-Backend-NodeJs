@@ -218,6 +218,20 @@ router.post(
       .isInt()
       .withMessage('Start year must be a valid year.'),
 
+    body('*.currently_studying')
+      .isBoolean()
+      .withMessage('Currently studying must be a boolean.'),
+
+    body('*.end_year')
+      .optional()
+      .isInt()
+      .withMessage('End year must be a valid year.'),
+
+    body('*.grade')
+      .optional()
+      .isFloat()
+      .withMessage('Grade ust be float'),
+
     body().custom((educationList) => {
       for (const edu of educationList) {
         const currentlyStudying = Boolean(edu.currently_studying);

@@ -131,6 +131,7 @@ exports.applyJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, result.is_applied ? "Job applied successfully" : "Profile not completed" , result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -178,33 +179,6 @@ exports.getApplicantProfile = async (req, res) => {
         return sendErrorResponse(res, 500, 'Internal Server error', err.message);
     }
 };
-
-function getNextIncompleteStep(result) {
-    if (!(result.first_name && result.last_name && result.gender && result.email && result.intro)) {
-        return 0; 
-    }
-    if (!result.educationList || result.educationList.length === 0) {
-        return 1;
-    }
-    if (!result.experienceList || result.experienceList.length === 0) {
-        return 2; 
-    }
-    if (!result.skillsList || result.skillsList.length === 0) {
-        return 3; 
-    }
-    if (!result.languagesList || result.languagesList.length === 0) {
-        return 4; 
-    }
-    if (!result.resume) {
-        return 5; 
-    }
-
-    if (!result.certificateList || result.certificateList.length === 0) {
-        return 6; 
-    }
-
-    return -1;
-}
 
 exports.updateProfile = async (req, res) => {
     try {
@@ -575,3 +549,30 @@ exports.updateCertificate = async (req, res) => {
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
+
+function getNextIncompleteStep(result) {
+    if (!(result.first_name && result.last_name && result.gender && result.email && result.intro)) {
+        return 0; 
+    }
+    if (!result.educationList || result.educationList.length === 0) {
+        return 1;
+    }
+    if (!result.experienceList || result.experienceList.length === 0) {
+        return 2; 
+    }
+    if (!result.skillsList || result.skillsList.length === 0) {
+        return 3; 
+    }
+    if (!result.languagesList || result.languagesList.length === 0) {
+        return 4; 
+    }
+    if (!result.resume) {
+        return 5; 
+    }
+
+    if (!result.certificateList || result.certificateList.length === 0) {
+        return 6; 
+    }
+
+    return -1;
+}
