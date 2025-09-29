@@ -2,6 +2,7 @@ const db = require('../config/lts360JobsDatabase.js')
 const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
+const ApplicantProfile = require('./ApplicantProfile.js');
 
 class Job {
   static async getJobPostingsUser(userId, 
@@ -957,20 +958,15 @@ static async removeBookmarkLocalJob(userId, jobId) {
       const createdBy = jobCheckResult[0].posted_by_id;
       const title = jobCheckResult[0].title;
 
-      applicant_profile = await ApplicantProfile.getApplicantUserProfile(userId)
-      is_profile_completed = await this.isProfileCompleted(applicant_profile)
-
+      const applicant_profile = await ApplicantProfile.getApplicantUserProfile(userId)
+      const is_profile_completed = await this.isProfileCompleted(applicant_profile)
       if (!is_profile_completed) {
         return {
           is_profile_completed: false,
           is_applied: false
         }
       }
-      const [userResult] = await connection.execute(
-        `SELECT applcant_id from applicant_profiles where external_user_id = ?`,
-        [userId]
-      );
-      const userProfileId = userResult[0].id;
+      const userProfileId = applicant_profile.applicant_id;
 
       const [existing] = await connection.execute(
         `SELECT 1 FROM applications WHERE applicant_id = ? AND job_listing_id = ? LIMIT 1`,
