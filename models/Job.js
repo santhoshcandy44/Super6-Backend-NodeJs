@@ -5,7 +5,7 @@ const moment = require('moment');
 const ApplicantProfile = require('./ApplicantProfile.js');
 
 class Job {
-  static async getJobPostingsUser(userId, 
+  static async getJobPostingsUser(userId,
     queryParam,
     latitudeParam,
     longitudeParam,
@@ -618,7 +618,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
       }
     }
-    
+
     const [results] = await connection.execute(query, params);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
@@ -746,51 +746,51 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
   static async bookmarkJob(userId, jobId) {
     let connection;
     try {
-        connection = await db.getConnection();
+      connection = await db.getConnection();
 
-        await connection.beginTransaction();
+      await connection.beginTransaction();
 
-        const [rows] = await connection.execute(
-            "INSERT INTO user_bookmark_jobs (external_user_id, job_id) VALUES (?, ?)",
-            [userId, jobId]
-        );
+      const [rows] = await connection.execute(
+        "INSERT INTO user_bookmark_jobs (external_user_id, job_id) VALUES (?, ?)",
+        [userId, jobId]
+      );
 
-        if (rows.affectedRows === 0) {
-            throw new Error('Error on inserting bookmark');
-        }
-        await connection.commit();
-        return rows.insertId;
+      if (rows.affectedRows === 0) {
+        throw new Error('Error on inserting bookmark');
+      }
+      await connection.commit();
+      return rows.insertId;
     } catch (error) {
-        (await connection).rollback();
-        throw new Error('Failed to create bookmark: ' + error.message);
+      (await connection).rollback();
+      throw new Error('Failed to create bookmark: ' + error.message);
     } finally {
-        (await connection).release;
+      (await connection).release;
     }
-}
+  }
 
-static async removeBookmarkLocalJob(userId, jobId) {
+  static async removeBookmarkLocalJob(userId, jobId) {
     let connection;
     try {
-        connection = await db.getConnection();
-        await connection.beginTransaction();
+      connection = await db.getConnection();
+      await connection.beginTransaction();
 
-        const [result] = await connection.execute(
-            "DELETE FROM user_bookmark_jobs WHERE user_id = ? AND job_id = ?",
-            [userId, jobId]
-        );
+      const [result] = await connection.execute(
+        "DELETE FROM user_bookmark_jobs WHERE user_id = ? AND job_id = ?",
+        [userId, jobId]
+      );
 
-        if (result.affectedRows === 0) {
-            throw new Error('No bookmark found to delete');
-        }
-        await connection.commit();
-        return { "Success": true };
+      if (result.affectedRows === 0) {
+        throw new Error('No bookmark found to delete');
+      }
+      await connection.commit();
+      return { "Success": true };
     } catch (error) {
-        (await connection).rollback();
-        throw new Error('Failed to remove bookmark: ' + error.message);
+      (await connection).rollback();
+      throw new Error('Failed to remove bookmark: ' + error.message);
     } finally {
-        (await connection).release;
+      (await connection).release;
     }
-}
+  }
 
   static async searchLocationSuggestions(query) {
     let connection;
@@ -944,6 +944,33 @@ static async removeBookmarkLocalJob(userId, jobId) {
     );
   }
 
+  static async generateUniqueApplicationId() {
+    let id, exists = true;
+    let digitLength = 8;
+
+    while (exists) {
+      const min = Math.pow(10, digitLength - 1);
+      const max = Math.pow(10, digitLength) - 1;
+
+      id = Math.floor(min + Math.random() * (max - min + 1));
+
+      const [rows] = await db.query(
+        "SELECT application_id FROM applications WHERE application_id = ? LIMIT 1",
+        [id]
+      );
+
+      exists = rows.length > 0;
+
+      if (exists && digitLength < 12) {
+        const [countRows] = await db.query("SELECT COUNT(*) as total FROM applications");
+        if (countRows[0].total >= (max - min + 1)) {
+          digitLength++;
+        }
+      }
+    }
+    return id;
+  }
+
   static async applyJob(userId, jobId) {
     let connection;
     try {
@@ -971,7 +998,7 @@ static async removeBookmarkLocalJob(userId, jobId) {
         [userId]
       );
 
-      if(!userResult) throw Error("Applicant profile not exist")
+      if (!userResult) throw Error("Applicant profile not exist")
 
       const userProfileId = userResult.applicant_id;
 
@@ -980,13 +1007,13 @@ static async removeBookmarkLocalJob(userId, jobId) {
         [userProfileId, jobId]
       );
 
-      if (existing.length > 0)  throw new Error("You have already applied for this job");
+      if (existing.length > 0) throw new Error("You have already applied for this job");
 
       await connection.beginTransaction();
       const [rows] = await connection.execute(
-        `INSERT INTO applications (applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at )
-         VALUES (?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
-        [userProfileId, jobId]
+        `INSERT INTO applications (application_id, applicant_id, job_id, applied_at, status, is_rejected, is_top_applicant, reviewed_at, updated_at )
+         VALUES (?, ?, ?, NOW(), 'pending', FALSE, FALSE, NULL, NOW())`,
+        [this.generateUniqueApplicationId(), userProfileId, jobId]
       );
       if (rows.affectedRows === 0) throw new Error('Error on inserting application');
       await connection.commit();
