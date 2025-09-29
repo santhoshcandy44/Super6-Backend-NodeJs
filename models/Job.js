@@ -967,7 +967,7 @@ static async removeBookmarkLocalJob(userId, jobId) {
         }
       }
       const [[userResult]] = await connection.execute(
-        `SELECT applcant_id from applicant_profiles where external_user_id = ?`,
+        `SELECT applicant_id from applicant_profiles where external_user_id = ?`,
         [userId]
       );
 
