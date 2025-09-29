@@ -966,7 +966,14 @@ static async removeBookmarkLocalJob(userId, jobId) {
           is_applied: false
         }
       }
-      const userProfileId = applicant_profile.applicant_id;
+      const [[userResult]] = await connection.execute(
+        `SELECT applcant_id from applicant_profiles where external_user_id = ?`,
+        [userId]
+      );
+
+      if(!userResult) throw Error("Applicant profile not exist")
+
+      const userProfileId = userResult.applicant_id;
 
       const [existing] = await connection.execute(
         `SELECT 1 FROM applications WHERE applicant_id = ? AND job_listing_id = ? LIMIT 1`,
