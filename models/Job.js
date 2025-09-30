@@ -778,7 +778,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       );
 
       if (result.affectedRows === 0) throw new Error('No bookmark found to delete');
-      
+
       await connection.commit();
       return { "Success": true };
     } catch (error) {
@@ -1036,7 +1036,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
   static async getSavedJobs(userId, page, pageSize, lastTimeStamp) {
 
-    const query = `SELECT
+    let query = `SELECT
      j.job_id,
      j.title,
      j.city_id,
