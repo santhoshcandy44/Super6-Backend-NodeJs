@@ -751,7 +751,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       await connection.beginTransaction();
 
       const [rows] = await connection.execute(
-        "INSERT INTO user_bookmark_jobs (external_user_id, job_id) VALUES (?, ?)",
+        "INSERT INTO user_bookmark_jobs (external_user_id, job_id, created_at) VALUES (?, ?, NOW())",
         [userId, jobId]
       );
 
