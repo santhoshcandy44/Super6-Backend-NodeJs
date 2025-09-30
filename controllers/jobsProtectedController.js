@@ -71,12 +71,13 @@ exports.bookmarkJob = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { job_id } = req.body;
-        const result = await LocalJob.bookmarkLocalJob(user_id, job_id);
+        const result = await Job.bookmarkJob(user_id, job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark local job");
         }
         return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -90,7 +91,7 @@ exports.removeBookmarkJob = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { job_id } = req.body;
-        const result = await LocalJob.removeBookmarkLocalJob(user_id, job_id);
+        const result = await Job.removeBookmarkJob(user_id, job_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to remove bookmark");
         }

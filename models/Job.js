@@ -768,7 +768,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
   }
 
-  static async removeBookmarkLocalJob(userId, jobId) {
+  static async removeBookmarkJob(userId, jobId) {
     let connection;
     try {
       connection = await db.getConnection();

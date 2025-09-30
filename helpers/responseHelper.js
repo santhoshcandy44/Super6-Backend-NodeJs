@@ -11,7 +11,6 @@ function sendJsonResponse(res, statusCode,message,data=null,isSuccessful = true)
 }
   
 function sendErrorResponse(res, statusCode, message, errorDetails = null,  error_code='ERROR') {
-    console.log(message);
     const errorResponse = {
         status: 'error',
         statusCode: statusCode,
