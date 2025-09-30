@@ -755,9 +755,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         [userId, jobId]
       );
 
-      if (rows.affectedRows === 0) {
-        throw new Error('Error on inserting bookmark');
-      }
+      if (rows.affectedRows === 0) throw new Error('Error on inserting bookmark');
       await connection.commit();
       return rows.insertId;
     } catch (error) {
@@ -779,9 +777,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         [userId, jobId]
       );
 
-      if (result.affectedRows === 0) {
-        throw new Error('No bookmark found to delete');
-      }
+      if (result.affectedRows === 0) throw new Error('No bookmark found to delete');
+      
       await connection.commit();
       return { "Success": true };
     } catch (error) {
@@ -1128,13 +1125,15 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     query += ` ORDER BY
-  total_relevance DESC
+  j.created_at DESC
 LIMIT ? OFFSET ?`;
 
     const offset = (page - 1) * pageSize;
     params.push(pageSize, offset);
 
     const [results] = await db.execute(query, params);
+
+    cosole.log(results);
 
     const jobs = {};
     await (async () => {
