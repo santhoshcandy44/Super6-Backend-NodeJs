@@ -1118,10 +1118,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const params = [userId, userId, userId]
 
     if (lastTimeStamp != null) {
-      query += ` AND s.created_at < ?`;
+      query += ` AND j.posted_at < ?`;
       params.push(lastTimeStamp);
     } else {
-      query += ` AND j.created_at < CURRENT_TIMESTAMP`;
+      query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
     }
 
     query += ` ORDER BY
