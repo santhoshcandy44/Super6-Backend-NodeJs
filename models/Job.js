@@ -727,7 +727,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                 is_verified: !!row.is_verified,
               },
               is_applied: !!row.is_applied,
-              is_bookmarked: !!row.is_bookarked,
+              is_bookmarked: !!row.is_bookmarked,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
@@ -1132,8 +1132,6 @@ LIMIT ? OFFSET ?`;
     params.push(pageSize, offset);
 
     const [results] = await db.execute(query, params);
-
-   console.log(results);
     
     const jobs = {};
     await (async () => {
@@ -1226,7 +1224,7 @@ LIMIT ? OFFSET ?`;
                 is_verified: !!row.is_verified,
               },
               is_applied: !!row.is_applied,
-              is_bookmarked: !!row.is_bookarked,
+              is_bookmarked: !!row.is_bookmarked,
               initial_check_at: formattedDate,
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
