@@ -52,7 +52,7 @@ exports.getSavedJobs = async (req, res) => {
         const {page, page_size, last_timestamp,  } = req.query;
         const queryPage = page ? page : 1;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const PAGE_SIZE = page_size;
+        const PAGE_SIZE = page_size ? page_size : 30;
         const result = await Job.getSavedJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
