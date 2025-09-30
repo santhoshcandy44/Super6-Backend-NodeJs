@@ -56,7 +56,6 @@ exports.getSavedJobs = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
         }
-        console.log(result);
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result)
     } catch (error) {
         console.log(error);
