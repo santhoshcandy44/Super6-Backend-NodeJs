@@ -1125,7 +1125,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     query += ` ORDER BY
-  j.created_at DESC
+  j.posted_at DESC
 LIMIT ? OFFSET ?`;
 
     const offset = (page - 1) * pageSize;
