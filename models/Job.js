@@ -775,7 +775,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       await connection.beginTransaction();
 
       const [result] = await connection.execute(
-        "DELETE FROM user_bookmark_jobs WHERE user_id = ? AND job_id = ?",
+        "DELETE FROM user_bookmark_jobs WHERE external_user_id = ? AND job_id = ?",
         [userId, jobId]
       );
 
