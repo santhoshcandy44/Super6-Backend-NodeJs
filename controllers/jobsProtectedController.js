@@ -47,7 +47,6 @@ exports.getSavedJobs = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-
         const user_id = req.user.user_id;
         const {page, page_size, last_timestamp,  } = req.query;
         const queryPage = page ? page : 1;
@@ -58,7 +57,6 @@ exports.getSavedJobs = async (req, res) => {
             return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result)
-
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal server error", error.message)
     }
