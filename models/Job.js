@@ -1136,7 +1136,109 @@ LIMIT ? OFFSET ?`;
 
     const [results] = await db.execute(query, params);
 
-    return results;
+    const jobs = {};
+    await (async () => {
+      for (const row of results) {
+        const job_id = row.id;
+        const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
+        if (!jobs[job_id]) {
+          try {
+            jobs[job_id] = {
+              job_id: row.job_id,
+              title: row.title,
+              work_mode: row.work_mode,
+              location: row.location,
+              description: row.description,
+              education: row.education,
+              experience_type: row.experience_type,
+              experience_range_min: row.experience_range_min,
+              experience_range_max: row.experience_range_max,
+              experience_fixed: row.experience_fixed,
+
+              salary_min: row.salary_min,
+              salary_max: row.salary_max,
+              salary_min_formatted: await this.formatSalaryWithSettings(row.salary_min, row.salary_currency, row.currencySymbol),
+              salary_max_formatted: await this.formatSalaryWithSettings(row.salary_max, row.salary_currency, row.currencySymbol),
+              salary_not_disclosed: Boolean(row.salary_not_disclosed),
+
+              salary_currency: row.salary_currency,
+              must_have_skills: (() => {
+                try {
+                  const parsed = JSON.parse(row.must_have_skills);
+                  return Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch {
+                  return [];
+                }
+              })(),
+              good_to_have_skills: (() => {
+                try {
+                  const parsed = JSON.parse(row.good_to_have_skills);
+                  return Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch {
+                  return [];
+                }
+              })(),
+              industry_type: row.industry_type,
+              department: row.department,
+              role: row.role,
+              employment_type: row.employment_type,
+              vacancies: row.vacancies,
+              highlights: (() => {
+                try {
+                  const parsed = JSON.parse(row.highlights);
+                  return Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch {
+                  return [];
+                }
+              })(),
+              posted_by: row.posted_by_id,
+              posted_at: row.posted_at,
+              expiry_date: row.expiry_date,
+              // status: row.status,
+              // approval_status: row.approval_status,
+              slug: MEDIA_BASE_URL + '/job/' + row.slug,
+
+              organization_id: row.organization_id,
+
+              organization: {
+                id: row.organization_id,
+                name: row.organization_name,
+                logo: row.organization_logo,
+                email: row.organization_email,
+                address: row.organization_address,
+                website: row.website,
+                country: row.country,
+                state: row.state,
+                city: row.city,
+                postal_code: row.postal_code,
+              },
+
+              recruiter: {
+                id: row.posted_by_id,
+                first_name: row.first_name,
+                last_name: row.last_name,
+                email: row.recruiter_email,
+                role: row.recruiter_role,
+                company: row.company,
+                phone: row.phone,
+                profile_picture: row.profile_picture,
+                bio: row.bio,
+                years_of_experience: row.years_of_experience,
+                is_verified: !!row.is_verified,
+              },
+              is_applied: !!row.is_applied,
+              is_bookmarked: !!row.is_bookarked,
+              initial_check_at: formattedDate,
+              total_relevance: row.total_relevance ? row._total_relevance : null
+            };
+          } catch (error) {
+            throw new Error("Error processing job posting data");
+          }
+        }
+      }
+    })();
+
+    return jobs;
   }
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {
