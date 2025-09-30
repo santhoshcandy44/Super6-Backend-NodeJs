@@ -1124,7 +1124,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       query += ` AND s.created_at < ?`;
       params.push(lastTimeStamp);
     } else {
-      query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+      query += ` AND j.created_at < CURRENT_TIMESTAMP`;
     }
 
     query += ` ORDER BY
