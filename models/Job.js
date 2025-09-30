@@ -1133,7 +1133,7 @@ LIMIT ? OFFSET ?`;
 
     const [results] = await db.execute(query, params);
 
-    cosole.log(results);
+    console.log(results);
 
     const jobs = {};
     await (async () => {
