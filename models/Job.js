@@ -1133,8 +1133,6 @@ LIMIT ? OFFSET ?`;
 
     const [results] = await db.execute(query, params);
 
-    console.log(results);
-
     const jobs = {};
     await (async () => {
       for (const row of results) {
