@@ -1237,7 +1237,7 @@ LIMIT ? OFFSET ?`;
       }
     })();
 
-    return jobs;
+    return Object.values(jobs);
   }
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {
