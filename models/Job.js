@@ -979,9 +979,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         'SELECT posted_by_id, title FROM jobs WHERE job_id = ?',
         [jobId]
       );
-      if (jobCheckResult.length === 0) {
-        throw new Error('Job not exist');
-      }
+      if (jobCheckResult.length === 0) new Error('Job not exist');
       const createdBy = jobCheckResult[0].posted_by_id;
       const title = jobCheckResult[0].title;
 
@@ -1037,6 +1035,108 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     } finally {
       (await connection).release;
     }
+  }
+
+  static async getSavedJobs(userId, page, pageSize, lastTimeStamp) {
+
+    const query = `SELECT
+     j.job_id,
+     j.title,
+     j.city_id,
+     j.work_mode,
+     j.description,
+     j.education,
+     j.experience_type,
+     j.experience_range_min,
+     j.experience_range_max,
+     j.experience_fixed,
+     j.salary_min,
+     j.salary_max,
+     j.salary_not_disclosed,
+     j.must_have_skills,
+     j.good_to_have_skills,
+     j.industry_type,
+     j.department,
+     j.role,
+     j.employment_type,
+     j.vacancies,
+     j.highlights,
+     j.posted_at,
+     j.organization_id,
+     j.expiry_date,
+     j.status,
+     j.approval_status,
+     j.slug,
+     j.posted_by_id,
+
+     -- Organization Info
+     o.organization_name,
+     o.logo AS organization_logo,
+     o.email AS organization_email,
+     o.organization_address,
+     o.website,
+     o.country,
+     o.state,
+     o.city,
+     o.postal_code,
+
+     -- Recruiter Info
+     u.first_name,
+     u.last_name,
+     u.email AS recruiter_email,
+     u.role AS recruiter_role,
+     u.company,
+     u.phone,
+     u.profile_picture,
+     u.bio,
+     u.years_of_experience,
+     u.is_verified,
+
+     -- location
+     ci.name as location,
+     ci.latitude,
+     ci.longitude,
+
+     CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+    ub.created_at As bookmarked_at,
+
+CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
+     -- Currency Info
+     c.currency_type AS salary_currency,
+         CURRENT_TIMESTAMP AS initial_check_at
+
+ FROM jobs AS j
+
+ LEFT JOIN organization_profiles o ON j.organization_id = o.organization_id
+ LEFT JOIN recruiter_profiles u ON j.posted_by_id = u.id
+ LEFT JOIN recruiter_settings c ON j.posted_by_id = c.user_id
+ LEFT JOIN cities ci ON j.city_id = ci.id
+ LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
+ LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
+ LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+ 
+ WHERE ub.external_user_id = ? GROUP BY j.job_id`
+
+    const params = [userId, userId, userId]
+
+    if (lastTimeStamp != null) {
+      query += ` AND s.created_at < ?`;
+      params.push(lastTimeStamp);
+    } else {
+      query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+    }
+
+    query += ` ORDER BY
+  total_relevance DESC
+LIMIT ? OFFSET ?`;
+
+    const offset = (page - 1) * pageSize;
+    params.push(pageSize, offset);
+
+    const [results] = await db.execute(query, params);
+
+    return results;
   }
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {

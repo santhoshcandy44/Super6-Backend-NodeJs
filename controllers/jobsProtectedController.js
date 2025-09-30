@@ -11,7 +11,7 @@ exports.getJobListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;        
+        const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
@@ -22,11 +22,11 @@ exports.getJobListingsForUser = async (req, res) => {
             ? work_modes
             : typeof work_modes === 'string'
                 ? work_modes.split(',')
-                : [];        
+                : [];
         const normalizedWorkModes = workModesArray
             .map(mode => mode.trim().toLowerCase())
             .filter(mode => VALID_WORK_MODES.includes(mode));
-        const countryCode = req.headers['x-country-code']; 
+        const countryCode = req.headers['x-country-code'];
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = 1;
@@ -40,12 +40,35 @@ exports.getJobListingsForUser = async (req, res) => {
     }
 };
 
-
-exports.bookmarkJob= async (req, res) => {
+exports.getSavedJobs = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+
+        const user_id = req.user.user_id;
+        const {page, page_size, last_timestamp,  } = req.query;
+        const queryPage = page ? page : 1;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const PAGE_SIZE = page_size;
+        const result = await Job.getSavedJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp);
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
+        }
+        return sendJsonResponse(res, 200, "Jobs retrieved successfully", result)
+
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal server error", error.message)
+    }
+}
+
+exports.bookmarkJob = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -56,11 +79,11 @@ exports.bookmarkJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
-exports.removeBookmarkJob= async (req, res) => {
+exports.removeBookmarkJob = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -83,7 +106,7 @@ exports.searchLocationSuggestions = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const query = req.query.query;
@@ -101,11 +124,11 @@ exports.searchRoleSuggestions = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         // const user_id = req.user.user_id;
-        const query = req.query.query; 
+        const query = req.query.query;
         const result = await Job.searchRoleSuggestions(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
@@ -116,7 +139,7 @@ exports.searchRoleSuggestions = async (req, res) => {
     }
 };
 
-exports.applyJob= async (req, res) => {
+exports.applyJob = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -140,7 +163,7 @@ exports.getApplicantProfile = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.params.user_id;
@@ -161,8 +184,8 @@ exports.getApplicantProfile = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_educations: result.educationList, 
-            applicant_experiences: result.experienceList, 
+            applicant_educations: result.educationList,
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -184,7 +207,7 @@ exports.updateProfile = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const jobProfessionalInfo = req.body;
@@ -204,8 +227,8 @@ exports.updateProfile = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_educations: result.educationList, 
-            applicant_experiences: result.experienceList, 
+            applicant_educations: result.educationList,
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -228,14 +251,14 @@ exports.updateEducation = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const applicantEducationInfo = req.body;
         if (!applicantEducationInfo) {
             return sendErrorResponse(res, 400, "Missing  education info");
         }
-        const userId = req.user.user_id; 
+        const userId = req.user.user_id;
         const result = await ApplicantProfile.updateOrCreateEducationInfo(userId, applicantEducationInfo);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update education information");
@@ -250,7 +273,7 @@ exports.updateEducation = async (req, res) => {
                 profile_pic_url: result.profile_picture
             },
             applicant_educations: result.educationList,
-            applicant_experiences: result.experienceList, 
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -272,14 +295,14 @@ exports.updateExperience = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const applicantExperienceInfo = req.body;
         if (!applicantExperienceInfo) {
             return sendErrorResponse(res, 400, "Missing experience Info");
         }
-        const userId = req.user.user_id; 
+        const userId = req.user.user_id;
         const result = await ApplicantProfile.updateOrCreateExperienceInfo(userId, applicantExperienceInfo);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update experience information");
@@ -293,8 +316,8 @@ exports.updateExperience = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_educations: result.educationList, 
-            applicant_experiences: result.experienceList, 
+            applicant_educations: result.educationList,
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -359,7 +382,7 @@ exports.updateSkill = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const applicantSkillInfo = req.body;
@@ -380,8 +403,8 @@ exports.updateSkill = async (req, res) => {
                 intro: result.intro,
                 profile_pic_url: result.profile_picture
             },
-            applicant_educations: result.educationList, 
-            applicant_experiences: result.experienceList, 
+            applicant_educations: result.educationList,
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -411,7 +434,7 @@ exports.updateLanguage = async (req, res) => {
         if (!applicantLanguageInfo || applicantLanguageInfo.length === 0) {
             return sendErrorResponse(res, 400, "Missing language");
         }
-        const userId = req.user.user_id; 
+        const userId = req.user.user_id;
         const result = await ApplicantProfile.updateOrCreateLanguageInfo(userId, applicantLanguageInfo);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update language information");
@@ -426,7 +449,7 @@ exports.updateLanguage = async (req, res) => {
                 profile_pic_url: result.profile_picture
             },
             applicant_educations: result.educationList,
-            applicant_experiences: result.experienceList, 
+            applicant_experiences: result.experienceList,
             applicant_skills: result.skillsList,
             applicant_languages: result.languagesList,
             applicant_certificates: result.certificateList,
@@ -448,7 +471,7 @@ exports.updateResume = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.user.user_id;
@@ -552,26 +575,26 @@ exports.updateCertificate = async (req, res) => {
 
 function getNextIncompleteStep(result) {
     if (!(result.first_name && result.last_name && result.gender && result.email && result.intro)) {
-        return 0; 
+        return 0;
     }
     if (!result.educationList || result.educationList.length === 0) {
         return 1;
     }
     if (!result.experienceList || result.experienceList.length === 0) {
-        return 2; 
+        return 2;
     }
     if (!result.skillsList || result.skillsList.length === 0) {
-        return 3; 
+        return 3;
     }
     if (!result.languagesList || result.languagesList.length === 0) {
-        return 4; 
+        return 4;
     }
     if (!result.resume) {
-        return 5; 
+        return 5;
     }
 
     if (!result.certificateList || result.certificateList.length === 0) {
-        return 6; 
+        return 6;
     }
 
     return -1;
