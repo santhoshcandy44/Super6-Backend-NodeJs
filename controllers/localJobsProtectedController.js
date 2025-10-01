@@ -87,13 +87,12 @@ exports.getPublishedLocalJobs = async (req, res) => {
         }
         const user_id = req.user.user_id; 
         const { user_id: userId } = req.params;
-        console.log(user_id)
-        console.log(userId);
         if(userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve local jobs");
         const { page, page_size, last_timestamp } = req.query;
         const queryPage = page ? page : 1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        console.log(PAGE_SIZE);
         const result = await LocalJob.getPublishedLocalJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
