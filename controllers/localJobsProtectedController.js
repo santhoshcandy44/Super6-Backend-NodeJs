@@ -105,7 +105,7 @@ exports.getLocalJobApplications = async (req, res) => {
         }
         const user_id = req.user.user_id; 
         const { local_job_id } = req.params;
-        connsole.log(local_job_id);
+        console.log(local_job_id);
         const { page, page_size, last_timestamp } = req.query;
         const queryPage = page ? page : 1;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
