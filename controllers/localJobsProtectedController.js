@@ -86,7 +86,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const { userId } = req.params;
+        const { user_id: userId } = req.params;
         console.log(user_id)
         console.log(userId);
         if(userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve local jobs");
