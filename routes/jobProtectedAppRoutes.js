@@ -511,9 +511,9 @@ router.post(
 router.get('/saved-jobs/:user_id(\\d+)',
   authenticateToken,
   [
-    param('user_id').isInt().withMessage('User ID must be a valid integer'),
-    query('page').optional().isInt().withMessage('User ID must be a valid integer'),
-    query('page_size').optional().isInt().withMessage('User ID must be a valid integer'),
+    param('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
+    query('page').optional().isInt().withMessage('User ID must be a valid integer').toInt(),
+    query('page_size').optional().isInt().withMessage('User ID must be a valid integer').toInt(),
     query('last_timestamp')
       .optional()
       .isString().withMessage('Last Timestamp must be a valid string format')
