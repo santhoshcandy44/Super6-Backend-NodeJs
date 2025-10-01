@@ -1436,18 +1436,15 @@ GROUP BY l.local_job_id;
         }
     }
 
-    static async getPublishedLocalJobs(userId) {
+    static async getPublishedLocalJobs(userId, page, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
-        const [results] = await db.query(
-            `  SELECT
+        let query = `SELECT
                     l.local_job_id AS local_job_id,
                     l.title,
                     l.description,
@@ -1501,9 +1498,28 @@ GROUP BY l.local_job_id;
             
 
                 INNER JOIN users u ON l.created_by = u.user_id
-                WHERE l.created_by = ? GROUP BY local_job_id`,
+                WHERE l.created_by = ?`;
+                
+        const params = [userId];
 
-            [userId]
+        if (!lastTimeStamp) {
+            query += ` AND l.created_at < CURRENT_TIMESTAMP`;
+        } else {
+            query += ` AND l.created_at < ?`;
+            params.push(lastTimeStamp);
+        }
+
+        query += ` GROUP BY local_job_id 
+               ORDER BY l.created_at DESC
+               LIMIT ? OFFSET ?`;
+
+        const offset = (page - 1) * pageSize;
+
+        params.push(pageSize, offset);
+
+        const [results] = await db.query(
+            query,
+            params
         );
 
         const items = {};
