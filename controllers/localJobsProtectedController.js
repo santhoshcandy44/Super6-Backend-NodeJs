@@ -92,7 +92,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
         const queryPage = page ? page : 1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        console.log(PAGE_SIZE);
+        console.log(req.query);
         const result = await LocalJob.getPublishedLocalJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
