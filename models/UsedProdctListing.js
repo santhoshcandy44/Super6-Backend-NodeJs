@@ -1310,6 +1310,8 @@ distance LIMIT ? OFFSET ?`;
 
         params.push(pageSize, offset);
 
+        const [results] = db.execute(query, params);
+
         const products = {};
 
         results.forEach(row => {
