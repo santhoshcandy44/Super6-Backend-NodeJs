@@ -106,8 +106,8 @@ exports.getLocalJobApplications = async (req, res) => {
         const user_id = req.user.user_id; 
         const { local_job_id } = req.params;
         const { page, page_size, last_timestamp } = req.query;
-        const queryPage = !page ? 1 : page;
-        const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
+        const queryPage = page ? page : 1;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
         const PAGE_SIZE = page_size ? page_size : 30;
         const result = await LocalJob.getLocalJobApplicants(user_id, local_job_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
@@ -115,6 +115,7 @@ exports.getLocalJobApplications = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Local job applicants retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
