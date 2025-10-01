@@ -1510,7 +1510,7 @@ GROUP BY l.local_job_id;
         }
 
         query += ` GROUP BY local_job_id 
-               ORDER BY l.created_at DESC
+               ORDER BY .created_at DESC
                LIMIT ? OFFSET ?`;
 
         const offset = (page - 1) * pageSize;
