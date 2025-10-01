@@ -110,6 +110,29 @@ router.get('/published-local-jobs/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
+
+        query('page')
+            .optional()
+            .isInt().withMessage('Invalid page format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
+
+        query('last_timestamp')
+            .optional()
+            .isString().withMessage('Last Timestamp must be a valid string format')
+            .trim()
+            .escape()
+            .custom((value, { req }) => {
+                const decodedValue = decodeURIComponent(value);
+                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+                if (!timestampRegex.test(decodedValue)) {
+                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
+                }
+                return true;
+            })
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
     localJobsProtectedController.getPublishedLocalJobs
 );
