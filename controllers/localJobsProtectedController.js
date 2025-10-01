@@ -86,7 +86,13 @@ exports.getPublishedLocalJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const result = await LocalJob.getPublishedLocalJobs(user_id)
+        const { userId } = req.params;
+        if(userId!= userId) return sendErrorResponse(res, 400, "Access forbidden to retrieve local jobs");
+        const { page, page_size, last_timestamp } = req.query;
+        const queryPage = page ? page : 1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await LocalJob.getPublishedLocalJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
@@ -105,11 +111,10 @@ exports.getLocalJobApplications = async (req, res) => {
         }
         const user_id = req.user.user_id; 
         const { local_job_id } = req.params;
-        console.log(local_job_id);
         const { page, page_size, last_timestamp } = req.query;
         const queryPage = page ? page : 1;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const PAGE_SIZE = page_size ? page_size : 30;
+        const PAGE_SIZE = page_size ? page_size : 20;
         const result = await LocalJob.getLocalJobApplications(user_id, local_job_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local job applicants");
