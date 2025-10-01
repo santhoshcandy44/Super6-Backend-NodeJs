@@ -1517,7 +1517,7 @@ GROUP BY l.local_job_id;
 
         params.push(pageSize, offset);
 
-        const [results] = await db.query(
+        const [results] = await db.execute(
             query,
             params
         );
