@@ -109,15 +109,18 @@ router.get('/published-local-jobs/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid page format')
+            .toInt(),
 
         query('page_size')
             .optional()
-            .isInt().withMessage('Invalid page size format'),
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
 
         query('last_timestamp')
             .optional()
@@ -332,15 +335,18 @@ router.get(
     authenticateToken,
     [
         param('local_job_id')
-            .isInt().withMessage('Invalid local job id format'),
+            .isInt().withMessage('Invalid local job id format')
+            .toInt(),
 
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid page format')
+            .toInt(),
 
         query('page_size')
             .optional()
-            .isInt().withMessage('Invalid page size format'),
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
 
         query('last_timestamp')
             .optional()
