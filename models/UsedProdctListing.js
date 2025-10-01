@@ -1290,8 +1290,7 @@ distance LIMIT ? OFFSET ?`;
 
       LEFT JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id AND ub.user_id = u.user_id
             
-            WHERE p.created_by = ? 
-            GROUP BY p.product_id
+            WHERE p.created_by = ?
         `;
 
         const params = [userId];
