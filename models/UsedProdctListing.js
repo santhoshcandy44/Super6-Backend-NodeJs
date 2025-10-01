@@ -1310,7 +1310,7 @@ distance LIMIT ? OFFSET ?`;
 
         params.push(pageSize, offset);
 
-        const [results] = db.execute(query, params);
+        const [results] = await db.execute(query, params);
 
         const products = {};
 
