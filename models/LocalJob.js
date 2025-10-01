@@ -1558,7 +1558,7 @@ GROUP BY l.local_job_id;
         return Object.values(items);
     }
 
-    static async getLocalJobApplicants(userId, localJobId, page, pageSize, lastTimeStamp) {
+    static async getLocalJobApplications(userId, localJobId, page, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
