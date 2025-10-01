@@ -1584,7 +1584,7 @@ GROUP BY l.local_job_id;
             throw new Error('User not exist');
         }
 
-        const [jobCheckResult] = await db.execute(
+        const [jobCheckResult] = await db.query(
             'SELECT local_job_id FROM local_jobs WHERE local_job_id = ?',
             [localJobId]
         );
@@ -1638,7 +1638,7 @@ GROUP BY l.local_job_id;
 
         params.push(pageSize, offset);
 
-        const [results] = await db.query(
+        const [results] = await db.execute(
             query,
             params
         );
