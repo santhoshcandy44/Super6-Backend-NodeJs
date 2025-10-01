@@ -1228,18 +1228,15 @@ distance LIMIT ? OFFSET ?`;
         return Object.values(products);
     }
 
-    static async getPublishedUsedProductListings(userId) {
+    static async getPublishedUsedProductListings(userId, page, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
-
-        const [results] = await db.query(`
+        let query = `
             SELECT
                 p.product_id AS product_id,
                 p.name,
@@ -1292,11 +1289,27 @@ distance LIMIT ? OFFSET ?`;
                         INNER JOIN users u ON p.created_by = u.user_id
 
       LEFT JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id AND ub.user_id = u.user_id
-
             
             WHERE p.created_by = ? 
             GROUP BY p.product_id
-        `, [userId]);
+        `;
+
+        const params = [userId];
+
+        if (!lastTimeStamp) {
+            query += ` AND p.created_at < CURRENT_TIMESTAMP`;
+        } else {
+            query += ` AND p.created_at < ?`;
+            params.push(lastTimeStamp);
+        }
+
+        query += ` GROUP BY product_id 
+               ORDER BY p.created_at DESC
+               LIMIT ? OFFSET ?`;
+
+        const offset = (page - 1) * pageSize;
+
+        params.push(pageSize, offset);
 
         const products = {};
 

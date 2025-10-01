@@ -6,10 +6,10 @@ exports.getUsedProductListingsForUser = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { s, page, last_timestamp, last_total_relevance } = req.query;
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
@@ -31,18 +31,18 @@ exports.guestGetUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError, errors.array());
-        }        
-        const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
+        }
+        const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude } = req.query;
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
-        const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await UsedProductListing.guestGetUsedProductListings(user_id, decodedQuery, 
+        const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
+        const result = await UsedProductListing.guestGetUsedProductListings(user_id, decodedQuery,
             queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -57,10 +57,10 @@ exports.getUserPublishedUsedProductListingsFeedGuest = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const {user_id} = req.params;
+        const { user_id } = req.params;
         const result = await UsedProductListing.getPublishedUsedProductListings(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
@@ -75,15 +75,15 @@ exports.getPublishedUsedProductListingsFeedUser = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.user.user_id;
-        const {user_id} =  req.params;
+        const { user_id } = req.params;
         const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
-        }        
+        }
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
@@ -94,16 +94,23 @@ exports.getPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
-        const result = await UsedProductListing.getPublishedUsedProductListings(user_id)
+        const user_id = req.user.user_id;
+        const { user_id: userId } = req.params;
+        if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve used product listings");
+        const { page, page_size, last_timestamp } = req.query;
+        const queryPage = page ? page : 1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
 
-        return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);  
+        return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
@@ -113,13 +120,13 @@ exports.createOrUpdateUsedProductListing = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0].msg; 
-            return sendErrorResponse(res, 400,firstError.msg, errors.array());
+            const firstError = errors.array()[0].msg;
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const {product_id, name, description, price, price_unit, location, country, state, keep_image_ids } = req.body;  // keepImageIds comes from req.body
-        const images = req.files['images[]']; 
-        const user_id = req.user.user_id; 
-        const keepImageIdsArray = keep_image_ids? keep_image_ids.map(id => Number(id)): [];
+        const { product_id, name, description, price, price_unit, location, country, state, keep_image_ids } = req.body;  // keepImageIds comes from req.body
+        const images = req.files['images[]'];
+        const user_id = req.user.user_id;
+        const keepImageIdsArray = keep_image_ids ? keep_image_ids.map(id => Number(id)) : [];
         const result = await UsedProductListing.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish used product listing");
@@ -134,7 +141,7 @@ exports.bookmarkUsedProductListing = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -153,7 +160,7 @@ exports.removeBookmarkUsedProductListing = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -190,7 +197,7 @@ exports.deleteUsedProductListing = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;

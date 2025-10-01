@@ -1,5 +1,5 @@
 const express = require('express');
-const authenticateToken = require('../middlewares/authMiddleware'); 
+const authenticateToken = require('../middlewares/authMiddleware');
 const usedProductsProtectedController = require('../controllers/usedProductsProtectedController');
 const he = require('he');
 const { body, param, query } = require('express-validator');
@@ -7,8 +7,8 @@ const multer = require('multer');
 const router = express.Router();
 const upload = multer();
 
-router.get('/get-used-product-listings',
-    authenticateToken, 
+router.get('/used-product-listings',
+    authenticateToken,
     [
         query('user_id')
             .optional()
@@ -23,8 +23,8 @@ router.get('/get-used-product-listings',
             .isString().withMessage('Query string must be a valid string format')
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) 
-            .withMessage('Query string must be between 1 and 100 characters long'), 
+            .isLength({ min: 0, max: 100 })
+            .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('last_timestamp')
             .optional()
@@ -40,16 +40,16 @@ router.get('/get-used-product-listings',
                 // req.query.last_timestamp = decodedValue;
                 return true;
             })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'), 
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
         query('last_total_relevance')
             .optional()
             .isFloat().withMessage('Last total relevance must be a valid float format')
 
     ],
-    usedProductsProtectedController.getUsedProductListingsForUser 
+    usedProductsProtectedController.getUsedProductListingsForUser
 );
 
-router.get('/guest-get-used-product-listings',
+router.get('/guest-used-product-listings',
     [
         query('user_id')
             .optional()
@@ -96,50 +96,53 @@ router.get('/guest-get-used-product-listings',
                 return true;
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
-            
+
         query('last_total_relevance')
             .optional()
             .isFloat().withMessage('Last total relevance must be a valid float format')
     ],
-    usedProductsProtectedController.guestGetUsedProductListings 
+    usedProductsProtectedController.guestGetUsedProductListings
 );
 
-
-// router.get('/get-published-services-feed-guest/:user_id(\\d+)', 
-//     [
-//         // Validate and sanitize the user_id parameter
-//         param('user_id')
-//             .isInt().withMessage('Invalid user id format')
-//     ],
-//     servicesProtectedController.getUserPublishedServicesFeedGuest 
-// );
-
-// // Update Service Route
-// router.get('/get-published-services-feed-user/:user_id(\\d+)', 
-//     authenticateToken,
-//     [
-//         param('user_id')
-//             .optional()
-//             .isInt().withMessage('Invalid user id format'), 
-//     ],
-//     servicesProtectedController.getPublishedServicesFeedUser 
-// );
-
-router.get('/get-published-used-product-listings/:user_id(\\d+)', 
-    authenticateToken, 
+router.get('/published-used-product-listings/:user_id(\\d+)',
+    authenticateToken,
     [
-        query('user_id')
+        param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
+        query('page')
+            .optional()
+            .isInt().withMessage('Invalid page format')
+            .toInt(),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
+
+        query('last_timestamp')
+            .optional()
+            .isString().withMessage('Last Timestamp must be a valid string format')
+            .trim()
+            .escape()
+            .custom((value, { req }) => {
+                const decodedValue = decodeURIComponent(value);
+                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+                if (!timestampRegex.test(decodedValue)) {
+                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
+                }
+                return true;
+            })
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
-    usedProductsProtectedController.getPublishedUsedProductListings 
+    usedProductsProtectedController.getPublishedUsedProductListings
 );
 
 router.post('/create-or-update-used-product-listing',
-    authenticateToken, // Ensure the user is authenticated
+    authenticateToken,
     upload.fields([
-        { name: 'images[]', maxCount: 10 }  
+        { name: 'images[]', maxCount: 10 }
     ]),
     [
         body('product_id').isInt().withMessage('Product ID must be a valid integer'),
@@ -168,7 +171,7 @@ router.post('/create-or-update-used-product-listing',
             .isString()
             .withMessage('Country must be a valid string')
             .custom((value) => {
-                const allowedCountries = ['IN']; 
+                const allowedCountries = ['IN'];
                 if (!allowedCountries.includes(value)) {
                     throw new Error('Country must be a valid country (IN, USA)');
                 }
@@ -195,7 +198,7 @@ router.post('/create-or-update-used-product-listing',
                 return true;
             }),
 
-            body('images[]')
+        body('images[]')
             .custom((value, { req }) => {
                 if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keep_image_ids || req.body.keep_image_ids.length === 0)) {
                     throw new Error('Atleast 1 image is required');
@@ -203,7 +206,7 @@ router.post('/create-or-update-used-product-listing',
                 return true;
             }),
 
-            body('keep_image_ids')
+        body('keep_image_ids')
             .optional()
             .custom((value, { req }) => {
                 if (!Array.isArray(value)) {
@@ -224,7 +227,7 @@ router.post('/create-or-update-used-product-listing',
                     throw new Error('Either Keep Image IDs or Images must be provided');
                 }
 
-                req.body.keep_image_ids = asNumbers; 
+                req.body.keep_image_ids = asNumbers;
                 return true;
             }),
 
@@ -236,13 +239,13 @@ router.post('/create-or-update-used-product-listing',
                 }
                 return true;
             })
-            .isFloat({ min: 0 }) 
+            .isFloat({ min: 0 })
             .withMessage('Price must be a valid number greater than or equal to 0')
             .notEmpty()
             .withMessage('Price cannot be empty'),
 
         body('price_unit')
-            .isIn(['INR', 'USD']) 
+            .isIn(['INR', 'USD'])
             .withMessage('Price unit must be either INR or USD'),
 
         body('location')
@@ -253,7 +256,7 @@ router.post('/create-or-update-used-product-listing',
             .trim()
             .escape()
             .custom((value) => {
-                const decodedLocation = he.decode(value); 
+                const decodedLocation = he.decode(value);
                 const location = JSON.parse(decodedLocation);
                 if (
                     typeof location.latitude !== 'number' ||
@@ -278,15 +281,15 @@ router.post('/create-or-update-used-product-listing',
             }),
     ],
 
-    usedProductsProtectedController.createOrUpdateUsedProductListing 
+    usedProductsProtectedController.createOrUpdateUsedProductListing
 );
 
 router.post(
-    '/bookmark-used-product-listing', 
+    '/bookmark-used-product-listing',
     authenticateToken,
     [
         body('user_id')
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
         body('product_id')
             .isInt().withMessage('Invalid product id format')
@@ -295,11 +298,11 @@ router.post(
 );
 
 router.post(
-    '/remove-bookmark-used-product-listing', 
+    '/remove-bookmark-used-product-listing',
     authenticateToken,
     [
         body('user_id')
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
         body('product_id')
             .isInt().withMessage('Invalid product id format')
@@ -307,8 +310,8 @@ router.post(
     usedProductsProtectedController.removeBookmarkUsedProductListing
 );
 
-router.get('/search-used-product-listing-suggestions/:user_id(\\d+)', 
-    authenticateToken, 
+router.get('/used-product-listing-search-suggestions/:user_id(\\d+)',
+    authenticateToken,
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
@@ -317,10 +320,10 @@ router.get('/search-used-product-listing-suggestions/:user_id(\\d+)',
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
-    usedProductsProtectedController.usedProductListingsSearchQueries 
+    usedProductsProtectedController.usedProductListingsSearchQueries
 );
 
-router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)', 
+router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
@@ -329,16 +332,16 @@ router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)',
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
     ],
-    usedProductsProtectedController.usedProductListingsSearchQueries 
+    usedProductsProtectedController.usedProductListingsSearchQueries
 );
 
 router.delete('/:product_id(\\d+)/delete-used-product-listing',
-    authenticateToken, 
+    authenticateToken,
     [
         param('product_id').isInt().withMessage('Invalid product id format').trim().escape(),
         query('user_id').isInt().withMessage('Invalid user id format').trim().escape(),
     ],
-    usedProductsProtectedController.deleteUsedProductListing 
+    usedProductsProtectedController.deleteUsedProductListing
 );
 
 module.exports = router;
