@@ -96,7 +96,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
     }
 };
 
-exports.getLocalJobApplicants = async (req, res) => {
+exports.getLocalJobApplications = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -104,11 +104,11 @@ exports.getLocalJobApplicants = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const {local_job_id} = req.params;
-        const {page, last_timestamp } = req.query;
+        const { local_job_id } = req.params;
+        const { page, page_size, last_timestamp } = req.query;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
-        const PAGE_SIZE = 30;
+        const PAGE_SIZE = page_size ? page_size : 30;
         const result = await LocalJob.getLocalJobApplicants(user_id, local_job_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local job applicants");

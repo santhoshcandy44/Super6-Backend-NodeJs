@@ -8,7 +8,7 @@ const localJobsProtectedController = require('../controllers/localJobsProtectedC
 const router = express.Router();
 const upload = multer();
 
-router.get('/get-local-jobs',
+router.get('/local-jobs',
     authenticateToken,
     [
         query('user_id')
@@ -17,15 +17,15 @@ router.get('/get-local-jobs',
 
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'), 
+            .isInt().withMessage('Invalid page format'),
 
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') 
+            .isString().withMessage('Query string must be a valid string format')
             .trim()
             .escape()
             .isLength({ min: 0, max: 100 })
-            .withMessage('Query string must be between 1 and 100 characters long'), 
+            .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('last_timestamp')
             .optional()
@@ -39,22 +39,22 @@ router.get('/get-local-jobs',
                     throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
                 }
                 // req.query.last_timestamp = decodedValue; 
-                return true; 
+                return true;
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
         query('last_total_relevance')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format') 
+            .isFloat().withMessage('Last total relevance must be a valid float format')
     ],
     localJobsProtectedController.getLocalJobsForUser
 );
 
-router.get('/guest-get-local-jobs',
+router.get('/guest-local-jobs',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
         query('page')
             .optional()
@@ -62,10 +62,10 @@ router.get('/guest-get-local-jobs',
 
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') 
+            .isString().withMessage('Query string must be a valid string format')
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) 
+            .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
@@ -84,7 +84,7 @@ router.get('/guest-get-local-jobs',
 
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') 
+            .isString().withMessage('Last Timestamp must be a valid string format')
             .trim()
             .escape()
             .custom((value, { req }) => {
@@ -105,7 +105,7 @@ router.get('/guest-get-local-jobs',
     localJobsProtectedController.guestGetLocalJobs
 );
 
-router.get('/get-published-local-jobs/:user_id(\\d+)',
+router.get('/published-local-jobs/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
@@ -305,7 +305,7 @@ router.post(
 );
 
 router.get(
-    '/get-local-job-applicants/:local_job_id(\\d+)',
+    '/local-job-applications/:local_job_id(\\d+)',
     authenticateToken,
     [
         param('local_job_id')
@@ -315,9 +315,13 @@ router.get(
             .optional()
             .isInt().withMessage('Invalid page format'),
 
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
+
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') 
+            .isString().withMessage('Last Timestamp must be a valid string format')
             .trim()
             .escape()
             .custom((value, { req }) => {
@@ -333,7 +337,7 @@ router.get(
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
-    localJobsProtectedController.getLocalJobApplicants
+    localJobsProtectedController.getLocalJobApplications
 );
 
 router.post(
@@ -389,7 +393,7 @@ router.post(
     localJobsProtectedController.removeBookmarkLocalJob
 );
 
-router.get('/search-local-job-suggestions/:user_id(\\d+)',
+router.get('/local-job-search-suggestions/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
@@ -402,7 +406,7 @@ router.get('/search-local-job-suggestions/:user_id(\\d+)',
     localJobsProtectedController.localJobsSearchQueries
 );
 
-router.get('/guest-search-local-job-suggestions/:user_id(\\d+)',
+router.get('/guest-local-job-search-suggestions/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
