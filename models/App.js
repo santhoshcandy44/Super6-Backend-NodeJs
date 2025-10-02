@@ -78,37 +78,38 @@ class App {
         if (userCheckResult.length === 0) throw new Error('User is not exist.');
 
         let query = `
-            (
-              SELECT 'service' AS type, s.service_id AS id, ub.created_at AS bookmarked_at
-              FROM services s
-              INNER JOIN user_bookmark_services ub ON s.service_id = ub.service_id
-              WHERE ub.user_id = ?
-            )
+        SELECT * FROM (
+            SELECT 'service' AS type, s.service_id AS id, ub.created_at AS bookmarked_at
+            FROM services s
+            INNER JOIN user_bookmark_services ub ON s.service_id = ub.service_id
+            WHERE ub.user_id = ?
+            
             UNION ALL
-            (
-              SELECT 'used_product_listing' AS type, p.product_id AS id, ub.created_at AS bookmarked_at
-              FROM used_product_listings p
-              INNER JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id
-              WHERE ub.user_id = ?
-            )
+            
+            SELECT 'used_product_listing' AS type, p.product_id AS id, ub.created_at AS bookmarked_at
+            FROM used_product_listings p
+            INNER JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id
+            WHERE ub.user_id = ?
+            
             UNION ALL
-            (
-              SELECT 'local_job' AS type, l.local_job_id AS id, ub.created_at AS bookmarked_at
-              FROM local_jobs l
-              INNER JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id
-              WHERE ub.user_id = ?
-            )
-        `;
-        const params =  [userId, userId, userId];
+            
+            SELECT 'local_job' AS type, l.local_job_id AS id, ub.created_at AS bookmarked_at
+            FROM local_jobs l
+            INNER JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id
+            WHERE ub.user_id = ?
+        ) AS all_bookmarks
+        WHERE
+    `;
+        const params = [userId, userId, userId];
 
         if (!lastTimeStamp) {
-            query += ` AND ub.created_at < CURRENT_TIMESTAMP`;
+            query += ` all_bookmarks.bookmarked_at < CURRENT_TIMESTAMP`;
         } else {
-            query += ` AND ub.created_at < ?`;
+            query += ` all_bookmarks.bookmarked_at < ?`;
             params.push(lastTimeStamp);
         }
 
-        query += ` ORDER BY bookmarked_at DESC LIMIT ? OFFSET ?`;
+        query += ` ORDER BY all_bookmarks.bookmarked_at DESC LIMIT ? OFFSET ?`;
 
         const offset = (page - 1) * pageSize;
 
@@ -518,7 +519,7 @@ class App {
                     ub.user_id = ? 
                     GROUP BY local_job_id AND l.local_job_id IN (?)
                     `, [userId, userId, localJobIds]);
-    
+
             await (async () => {
                 for (const row of localJobResults) {
                     const localJobId = row.local_job_id;
