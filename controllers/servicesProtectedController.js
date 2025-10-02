@@ -131,6 +131,7 @@ exports.getPublishedServices = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
