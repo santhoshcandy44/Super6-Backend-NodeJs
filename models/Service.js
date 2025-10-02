@@ -1937,7 +1937,7 @@ END AS thumbnail,
         return Object.values(services);
     }
 
-    static async getUserPublishedServices(userId) {
+    static async getUserPublishedServices(userId, page, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1947,7 +1947,7 @@ END AS thumbnail,
             throw new Error('User not exist');
         }
 
-        const [results] = await db.query(`
+        let query = `
                 SELECT
                     s.service_id AS service_id,
                     s.title,
@@ -2040,8 +2040,27 @@ END AS thumbnail,
 
 
                 INNER JOIN users u ON s.created_by = u.user_id
-                WHERE s.created_by = ? GROUP BY service_id
-            `, [userId]);
+                WHERE s.created_by = ?`;
+
+                
+        const params = [userId];
+
+        if (!lastTimeStamp) {
+            query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+        } else {
+            query += ` AND s.created_at < ?`;
+            params.push(lastTimeStamp);
+        }
+
+        query += ` GROUP BY service_id 
+               ORDER BY s.created_at DESC
+               LIMIT ? OFFSET ?`;
+
+        const offset = (page - 1) * pageSize;
+
+        params.push(pageSize, offset);
+
+        const [results] = await db.execute(query, [userId]);
 
         const services = {};
 

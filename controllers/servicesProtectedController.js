@@ -8,7 +8,7 @@ exports.getServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -43,15 +43,15 @@ exports.guestGetServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
+        const { user_id, s, page, industries, last_timestamp, last_total_relevance, latitude, longitude } = req.query;
         const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
-        const queryIndustries = !industries ? [] :industries;
+        const queryIndustries = !industries ? [] : industries;
         if (!querySearch && (!queryIndustries || queryIndustries.length === 0)) {
             return sendErrorResponse(
                 res,
@@ -62,9 +62,9 @@ exports.guestGetServices = async (req, res) => {
         }
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
-        const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await Service.getServicesForGuestUser(user_id, decodedQuery, 
-            queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates, queryIndustries);            
+        const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
+        const result = await Service.getServicesForGuestUser(user_id, decodedQuery,
+            queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates, queryIndustries);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -78,7 +78,7 @@ exports.getBookmarkedServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -96,10 +96,10 @@ exports.getUserPublishedServicesFeedGuest = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const {user_id} = req.params;
+        const { user_id } = req.params;
         const result = await Service.getUserPublishedServices(user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -114,11 +114,11 @@ exports.getPublishedServicesFeedUser = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.user.user_id;
-        const {user_id} =  req.params;
+        const { user_id } = req.params;
         const result = await Service.getUserPublishedServicesFeedUser(userId, user_id)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
@@ -133,11 +133,17 @@ exports.getPublishedServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
-        const result = await Service.getUserPublishedServices(user_id)
+        const user_id = req.user.user_id;
+        const { user_id: userId } = req.params;
+        if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve services");
+        const { page, page_size, last_timestamp } = req.query;
+        const queryPage = page ? page : 1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await Service.getUserPublishedServices(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -154,7 +160,7 @@ exports.updateServiceInfo = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array())
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { title, short_description, long_description, industry } = req.body;
         const { service_id } = req.params;
         const result = await Service.updateServiceDetails(service_id, user_id, title, short_description, long_description, industry);
@@ -171,10 +177,10 @@ exports.updateServicePlans = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0].msg; 
+            const firstError = errors.array()[0].msg;
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { plans } = req.body;
         const { service_id } = req.params;
         const result = await Service.updateServicePlans(service_id, plans);
@@ -194,7 +200,7 @@ exports.updateServiceLocation = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { service_id } = req.params;
         const { longitude, latitude, geo, location_type } = req.body;
         const result = await Service.updateOrInsertLocation(service_id, longitude, latitude, geo, location_type);
@@ -220,7 +226,7 @@ exports.deleteServiceImage = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { service_id } = req.params;
         const { image_id } = req.query;
         const result = await Service.deleteServiceImage(service_id, image_id);
@@ -240,7 +246,7 @@ exports.uploadServiceImage = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
+        const user_id = req.user.user_id;
         const { service_id } = req.params;
         const { image_id } = req.body;
         const file = req.file;
@@ -254,7 +260,7 @@ exports.uploadServiceImage = async (req, res) => {
         return sendJsonResponse(res, 200, "Service image uploaded successfully", {
             image_id: result.id,
             service_id: result.service_id,
-            image_url: MEDIA_BASE_URL +"/"+ result.image_url,
+            image_url: MEDIA_BASE_URL + "/" + result.image_url,
             width: result.width,
             height: result.height,
             size: result.size,
@@ -269,7 +275,7 @@ exports.updateServiceImage = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -286,7 +292,7 @@ exports.updateServiceImage = async (req, res) => {
         return sendJsonResponse(res, 200, "Service image updated successfully", {
             image_id: result.id,
             service_id: result.service_id,
-            image_url: MEDIA_BASE_URL +"/"+ result.image_url,
+            image_url: MEDIA_BASE_URL + "/" + result.image_url,
             width: result.width,
             height: result.height,
             size: result.size,
@@ -318,7 +324,7 @@ exports.updateServiceTumbnail = async (req, res) => {
         return sendJsonResponse(res, 200, "Service thumbnail updated successfully", {
             image_id: result.thumbnail_id,
             service_id: result.service_id,
-            image_url: MEDIA_BASE_URL +"/"+ result.image_url,
+            image_url: MEDIA_BASE_URL + "/" + result.image_url,
             width: result.width,
             height: result.height,
             size: result.size,
@@ -333,12 +339,12 @@ exports.createService = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { title, long_description, short_description, industry, plans, location, country, state} = req.body;
-        const images = req.files['images[]']; 
-        const user_id = req.user.user_id; 
+        const { title, long_description, short_description, industry, plans, location, country, state } = req.body;
+        const images = req.files['images[]'];
+        const user_id = req.user.user_id;
         const thumbnail = req.files['thumbnail'][0];
         const result = await Service.createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans, images, location);
         if (!result) {
@@ -373,7 +379,7 @@ exports.removeBookmarkService = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
@@ -392,11 +398,11 @@ exports.searchSuggestions = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         // const user_id = req.user.user_id;
-        const query = req.query.query; 
+        const query = req.query.query;
         const result = await Service.searchQueries(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
@@ -411,7 +417,7 @@ exports.deleteService = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
