@@ -318,7 +318,7 @@ class App {
         }
 
         if (productIds.length) {
-            const [usedProductResults] = await db.execute(`       
+            const [usedProductResults] = await db.query(`       
             SELECT
                 s.product_id AS product_id,
                 s.name,
@@ -451,7 +451,7 @@ class App {
         }
 
         if (localJobIds.length) {
-            const [localJobResults] = await db.execute(`
+            const [localJobResults] = await db.query(`
                 SELECT
                     l.local_job_id AS local_job_id,
                     l.title,
