@@ -74,23 +74,6 @@ exports.guestGetServices = async (req, res) => {
     }
 };
 
-exports.getBookmarkedServices = async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const firstError = errors.array()[0];
-            return sendErrorResponse(res, 400, firstError.msg, errors.array());
-        }
-        const user_id = req.user.user_id;
-        const result = await Service.getUserBookmarkedServices(user_id)
-        if (!result) {
-            return sendErrorResponse(res, 400, "Failed to retrieve services");
-        }
-        return sendJsonResponse(res, 200, "Bookmarked servcies retrieved successfully", result);
-    } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
-    }
-};
 
 exports.getUserPublishedServicesFeedGuest = async (req, res) => {
     try {

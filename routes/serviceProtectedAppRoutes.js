@@ -8,14 +8,6 @@ const he = require('he');
 const router = express.Router();
 const upload = multer();
 
-router.get('/user-bookmark-services/:user_id(\\d+)', 
-    authenticateToken,
-    [
-        param('user_id').isInt().withMessage('User ID must be a valid integer'),
-    ],
-    servicesProtectedController.getBookmarkedServices
-);
-
 router.get('/services', 
     authenticateToken,
     [
@@ -146,7 +138,7 @@ router.get('/guest-services',
     servicesProtectedController.guestGetServices 
 );
 
-router.get('/published-services-feed-guest/:user_id(\\d+)',
+router.get('/guest-feed-published-services/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
@@ -154,7 +146,7 @@ router.get('/published-services-feed-guest/:user_id(\\d+)',
     servicesProtectedController.getUserPublishedServicesFeedGuest
 );
 
-router.get('/published-services-feed-user/:user_id(\\d+)',
+router.get('/feed-published-services/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
