@@ -2,7 +2,7 @@ const express = require('express');
 const authenticateToken = require('../middlewares/authMiddleware');
 const router = express.Router();
 const appProtectedController = require('../controllers/appProtectedController');
-const { body, param } = require('express-validator');
+const { body, param, query} = require('express-validator');
 
 router.post('/update-fcm',
   authenticateToken,
