@@ -517,7 +517,7 @@ class App {
     
                 WHERE
                     ub.user_id = ? 
-                    GROUP BY local_job_id AND l.local_job_id IN (?)
+                AND l.local_job_id IN (?) GROUP BY local_job_id 
                     `, [userId, userId, localJobIds]);
 
             await (async () => {
