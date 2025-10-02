@@ -130,7 +130,7 @@ class App {
         let localJobs = {};
 
         if (serviceIds.length) {
-            const [results] = await db.execute(`               
+            const [results] = await db.query(`               
             SELECT
                 s.service_id AS service_id,
                 s.title,
