@@ -74,7 +74,6 @@ exports.guestGetServices = async (req, res) => {
     }
 };
 
-
 exports.getUserPublishedServicesFeedGuest = async (req, res) => {
     try {
         const errors = validationResult(req);
