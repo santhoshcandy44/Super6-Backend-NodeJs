@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
-const {sendJsonResponse,sendErrorResponse} =require('../helpers/responseHelper');
-const User = require('../models/User'); 
-const App = require('../models/App'); 
+const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
+const User = require('../models/User');
+const App = require('../models/App');
 const he = require('he');
 
 exports.updateFCMToken = async (req, res) => {
@@ -17,8 +17,8 @@ exports.updateFCMToken = async (req, res) => {
         if (!userExists) {
             return sendErrorResponse(res, 404, "User not exist");
         }
-        const result= await App.updateUserFCMToken(userId, fcm_token);
-        if(!result){
+        const result = await App.updateUserFCMToken(userId, fcm_token);
+        if (!result) {
             return sendErrorResponse(res, 400, "Failed to update fcm token");
         }
         return sendJsonResponse(res, 200, "FCM token updated successfully");
@@ -34,14 +34,14 @@ exports.updateE2EEPublicKey = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors);
         }
-        const { e2ee_public_key, key_version } = req.body; 
-        const userId = req.user.user_id; 
+        const { e2ee_public_key, key_version } = req.body;
+        const userId = req.user.user_id;
         const userExists = await User.findUserById(userId);
         if (!userExists) {
             return sendErrorResponse(res, 404, "User not exist");
         }
-        const result= await App.updateUserE2EEPublicKey(userId, he.decode(e2ee_public_key), he.decode(key_version));
-        if(!result){
+        const result = await App.updateUserE2EEPublicKey(userId, he.decode(e2ee_public_key), he.decode(key_version));
+        if (!result) {
             return sendErrorResponse(res, 400, "Failed to update e2ee public key");
         }
         return sendJsonResponse(res, 200, "E2EE public key updated successfully");
@@ -54,11 +54,17 @@ exports.getBookmarks = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0]; 
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id; 
-        const result = await App.getUserBookmarks(user_id)
+        const user_id = req.user.user_id;
+        const { user_id: userId } = req.params;
+        if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to bookmarks");
+        const { page, page_size, last_timestamp } = req.query;
+        const queryPage = page ? page : 1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await App.getUserBookmarks(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
