@@ -1742,9 +1742,7 @@ END AS thumbnail,
             [userId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
         let query = `
                 SELECT
@@ -1859,7 +1857,7 @@ END AS thumbnail,
 
         params.push(pageSize, offset);
 
-        const [results] = await db.execute(query, [userId]);
+        const [results] = await db.execute(query, params);
 
         const services = {};
 
