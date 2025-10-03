@@ -786,7 +786,6 @@ END AS thumbnail,
         })();
 
         await connection.release();
-        console.log(services);
         return Object.values(services);
     }
 
