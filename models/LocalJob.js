@@ -1,7 +1,7 @@
 const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
-const moment = require('moment');
+const { formatMySQLDateToInitialCheckAt } = require(`./utils/dateUtils.js`)
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
@@ -75,14 +75,13 @@ class LocalJob {
                         ll.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
 
                                 ci.online AS user_online_status,
 
@@ -231,7 +230,7 @@ class LocalJob {
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
       -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -352,14 +351,13 @@ WHERE
                         ll.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                                 -- User online status (0 = offline, 1 = online)
                         ci.online AS user_online_status,
 
@@ -489,8 +487,7 @@ WHERE
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-
-                        u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
 
                         
     -- User online status (0 = offline, 1 = online)
@@ -574,10 +571,6 @@ WHERE
         await (async () => {
             for (const row of results) {
                 const local_job_id = row.local_job_id;
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
                 if (!items[local_job_id]) {
                     try {
                         items[local_job_id] = {
@@ -595,7 +588,7 @@ WHERE
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             local_job_id: row.local_job_id,
                             title: row.title,
@@ -623,10 +616,9 @@ WHERE
                             } : null,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             is_applied: Boolean(row.is_applied),
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
-                            distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
-
+                            distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null
                         };
                     } catch (error) {
                         throw new Error("Error processing service data");
@@ -712,7 +704,7 @@ WHERE
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                        u.created_at AS created_at,
+                        u.created_at AS publisher_created_at,
 
                         CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -829,14 +821,13 @@ WHERE
     ll.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
     
     CURRENT_TIMESTAMP AS initial_check_at,
@@ -942,14 +933,13 @@ WHERE
                         ll.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                         CURRENT_TIMESTAMP AS initial_check_at,
                             ci.online AS user_online_status,
 
@@ -1060,12 +1050,11 @@ WHERE
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
                     u.email AS publisher_email,
-                    u.created_at AS created_at,
                     u.about AS about,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status
 
@@ -1124,10 +1113,6 @@ WHERE
         await (async () => {
             for (const row of results) {
                 const local_job_id = row.local_job_id;
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
                 if (!items[local_job_id]) {
                     try {
                         items[local_job_id] = {
@@ -1145,7 +1130,7 @@ WHERE
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             local_job_id: row.local_job_id,
                             title: row.title,
@@ -1173,7 +1158,7 @@ WHERE
                             } : null,
                             is_bookmarked: Boolean(row.is_bookmarked),
 
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
 
@@ -1568,7 +1553,7 @@ GROUP BY l.local_job_id;
                         geo: row.geo,
                         location_type: row.location_type
                     } : null,
-                    initial_check_at: row.initial_check_at
+                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
                 };
             }
         });
@@ -1651,7 +1636,7 @@ GROUP BY l.local_job_id;
                     applicant_id: applicantId,
                     applied_at: row.applied_at,
                     is_reviewed: !!row.is_reviewed,
-                    initial_check_at: row.initial_check_at,
+                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                     user: {
                         user_id: applicantId,
                         first_name: row.first_name,
