@@ -5,6 +5,7 @@ const moment = require('moment');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
+const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
 class Service {
     static async getServicesForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
@@ -106,14 +107,13 @@ class Service {
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
 
                                 ci.online AS user_online_status,
 
@@ -281,14 +281,13 @@ END AS thumbnail,
     sl.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
       -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -448,14 +447,13 @@ END AS thumbnail,
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                                 -- User online status (0 = offline, 1 = online)
                         ci.online AS user_online_status,
 
@@ -624,13 +622,11 @@ END AS thumbnail,
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
                     u.email AS publisher_email,
-                    u.created_at AS created_at,
                     u.about AS about,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-
-                        u.created_at AS created_at,
+                        u.created_at AS publisher_created_at,
 
                         
     -- User online status (0 = offline, 1 = online)
@@ -697,10 +693,6 @@ END AS thumbnail,
         await (async () => {
             for (const row of results) {
                 const serviceId = row.service_id;
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
@@ -739,7 +731,7 @@ END AS thumbnail,
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             created_services: result,
                             service_id: serviceId,
@@ -771,7 +763,7 @@ END AS thumbnail,
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
 
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
                             industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
                             is_bookmarked: Boolean(row.is_bookmarked),
@@ -894,14 +886,13 @@ END AS thumbnail,
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                        u.created_at AS created_at,
+                        u.created_at AS publisher_created_at,
 
                         CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -1063,14 +1054,13 @@ END AS thumbnail,
     sl.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
     
     CURRENT_TIMESTAMP AS initial_check_at,
@@ -1218,14 +1208,13 @@ distance LIMIT ? OFFSET ?`;
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                         CURRENT_TIMESTAMP AS initial_check_at,
                             ci.online AS user_online_status,
 
@@ -1385,12 +1374,11 @@ END AS thumbnail,
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
                     u.email AS publisher_email,
-                    u.created_at AS created_at,
                     u.about AS about,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
 
@@ -1460,10 +1448,6 @@ END AS thumbnail,
         await (async () => {
             for (const row of results) {
                 const serviceId = row.service_id;
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
@@ -1487,7 +1471,7 @@ END AS thumbnail,
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear,
+                                created_at:  new Date(row.publisher_created_at).getFullYear().toString(),
                             },
 
                             created_services: result,
@@ -1519,7 +1503,7 @@ END AS thumbnail,
                                 ...JSON.parse(row.thumbnail),
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url 
                             } : null,
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
 
                             industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
@@ -1639,7 +1623,7 @@ END AS thumbnail,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
 
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -1668,11 +1652,7 @@ END AS thumbnail,
 
         results.forEach(row => {
             const serviceId = row.service_id;
-
             if (!services[serviceId]) {
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-
                 services[serviceId] = {
                     user: {
                         user_id: row.publisher_id,
@@ -1688,7 +1668,7 @@ END AS thumbnail,
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
                         online: Boolean(row.user_online_status),
-                        created_at: createdAtYear
+                        created_at:  new Date(row.publisher_created_at).getFullYear().toString()
 
                     },
                     service_id: serviceId,
@@ -1825,7 +1805,7 @@ END AS thumbnail,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at
+                    u.created_at AS publisher_created_at
 
                 FROM services s
                 LEFT JOIN service_images si ON s.service_id = si.service_id
@@ -1864,9 +1844,6 @@ END AS thumbnail,
         results.forEach(row => {
             const serviceId = row.service_id;
             if (!services[serviceId]) {
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-
                 services[serviceId] = {
                     user: {
                         user_id: row.publisher_id,
@@ -1881,7 +1858,7 @@ END AS thumbnail,
                         profile_pic_url_96x96: row.publisher_profile_pic_url
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
-                        created_at: createdAtYear
+                        created_at:  new Date(row.publisher_created_at).getFullYear().toString()
                     },
                     service_id: serviceId,
                     title: row.title,
@@ -1918,7 +1895,9 @@ END AS thumbnail,
                             geo: row.geo,
                             location_type: row.location_type
                         }
-                        : null
+                        : null,
+
+                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)    
                 };
             }
         });
