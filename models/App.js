@@ -585,7 +585,7 @@ class App {
                 ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
-        cosole.log(Object.values(combinedResults));
+        cosole.log(Object.values(Object.values(combinedResults)));
         return Object.values(combinedResults);
     }
 }
