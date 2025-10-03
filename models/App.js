@@ -117,9 +117,9 @@ class App {
 
         const [bookmarkRows] = await db.execute(query, params);
 
-        if (bookmarkRows.length === 0) {
-            return [];
-        }
+        if (bookmarkRows.length === 0) return [];
+
+        const initialCheckAt = bookmarkRows[0].initial_check_at;
 
         const serviceIds = bookmarkRows.filter(r => r.type === 'service').map(r => r.id);
         const productIds = bookmarkRows.filter(r => r.type === 'used_product_listing').map(r => r.id);
@@ -574,14 +574,17 @@ class App {
         const combinedResults = [
             ...Object.values(services).map(s => ({
                 type: "service",
+                initial_check_at:initialCheckAt,
                 ...s
             })),
             ...Object.values(usedProducts).map(up => ({
                 type: "used_product_listing",
+                initial_check_at:initialCheckAt,
                 ...up
             })),
             ...Object.values(localJobs).map(l => ({
                 type: "local_job",
+                initial_check_at:initialCheckAt,
                 ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
