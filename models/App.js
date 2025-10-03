@@ -585,7 +585,7 @@ class App {
                 ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
-        console.log(Object.values(Object.values(combinedResults)));
+        console.log(combinedResults);
         return Object.values(combinedResults);
     }
 }
