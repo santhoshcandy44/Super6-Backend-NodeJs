@@ -1558,7 +1558,6 @@ GROUP BY l.local_job_id;
             }
         });
 
-        console.log(Object.values(items));
         return Object.values(items);
     }
 
@@ -1658,7 +1657,6 @@ GROUP BY l.local_job_id;
                 };
             }
         });
-        console.log(Object.values(items));
         return Object.values(items);
     }
 

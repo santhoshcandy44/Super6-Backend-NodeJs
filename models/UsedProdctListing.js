@@ -477,13 +477,12 @@ WHERE
                 }
             }
         }
-
+        
         const services = {};
 
         await (async () => {
             for (const row of results) {
                 const product_id = row.product_id;
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
                 if (!services[product_id]) {
                     const publisher_id = row.publisher_id;
                     try {
@@ -996,9 +995,6 @@ distance LIMIT ? OFFSET ?`;
                     radius += 30;
                     await connection.release();
                     return await this.guestGetUsedProductListings(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
-
-                } else {
-                    console.log("Reached maximum distance limit. Returning available results.");
                 }
             }
         }
@@ -1008,7 +1004,6 @@ distance LIMIT ? OFFSET ?`;
         await (async () => {
             for (const row of results) {
                 const productId = row.product_id;
-                const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
                     try {
@@ -1068,13 +1063,10 @@ distance LIMIT ? OFFSET ?`;
                         };
 
                     } catch (error) {
-                        // Handle the error if the async operation fails
-                        console.error(error);
-                        throw new Error("Error processing service data");
+                        throw new Error("Error processing used product listing data");
                     }
                 }
             }
-
         })();
 
         await connection.release();
