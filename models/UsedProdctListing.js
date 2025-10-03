@@ -1209,6 +1209,54 @@ distance LIMIT ? OFFSET ?`;
         return Object.values(products);
     }
 
+    static async bookmarkUsedProductListing(userId, productId) {
+        let connection;
+        try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+            const [rows] = await connection.execute(
+                "INSERT INTO user_bookmark_used_product_listings (user_id, product_id) VALUES (?, ?)",
+                [userId, productId]
+            );
+
+            if (rows.affectedRows === 0) {
+                throw new Error('Error on inserting bookmark');
+            }
+            await connection.commit();
+            return rows.insertId;
+        } catch (error) {
+            (await connection).rollback();
+            throw new Error('Failed to create bookmark: ' + error.message);
+        } finally {
+            (await connection).release;
+        }
+    }
+
+    static async removeBookmarkUsedProductListing(userId, productId) {
+        let connection;
+        try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            const [result] = await connection.execute(
+                "DELETE FROM user_bookmark_used_product_listings WHERE user_id = ? AND product_id = ?",
+                [userId, productId]
+            );
+
+            if (result.affectedRows === 0) {
+                throw new Error('No bookmark found to delete');
+            }
+
+            await connection.commit();
+            return { "Success": true };
+        } catch (error) {
+            (await connection).rollback();
+            throw new Error('Failed to remove  bookmark: ' + error.message);
+        } finally {
+            (await connection).release;
+        }
+    }
+
     static async createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, files, locationJson, keepImageIdsArray, product_id) {
         let connection;
         const uploadedFiles = [];
@@ -1446,7 +1494,7 @@ distance LIMIT ? OFFSET ?`;
             }
         }
     }
-    
+
     static async getPublishedUsedProductListings(userId, page, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
@@ -1579,55 +1627,6 @@ distance LIMIT ? OFFSET ?`;
         });
 
         return Object.values(products);
-    }
-
-
-    static async bookmarkUsedProductListing(userId, productId) {
-        let connection;
-        try {
-            connection = await db.getConnection();
-            await connection.beginTransaction();
-            const [rows] = await connection.execute(
-                "INSERT INTO user_bookmark_used_product_listings (user_id, product_id) VALUES (?, ?)",
-                [userId, productId]
-            );
-
-            if (rows.affectedRows === 0) {
-                throw new Error('Error on inserting bookmark');
-            }
-            await connection.commit();
-            return rows.insertId;
-        } catch (error) {
-            (await connection).rollback();
-            throw new Error('Failed to create bookmark: ' + error.message);
-        } finally {
-            (await connection).release;
-        }
-    }
-
-    static async removeBookmarkUsedProductListing(userId, productId) {
-        let connection;
-        try {
-            connection = await db.getConnection();
-            await connection.beginTransaction();
-
-            const [result] = await connection.execute(
-                "DELETE FROM user_bookmark_used_product_listings WHERE user_id = ? AND product_id = ?",
-                [userId, productId]
-            );
-
-            if (result.affectedRows === 0) {
-                throw new Error('No bookmark found to delete');
-            }
-
-            await connection.commit();
-            return { "Success": true };
-        } catch (error) {
-            (await connection).rollback();
-            throw new Error('Failed to remove  bookmark: ' + error.message);
-        } finally {
-            (await connection).release;
-        }
     }
 
     static async deleteUsedProductListing(user_id, product_id) {
