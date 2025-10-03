@@ -1580,18 +1580,14 @@ GROUP BY l.local_job_id;
             [userId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
         const [jobCheckResult] = await db.query(
             'SELECT local_job_id FROM local_jobs WHERE local_job_id = ?',
             [localJobId]
         );
 
-        if (jobCheckResult.length === 0) {
-            throw new Error('Local job not found');
-        }
+        if (jobCheckResult.length === 0) throw new Error('Local job not found');
 
         let query = `SELECT 
                 a.applicant_id AS applicant_id,
@@ -1674,6 +1670,7 @@ GROUP BY l.local_job_id;
                 };
             }
         });
+        console.log(Object.values(items));
         return Object.values(items);
     }
 
