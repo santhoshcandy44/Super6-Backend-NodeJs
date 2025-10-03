@@ -5,6 +5,7 @@ const moment = require('moment');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
+const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
 class UsedProductListing {
 
@@ -74,14 +75,13 @@ class UsedProductListing {
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
 
                                 ci.online AS user_online_status,
 
@@ -183,14 +183,13 @@ class UsedProductListing {
     sl.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
       -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -299,14 +298,13 @@ WHERE
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                                 -- User online status (0 = offline, 1 = online)
                         ci.online AS user_online_status,
 
@@ -414,13 +412,12 @@ WHERE
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
                     u.email AS publisher_email,
-                    u.created_at AS created_at,
                     u.about AS about,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
 
-                        u.created_at AS created_at,
+                        u.created_at AS publisher_created_at,
 
                         
     -- User online status (0 = offline, 1 = online)
@@ -486,11 +483,7 @@ WHERE
         await (async () => {
             for (const row of results) {
                 const product_id = row.product_id;
-
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
-
                 if (!services[product_id]) {
                     const publisher_id = row.publisher_id;
                     try {
@@ -513,7 +506,7 @@ WHERE
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             product_id: product_id,
                             created_used_product_listings: result,
@@ -530,8 +523,7 @@ WHERE
                             })) : [],
                             short_code: BASE_URL + "/used-product/" + row.short_code,
 
-
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
@@ -613,14 +605,13 @@ WHERE
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                        u.created_at AS created_at,
+                        u.created_at AS publisher_created_at,
 
                         CURRENT_TIMESTAMP AS initial_check_at,
 
@@ -732,14 +723,13 @@ WHERE
     sl.location_type,
     u.user_id AS publisher_id,
     u.first_name AS publisher_first_name,
-    u.created_at AS created_at,
     u.about AS about,
     u.last_name AS publisher_last_name,
     u.email AS publisher_email,
     u.is_email_verified AS publisher_email_verified,
     u.profile_pic_url AS publisher_profile_pic_url,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-    u.created_at AS created_at,
+    u.created_at AS publisher_created_at,
 
     
     CURRENT_TIMESTAMP AS initial_check_at,
@@ -845,14 +835,13 @@ distance LIMIT ? OFFSET ?`;
                         sl.location_type,
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
-                        u.created_at AS created_at,
                         u.about AS about,
                         u.last_name AS publisher_last_name,
                         u.email AS publisher_email,
                         u.is_email_verified AS publisher_email_verified,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
                         CURRENT_TIMESTAMP AS initial_check_at,
                             ci.online AS user_online_status,
 
@@ -954,12 +943,11 @@ distance LIMIT ? OFFSET ?`;
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
                     u.email AS publisher_email,
-                    u.created_at AS created_at,
                     u.about AS about,
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status
 
@@ -1020,18 +1008,14 @@ distance LIMIT ? OFFSET ?`;
         await (async () => {
             for (const row of results) {
                 const productId = row.product_id;
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
                 const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
                     try {
                         const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
-
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
-
                         products[productId] = {
                             user: {
                                 user_id: row.publisher_id,
@@ -1047,7 +1031,7 @@ distance LIMIT ? OFFSET ?`;
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at: createdAtYear,
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString(),
                             },
 
                             created_used_product_listings: result,
@@ -1067,7 +1051,7 @@ distance LIMIT ? OFFSET ?`;
 
                             short_code: BASE_URL + "/used-product/" + row.short_code,
 
-                            initial_check_at: formattedDate,
+                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
 
                             is_bookmarked: Boolean(row.is_bookmarked),
@@ -1151,7 +1135,7 @@ distance LIMIT ? OFFSET ?`;
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at,
+                    u.created_at AS publisher_created_at,
 
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -1179,8 +1163,6 @@ distance LIMIT ? OFFSET ?`;
         results.forEach(row => {
             const productId = row.product_id;
             if (!products[productId]) {
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
                 products[productId] = {
                     user: {
                         user_id: row.publisher_id,
@@ -1196,8 +1178,7 @@ distance LIMIT ? OFFSET ?`;
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
                         online: Boolean(row.user_online_status),
-                        created_at: createdAtYear
-
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
                     product_id: productId,
                     name: row.name,
@@ -1225,143 +1206,6 @@ distance LIMIT ? OFFSET ?`;
                 };
             }
         });
-        return Object.values(products);
-    }
-
-    static async getPublishedUsedProductListings(userId, page, pageSize, lastTimeStamp) {
-        const [userCheckResult] = await db.query(
-            'SELECT user_id FROM users WHERE user_id = ?',
-            [userId]
-        );
-
-        if (userCheckResult.length === 0) throw new Error('User not exist');
-
-        let query = `
-            SELECT
-                p.product_id AS product_id,
-                p.name,
-                p.description,
-                p.price,
-                p.price_unit,
-                p.status,
-                p.short_code,
-                p.country,
-                p.state, 
-        
-                 COALESCE(
-            CONCAT('[', 
-                GROUP_CONCAT(
-                    DISTINCT CASE 
-                        WHEN pi.id IS NOT NULL THEN JSON_OBJECT(
-                            'image_id', pi.id,
-                            'image_url', pi.image_url,
-                            'width', pi.width,
-                            'height', pi.height,
-                            'size', pi.size,
-                            'format', pi.format
-                        )
-                    END
-                    ORDER BY pi.created_at DESC
-                ), 
-            ']'), '[]') AS images,
-
-            CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-
-
-                pl.longitude,
-                pl.latitude,
-                pl.geo,
-                pl.location_type,
-    
-                u.user_id AS publisher_id,
-                u.first_name AS publisher_first_name,
-                u.last_name AS publisher_last_name,
-                u.email AS publisher_email,
-                u.is_email_verified AS publisher_email_verified,
-                u.profile_pic_url AS publisher_profile_pic_url,
-                u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
-                u.created_at AS created_at
-    
-            FROM used_product_listings p
-            LEFT JOIN used_product_listing_images pi ON p.product_id = pi.product_id
-            LEFT JOIN used_product_listing_location pl ON p.product_id = pl.product_id
-            
-                        INNER JOIN users u ON p.created_by = u.user_id
-
-      LEFT JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id AND ub.user_id = u.user_id
-            
-            WHERE p.created_by = ?
-        `;
-
-        const params = [userId];
-
-        if (!lastTimeStamp) {
-            query += ` AND p.created_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` AND p.created_at < ?`;
-            params.push(lastTimeStamp);
-        }
-
-        query += ` GROUP BY product_id 
-               ORDER BY p.created_at DESC
-               LIMIT ? OFFSET ?`;
-
-        const offset = (page - 1) * pageSize;
-
-        params.push(pageSize, offset);
-
-        const [results] = await db.execute(query, params);
-
-        const products = {};
-
-        results.forEach(row => {
-            const productId = row.product_id;
-            if (!products[productId]) {
-                const date = new Date(row.created_at);
-                const createdAtYear = date.getFullYear().toString();
-
-                products[productId] = {
-                    user: {
-                        user_id: row.publisher_id,
-                        first_name: row.publisher_first_name,
-                        last_name: row.publisher_last_name,
-                        email: row.publisher_email,
-                        is_email_verified: !!row.publisher_email_verified,
-                        profile_pic_url: row.publisher_profile_pic_url
-                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                            : null,
-                        profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
-                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                            : null,
-                        created_at: createdAtYear
-                    },
-                    product_id: productId,
-                    name: row.name,
-                    price: row.price,
-                    price_unit: row.price_unit,
-                    description: row.description,
-                    country: row.country,
-                    state: row.state,
-                    status: row.status,
-                    short_code: BASE_URL + "/used-product/" + row.short_code,
-                    images: row.images ? JSON.parse(row.images).map(image => ({
-                        ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url
-                    })) : [],
-                    location: row.longitude && row.latitude && row.geo && row.location_type
-                        ? {
-                            longitude: row.longitude,
-                            latitude: row.latitude,
-                            geo: row.geo,
-                            location_type: row.location_type
-                        }
-                        : null,
-                    is_bookmarked: Boolean(row.is_bookmarked),
-
-                };
-            }
-        });
-
         return Object.values(products);
     }
 
@@ -1602,6 +1446,141 @@ distance LIMIT ? OFFSET ?`;
             }
         }
     }
+    
+    static async getPublishedUsedProductListings(userId, page, pageSize, lastTimeStamp) {
+        const [userCheckResult] = await db.query(
+            'SELECT user_id FROM users WHERE user_id = ?',
+            [userId]
+        );
+
+        if (userCheckResult.length === 0) throw new Error('User not exist');
+
+        let query = `
+            SELECT
+                p.product_id AS product_id,
+                p.name,
+                p.description,
+                p.price,
+                p.price_unit,
+                p.status,
+                p.short_code,
+                p.country,
+                p.state, 
+        
+                 COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN pi.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', pi.id,
+                            'image_url', pi.image_url,
+                            'width', pi.width,
+                            'height', pi.height,
+                            'size', pi.size,
+                            'format', pi.format
+                        )
+                    END
+                    ORDER BY pi.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+
+            CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+
+
+                pl.longitude,
+                pl.latitude,
+                pl.geo,
+                pl.location_type,
+    
+                u.user_id AS publisher_id,
+                u.first_name AS publisher_first_name,
+                u.last_name AS publisher_last_name,
+                u.email AS publisher_email,
+                u.is_email_verified AS publisher_email_verified,
+                u.profile_pic_url AS publisher_profile_pic_url,
+                u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
+                u.created_at AS publisher_created_at
+    
+            FROM used_product_listings p
+            LEFT JOIN used_product_listing_images pi ON p.product_id = pi.product_id
+            LEFT JOIN used_product_listing_location pl ON p.product_id = pl.product_id
+            
+                        INNER JOIN users u ON p.created_by = u.user_id
+
+      LEFT JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id AND ub.user_id = u.user_id
+            
+            WHERE p.created_by = ?
+        `;
+
+        const params = [userId];
+
+        if (!lastTimeStamp) {
+            query += ` AND p.created_at < CURRENT_TIMESTAMP`;
+        } else {
+            query += ` AND p.created_at < ?`;
+            params.push(lastTimeStamp);
+        }
+
+        query += ` GROUP BY product_id 
+               ORDER BY p.created_at DESC
+               LIMIT ? OFFSET ?`;
+
+        const offset = (page - 1) * pageSize;
+
+        params.push(pageSize, offset);
+
+        const [results] = await db.execute(query, params);
+
+        const products = {};
+
+        results.forEach(row => {
+            const productId = row.product_id;
+            if (!products[productId]) {
+                products[productId] = {
+                    user: {
+                        user_id: row.publisher_id,
+                        first_name: row.publisher_first_name,
+                        last_name: row.publisher_last_name,
+                        email: row.publisher_email,
+                        is_email_verified: !!row.publisher_email_verified,
+                        profile_pic_url: row.publisher_profile_pic_url
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                            : null,
+                        profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                            : null,
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                    },
+                    product_id: productId,
+                    name: row.name,
+                    price: row.price,
+                    price_unit: row.price_unit,
+                    description: row.description,
+                    country: row.country,
+                    state: row.state,
+                    status: row.status,
+                    short_code: BASE_URL + "/used-product/" + row.short_code,
+                    images: row.images ? JSON.parse(row.images).map(image => ({
+                        ...image,
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
+                    })) : [],
+                    location: row.longitude && row.latitude && row.geo && row.location_type
+                        ? {
+                            longitude: row.longitude,
+                            latitude: row.latitude,
+                            geo: row.geo,
+                            location_type: row.location_type
+                        }
+                        : null,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
+                };
+            }
+        });
+
+        return Object.values(products);
+    }
+
 
     static async bookmarkUsedProductListing(userId, productId) {
         let connection;
