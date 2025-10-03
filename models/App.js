@@ -78,7 +78,7 @@ class App {
         if (userCheckResult.length === 0) throw new Error('User is not exist.');
 
         let query = `
-        SELECT * FROM (
+        SELECT *, CURRENT_TIMESTAMP AS initial_check_at FROM (
             SELECT 'service' AS type, s.service_id AS id, ub.created_at AS bookmarked_at
             FROM services s
             INNER JOIN user_bookmark_services ub ON s.service_id = ub.service_id
@@ -205,7 +205,7 @@ class App {
                 u.is_email_verified AS publisher_email_verified,
                 u.profile_pic_url AS publisher_profile_pic_url,
                 u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
     
         -- User online status (0 = offline, 1 = online)
         ci.online AS user_online_status,
@@ -241,8 +241,6 @@ class App {
             await (async () => {
                 for (const row of results) {
                     const serviceId = row.service_id;
-                    const date = new Date(row.created_at);
-                    const createdAtYear = date.getFullYear().toString();
                     if (!services[serviceId]) {
                         try {
                             const publisher_id = row.publisher_id;
@@ -265,7 +263,7 @@ class App {
                                         ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                         : null,
                                     online: Boolean(row.user_online_status),
-                                    created_at: createdAtYear
+                                    created_at: new Date(row.publisher_created_at).getFullYear().toString()
                                 },
                                 created_services: result,
                                 service_id: serviceId,
@@ -307,9 +305,10 @@ class App {
                                             location_type: row.location_type
                                         }
                                         : null
+
                             };
 
-                        } catch (error) {
+                        } catch (error) {   
                             throw new Error("Error processing service data");
                         }
                     }
@@ -354,7 +353,7 @@ class App {
                 u.is_email_verified AS publisher_email_verified,
                 u.profile_pic_url AS publisher_profile_pic_url,
                 u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS created_at,
+                            u.created_at AS publisher_created_at,
     
         -- User online status (0 = offline, 1 = online)
         ci.online AS user_online_status,
@@ -384,8 +383,6 @@ class App {
             await (async () => {
                 for (const row of usedProductResults) {
                     const productId = row.product_id;
-                    const date = new Date(row.created_at);
-                    const createdAtYear = date.getFullYear().toString();
                     if (!usedProducts[productId]) {
                         try {
                             const publisher_id = row.publisher_id;
@@ -408,7 +405,7 @@ class App {
                                         ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                         : null,
                                     online: Boolean(row.user_online_status),
-                                    created_at: createdAtYear
+                                    created_at: new Date(row.publisher_created_at).getFullYear().toString()
                                 },
                                 created_used_product_listings: result,
                                 product_id: productId,
@@ -492,7 +489,7 @@ class App {
                     u.is_email_verified AS publisher_email_verified,
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                                u.created_at AS created_at,
+                                u.created_at AS publisher_created_at,
         
             -- User online status (0 = offline, 1 = online)
             ci.online AS user_online_status,
@@ -588,7 +585,7 @@ class App {
                 ...l
             }))
         ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
-
+        cosole.log(Object.values(combinedResults));
         return Object.values(combinedResults);
     }
 }

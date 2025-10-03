@@ -3,6 +3,7 @@ const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 const ApplicantProfile = require('./ApplicantProfile.js');
+const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
 class Job {
   static async getJobPostingsUser(userId,
@@ -640,7 +641,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     await (async () => {
       for (const row of results) {
         const job_id = row.id;
-        const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
         if (!jobs[job_id]) {
           try {
             jobs[job_id] = {
@@ -728,7 +728,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
               },
               is_applied: !!row.is_applied,
               is_bookmarked: !!row.is_bookmarked,
-              initial_check_at: formattedDate,
+              initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
           } catch (error) {
@@ -1137,7 +1137,6 @@ LIMIT ? OFFSET ?`;
     await (async () => {
       for (const row of results) {
         const job_id = row.id;
-        const formattedDate = moment(row.initial_check_at).format('YYYY-MM-DD HH:mm:ss');
         if (!jobs[job_id]) {
           try {
             jobs[job_id] = {
@@ -1225,7 +1224,7 @@ LIMIT ? OFFSET ?`;
               },
               is_applied: !!row.is_applied,
               is_bookmarked: !!row.is_bookmarked,
-              initial_check_at: formattedDate,
+              initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
               total_relevance: row.total_relevance ? row._total_relevance : null
             };
           } catch (error) {

@@ -159,6 +159,8 @@ exports.applyJob = async (req, res) => {
     }
 };
 
+//Profile
+
 exports.getApplicantProfile = async (req, res) => {
     try {
         const errors = validationResult(req);

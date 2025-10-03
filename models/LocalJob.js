@@ -1629,7 +1629,6 @@ GROUP BY l.local_job_id;
         const items = {};
         results.forEach(row => {
             const applicantId = row.applicant_id;
-            const createdAtYear = new Date(row.applicant_created_at).getFullYear().toString();
             if (!items[applicantId]) {
                 items[applicantId] = {
                     applicant_id: applicantId,
@@ -1652,7 +1651,7 @@ GROUP BY l.local_job_id;
                             ? PROFILE_BASE_URL + "/" + row.profile_pic_url_96x96
                             : null,
                         geo: row.geo,
-                        created_at: createdAtYear
+                        created_at: new Date(row.applicant_created_at).getFullYear().toString()
                     }
                 };
             }
