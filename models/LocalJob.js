@@ -1482,6 +1482,7 @@ GROUP BY l.local_job_id;
                     ll.latitude,
                     ll.geo,
                     ll.location_type,
+
                     u.user_id AS publisher_id,
                     u.first_name AS publisher_first_name,
                     u.last_name AS publisher_last_name,
@@ -1490,13 +1491,14 @@ GROUP BY l.local_job_id;
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS created_at
+                    u.created_at AS publisher_created_at,
+
+                    CURRENT_TIMESTAMP as initial_check_at
 
                 FROM local_jobs l
                 LEFT JOIN local_job_images li ON l.local_job_id = li.local_job_id
                 LEFT JOIN local_job_location ll ON l.local_job_id = ll.local_job_id
             
-
                 INNER JOIN users u ON l.created_by = u.user_id
                 WHERE l.created_by = ?`;
                 
@@ -1527,8 +1529,6 @@ GROUP BY l.local_job_id;
         results.forEach(row => {
             const localJobId = row.local_job_id;
             if (!items[localJobId]) {
-                const date = new Date(row.publisher_created_at);
-                const createdAtYear = date.getFullYear().toString();
                 items[localJobId] = {
                     user: {
                         user_id: row.publisher_id,
@@ -1542,7 +1542,7 @@ GROUP BY l.local_job_id;
                         profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
-                        created_at: createdAtYear
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
                     local_job_id: row.local_job_id,
                     title: row.title,
@@ -1567,7 +1567,8 @@ GROUP BY l.local_job_id;
                         latitude: row.latitude,
                         geo: row.geo,
                         location_type: row.location_type
-                    } : null
+                    } : null,
+                    initial_check_at: row.initial_check_at
                 };
             }
         });
