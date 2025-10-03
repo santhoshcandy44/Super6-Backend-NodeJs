@@ -5,6 +5,7 @@ const jobsDb = require('../config/lts360JobsDatabase');
 const { encrypt } = require('../utils/authUtils');
 const Service = require('./Service');
 const UsedProductListing = require('./UsedProdctListing');
+const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils');
 
 class App {
     static async updateUserFCMToken(userId, fcmToken) {
@@ -119,7 +120,7 @@ class App {
 
         if (bookmarkRows.length === 0) return [];
 
-        const initialCheckAt = bookmarkRows[0].initial_check_at;
+        const initialCheckAt = formatMySQLDateToInitialCheckAt(bookmarkRows[0].initial_check_at);
 
         const serviceIds = bookmarkRows.filter(r => r.type === 'service').map(r => r.id);
         const productIds = bookmarkRows.filter(r => r.type === 'used_product_listing').map(r => r.id);
