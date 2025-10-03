@@ -123,7 +123,7 @@ exports.getLocalJobApplications = async (req, res) => {
         return sendJsonResponse(res, 200, "Local job applicants retrieved successfully", result);
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
