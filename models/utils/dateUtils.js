@@ -7,7 +7,7 @@ const formatToMySQLDate = (millis) => {
 
 const formatMySQLDateToInitialCheckAt = (date) => {
     if (!date) return null; 
-    return moment(millis).format('YYYY-MM-DD HH:mm:ss');
+    return moment(date).format('YYYY-MM-DD HH:mm:ss');
 };
 
 module.exports = {

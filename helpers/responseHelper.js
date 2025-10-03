@@ -24,7 +24,6 @@ function sendErrorResponse(res, statusCode, message, errorDetails = null,  error
         requestId: uuidv4(), 
         documentation_url: `${API_DOC_BASE_URL}/docs/errors`
     };
-    console.log(message);
     res.status(statusCode).json(
       {
         isSuccessful:false,

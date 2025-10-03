@@ -24,7 +24,6 @@ exports.getLocalJobsForUser = async (req, res) => {
         console.log(result);
         return sendJsonResponse(res, 200, "Local jobs retrieved successfully", result);
     } catch (error) {
-        console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -74,7 +73,6 @@ exports.createOrUpdateLocalJob = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Local job updated successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -99,7 +97,6 @@ exports.getPublishedLocalJobs = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Published local jobs retrieved successfully", result);      
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
@@ -123,7 +120,6 @@ exports.getLocalJobApplications = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Local job applicants retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
@@ -184,8 +180,7 @@ exports.applyLocalJob= async (req, res) => {
         
         return sendJsonResponse(res, 200, "Local job applied successfully");
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 
 };
@@ -205,8 +200,7 @@ exports.bookmarkLocalJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -244,7 +238,6 @@ exports.localJobsSearchQueries = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };

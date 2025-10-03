@@ -621,7 +621,7 @@ WHERE
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null
                         };
                     } catch (error) {
-                        throw new Error("Error processing service data");
+                        throw new Error("Error processing used product listing data");
                     }
                 }
             }
