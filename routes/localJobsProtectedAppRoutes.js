@@ -128,7 +128,6 @@ router.get('/published-local-jobs/:user_id(\\d+)',
             .trim()
             .escape()
             .custom((value, { req }) => {
-                console.log(value);
                 const decodedValue = decodeURIComponent(value);
                 const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
                 if (!timestampRegex.test(decodedValue)) {
@@ -355,6 +354,7 @@ router.get(
             .trim()
             .escape()
             .custom((value, { req }) => {
+                console.log(value);
                 const decodedValue = decodeURIComponent(value);
                 const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
                 if (!timestampRegex.test(decodedValue)) {
