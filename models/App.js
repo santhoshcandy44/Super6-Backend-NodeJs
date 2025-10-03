@@ -588,10 +588,9 @@ class App {
                 initial_check_at:initialCheckAt,
                 ...l
             }))
-        ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));
+        ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));     
         return combinedResults;
     }
 }
-
 
 module.exports = App;
