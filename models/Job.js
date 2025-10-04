@@ -292,7 +292,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
             AND ? BETWEEN -90 AND 90
-            AND ? BETWEEN -180 AND 180`;
+            AND ? BETWEEN -180 AND 180
+            
+            AND (
+      (SELECT COUNT(*) FROM user_job_industries ui WHERE ui.external_user_id = ? ) = 0  
+      OR j.industry IN (SELECT ui.industry_id FROM user_job_industries ui WHERE ui.external_user_id = ?))
+
+            `;
 
         params = [
           userLon,
