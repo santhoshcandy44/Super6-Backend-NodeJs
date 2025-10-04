@@ -13,7 +13,10 @@ exports.getServices = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, page, last_timestamp, last_total_relevance } = req.query;
-        const industries = await Industries.getIndustries(user_id);
+        let industries = await Industries.getIndustries(user_id);
+        industries = industries.filter((value) => 
+            value.is_selected
+        )
         if (!industries || industries.length === 0) {
             return sendErrorResponse(
                 res,
