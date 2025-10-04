@@ -16,7 +16,6 @@ exports.getJobListingsForUser = async (req, res) => {
 
         const industries = await JobIndustries.getIndustries(user_id);
         if (!industries || industries.length === 0) {
-            console.log("Al");
             return sendErrorResponse(
                 res,
                 400,
@@ -631,6 +630,7 @@ exports.getIndustries = async (req, res) => {
         const industries = await JobIndustries.getIndustries(userIdProtected);
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.message);
     }
 };
