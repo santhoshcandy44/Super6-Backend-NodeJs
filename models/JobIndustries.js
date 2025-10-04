@@ -83,7 +83,7 @@ class JobIndustries {
     }
     
     static async insertUserIndustry(userId, industryId) {
-        const insertStmt = "INSERT INTO user_job_industries (external_user_id, industry_id) VALUES (?, ?)";
+        const insertStmt = "INSERT INTO user_job_industries (external_user_id, industry_id, created_at) VALUES (?, ?, NOW())";
         await db.query(insertStmt, [userId, industryId]);
     }
 }
