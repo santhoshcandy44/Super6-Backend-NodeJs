@@ -6,12 +6,10 @@ class JobIndustries {
         i.industry_id,
         i.industry_name,
         i.description,
-        CASE
-            WHEN ui.external_user_id IS NOT NULL THEN 1
-            ELSE 0
-        END AS is_selected
+       1 AS is_selected
     FROM job_industries i
-    LEFT JOIN user_job_industries ui ON i.industry_id = ui.industry_id AND ui.external_user_id = ?`;
+    INNER JOIN user_job_industries ui ON i.industry_id = ui.industry_id WHERE ui.external_user_id = ?`;
+    
         const [rows] = await db.query(query, [userId]);
         const industries = rows.map(row => ({
             industry_id: row.industry_id,
