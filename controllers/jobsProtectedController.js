@@ -16,6 +16,7 @@ exports.getJobListingsForUser = async (req, res) => {
 
         const industries = await JobIndustries.getIndustries(user_id);
         if (!industries || industries.length === 0) {
+            console.log("Industries");
             return sendErrorResponse(
                 res,
                 400,

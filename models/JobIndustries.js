@@ -80,7 +80,7 @@ class JobIndustries {
         const deleteStmt = "DELETE FROM user_job_industries WHERE external_user_id = ? AND industry_id = ?";
         await db.query(deleteStmt, [userId, industryId]);
     }
-
+    
     static async insertUserIndustry(userId, industryId) {
         const insertStmt = "INSERT INTO user_job_industries (external_user_id, industry_id) VALUES (?, ?)";
         await db.query(insertStmt, [userId, industryId]);
