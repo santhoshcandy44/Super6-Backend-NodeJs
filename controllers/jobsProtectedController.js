@@ -15,7 +15,10 @@ exports.getJobListingsForUser = async (req, res) => {
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
 
-        const industries = await JobIndustries.getIndustries(user_id);
+        let industries = await JobIndustries.getIndustries(user_id);
+        industries = industries.filter((value) => 
+            value.is_selected
+        )
         if (!industries || industries.length === 0) {
             return sendErrorResponse(
                 res,
@@ -631,7 +634,6 @@ exports.getIndustries = async (req, res) => {
         const industries = await JobIndustries.getIndustries(userIdProtected);
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.message);
     }
 };
