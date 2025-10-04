@@ -18,9 +18,6 @@ const industriesSettingsProtectedRoutes = require('./routes/industriesSettingsPr
 const boardsSettingsProtectedRoutes = require('./routes/boardsSettingsProtectedAppRoutes');
 const chatProtectedAppRoutes = require('./routes/chatProtectedAppRoutes');
 
-const jobIndustriesSettingsProtectedAppRoutes = require('./routes/jobIndustriesSettingsProtectedAppRoutes.js');
-
-
 const { MEDIA_ROOT_PATH } = require('./config/config');
 
 const { verifyShortEncryptedUrl } = require('./utils/authUtils')
@@ -103,7 +100,6 @@ app.use('/api/serve/profile', profileProtectedAppRoutes);
 app.use('/api/app/serve', protectedAppRoutes);
 app.use('/api/app/serve/account-settings', accountSettingsProtectedRoutes); 
 app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes);
-app.use('/api/app/serve/job-industries-settings', jobIndustriesSettingsProtectedAppRoutes);
 app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes);
 app.use('/api/app/serve/chat', chatProtectedAppRoutes); 
 
