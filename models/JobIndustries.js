@@ -62,7 +62,7 @@ class JobIndustries {
                 }
             }
             await connection.commit();
-            const updatedIndustries = await Industries.getIndustries(userId);
+            const updatedIndustries = await JobIndustries.getIndustries(userId);
             return updatedIndustries;
         } catch (error) {
             if (connection) {
