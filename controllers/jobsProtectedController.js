@@ -645,6 +645,7 @@ exports.getGuestIndustries = async (req, res) => {
         const industries = await JobIndustries.getGuestIndustries();
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.message);
     }
 };
@@ -667,6 +668,7 @@ exports.updateIndustries = async (req, res) => {
         const industries = await JobIndustries.updateIndustries(user_id, industriesArray);
         return sendJsonResponse(res, 200, "Industries updated successfully", industries);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error.message);
     }
 };
