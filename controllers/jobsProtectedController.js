@@ -15,6 +15,7 @@ exports.getJobListingsForUser = async (req, res) => {
         const { s, latitude, longitude, page, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
 
         const industries = await JobIndustries.getIndustries(user_id);
+        console.log(industries);
         if (!industries || industries.length === 0) {
             return sendErrorResponse(
                 res,
@@ -48,7 +49,6 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
