@@ -2,7 +2,8 @@ const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const ApplicantProfile = require('../models/ApplicantProfile');
 const Job = require('../models/Job');
-const JobIndustries = require('../models/JobIndustries')
+const JobIndustries = require('../models/JobIndustries');
+const User = require('../models/User');
 
 exports.getJobListingsForUser = async (req, res) => {
     try {
