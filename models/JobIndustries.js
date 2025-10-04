@@ -12,7 +12,7 @@ class JobIndustries {
         END AS is_selected
     FROM job_industries i
     LEFT JOIN user_job_industries ui ON i.industry_id = ui.industry_id AND ui.external_user_id = ?`;
-    
+
         const [rows] = await db.query(query, [userId]);
         const industries = rows.map(row => ({
             industry_id: row.industry_id,
@@ -53,11 +53,11 @@ class JobIndustries {
                 const count = countRows[0].count;
                 if (isSelected) {
                     if (count === 0) {
-                        await Industries.insertUserIndustry(userId, industryId);
+                        await JobIndustries.insertUserIndustry(userId, industryId);
                     }
                 } else {
                     if (count > 0) {
-                        await Industries.deleteUserIndustry(userId, industryId);
+                        await JobIndustries.deleteUserIndustry(userId, industryId);
                     }
                 }
             }
