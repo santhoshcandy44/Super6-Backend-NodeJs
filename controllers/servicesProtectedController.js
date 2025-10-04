@@ -58,7 +58,7 @@ exports.guestGetServices = async (req, res) => {
                 400,
                 'Industries cannot be empty',
                 null,
-                'EMPTY_SERVICE_INDUSTRIES');
+                'EMPTY_JOB_INDUSTRIES');
         }
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = 30;
