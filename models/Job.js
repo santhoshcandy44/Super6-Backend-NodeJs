@@ -306,7 +306,9 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           userId,
           userId,
           userLat,
-          userLon
+          userLon,
+          userId,
+          userId
         ];
 
         if (filterWorkModes.length > 0) {
