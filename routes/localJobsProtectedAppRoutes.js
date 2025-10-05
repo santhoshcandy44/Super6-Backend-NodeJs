@@ -19,6 +19,10 @@ router.get('/local-jobs',
             .optional()
             .isInt().withMessage('Invalid page format'),
 
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
+
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -59,6 +63,10 @@ router.get('/guest-local-jobs',
         query('page')
             .optional()
             .isInt().withMessage('Invalid page format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
 
         query('s')
             .optional()

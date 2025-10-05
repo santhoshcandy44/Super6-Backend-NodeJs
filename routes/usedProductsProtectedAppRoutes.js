@@ -18,6 +18,10 @@ router.get('/used-product-listings',
             .optional()
             .isInt().withMessage('Invalid page format'),
 
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
+
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -58,6 +62,10 @@ router.get('/guest-used-product-listings',
         query('page')
             .optional()
             .isInt().withMessage('Invalid page format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format'),
 
         query('s')
             .optional()
