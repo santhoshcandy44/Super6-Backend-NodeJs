@@ -21,7 +21,7 @@ router.get('/services',
 
         query('page_size')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid page size format'),
 
         query('s')
             .optional()
@@ -87,7 +87,7 @@ router.get('/guest-services',
 
         query('page_size')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid page size format'),
 
         query('s')
             .optional()

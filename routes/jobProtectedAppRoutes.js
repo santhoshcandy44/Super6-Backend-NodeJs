@@ -18,6 +18,10 @@ router.get('/job-listings',
       .optional()
       .isInt().withMessage('Invalid page format'),
 
+    query('page_size')
+      .optional()
+      .isInt().withMessage('Invalid page size format'),
+
     query('s')
       .optional()
       .isString().withMessage('Query string must be a valid string format')
@@ -532,20 +536,20 @@ router.get('/saved-jobs/:user_id(\\d+)',
 
 
 router.get('/job-industries',
-  authenticateToken, 
+  authenticateToken,
   [
-      query('user_id') 
-          .isInt().withMessage('User id must be a valid integer')
-          .trim().escape(),
+    query('user_id')
+      .isInt().withMessage('User id must be a valid integer')
+      .trim().escape(),
   ],
   jobsProtectedController.getIndustries
 );
 
 router.get('/guest-industries',
   [
-      query('user_id') 
-          .isInt().withMessage('User id must be a valid integer')
-          .trim().escape(),
+    query('user_id')
+      .isInt().withMessage('User id must be a valid integer')
+      .trim().escape(),
   ],
   jobsProtectedController.getGuestIndustries
 );
@@ -553,40 +557,40 @@ router.get('/guest-industries',
 router.put('/update-job-industries',
   authenticateToken,
   [
-      body('user_id') 
-          .isInt().withMessage('User id must be a valid integer')
-          .trim().escape(),
+    body('user_id')
+      .isInt().withMessage('User id must be a valid integer')
+      .trim().escape(),
 
-      body('industries')
-          .isString().withMessage('Industries must be a valid JSON string')
-          .custom((value) => {
-              try {
-                  const industriesArray = JSON.parse(value); 
-                  if (!Array.isArray(industriesArray)) {
-                      throw new Error('Industries must be an array');
-                  }
+    body('industries')
+      .isString().withMessage('Industries must be a valid JSON string')
+      .custom((value) => {
+        try {
+          const industriesArray = JSON.parse(value);
+          if (!Array.isArray(industriesArray)) {
+            throw new Error('Industries must be an array');
+          }
 
-                  const isAnySelected = industriesArray.some(industry => industry.is_selected === true);
-                  if (!isAnySelected) {
-                      throw new Error('At least one industry must be selected');
-                  }
+          const isAnySelected = industriesArray.some(industry => industry.is_selected === true);
+          if (!isAnySelected) {
+            throw new Error('At least one industry must be selected');
+          }
 
-                  industriesArray.forEach(industry => {
-                      if (typeof industry.industry_id !== 'number' || typeof industry.is_selected !== 'boolean') {
-                          throw new Error('Each industry must have a valid industry_id and is_selected field');
-                      }
-                      if (industry.industry_name && typeof industry.industry_name !== 'string') {
-                          throw new Error('Each industry must have a valid industry_name (if present)');
-                      }
-                      if (industry.description && typeof industry.description !== 'string') {
-                          throw new Error('Each industry must have a valid description (if present)');
-                      }
-                  });
-                  return true;
-              } catch (error) {
-                  throw new Error('Invalid JSON structure for industries');
-              }
-          })
+          industriesArray.forEach(industry => {
+            if (typeof industry.industry_id !== 'number' || typeof industry.is_selected !== 'boolean') {
+              throw new Error('Each industry must have a valid industry_id and is_selected field');
+            }
+            if (industry.industry_name && typeof industry.industry_name !== 'string') {
+              throw new Error('Each industry must have a valid industry_name (if present)');
+            }
+            if (industry.description && typeof industry.description !== 'string') {
+              throw new Error('Each industry must have a valid description (if present)');
+            }
+          });
+          return true;
+        } catch (error) {
+          throw new Error('Invalid JSON structure for industries');
+        }
+      })
   ],
   jobsProtectedController.updateIndustries
 );
