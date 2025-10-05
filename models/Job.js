@@ -347,7 +347,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         params.push(radius);
 
         const offset = (page - 1) * pageSize;
-        params.push(pageSize, offset);
+        params.push(1, 0);
       }
     } else {
       if (queryParam) {
