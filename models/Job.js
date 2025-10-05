@@ -63,6 +63,7 @@ class Job {
                     j.must_have_skills,
                     j.good_to_have_skills,
                     j.industry_id,
+                    ji.industry_name AS industry,
                     j.department,
                     j.role,
                     j.employment_type,
@@ -132,7 +133,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
-       
+        LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
+
         WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
@@ -382,6 +384,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.must_have_skills,
                     j.good_to_have_skills,
                     j.industry_id,
+                    ji.indusry_name as industry,
                     j.department,
                     j.role,
                     j.employment_type,
@@ -446,7 +449,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
-       
+        LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
+
         WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
@@ -529,6 +533,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.must_have_skills,
             j.good_to_have_skills,
             j.industry_id,
+            ji.industry_name as industry,
             j.department,
             j.role,
             j.employment_type,
@@ -586,11 +591,15 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+        LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
         WHERE
             ci.latitude BETWEEN -90 AND 90
-            AND ci.longitude BETWEEN -180 AND 180`;
+            AND ci.longitude BETWEEN -180 AND 180 
+            AND (SELECT COUNT(*) FROM user_job_industries ui WHERE ui.external_user_id = ? ) = 0  
+      OR j.industry_id IN (SELECT ui.industry_id FROM user_job_industries ui WHERE ui.external_user_id = ?))
+            `;
 
-        params = [userId, userId];
+        params = [userId, userId, userId, userId];
 
         if (filterWorkModes.length > 0) {
           const placeholders = filterWorkModes.map(() => `?`).join(', ');
@@ -1061,6 +1070,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
      j.must_have_skills,
      j.good_to_have_skills,
      j.industry_id,
+     ji.industry_name as industry,
      j.department,
      j.role,
      j.employment_type,
@@ -1120,7 +1130,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
  LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
  LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
  LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
- 
+ LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
+
  WHERE ub.external_user_id = ? GROUP BY j.job_id`
 
     const params = [userId, userId, userId]
