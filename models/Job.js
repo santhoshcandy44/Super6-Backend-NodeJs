@@ -319,6 +319,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
         }
 
+        console.log(salaryMin);
+        console.log(salaryMax);
+
+
         // if (salaryMin !== -1 && salaryMax !== -1) {
         //   query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
         //   params.push(salaryMin, salaryMax);
