@@ -226,6 +226,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.must_have_skills,
             j.good_to_have_skills,
             j.industry_id,
+            ji.industry,
             j.department,
             j.role,
             j.employment_type,
@@ -288,6 +289,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         LEFT JOIN applicant_profiles ap ON ap.external_user_id = ?
         LEFT JOIN user_bookmark_jobs ub ON j.job_id = ub.job_id AND ub.external_user_id = ?
         LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
+        LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
         WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180
@@ -684,7 +686,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                   return [];
                 }
               })(),
-              industry_type: row.industry_type,
+              industry_type: row.industry,
               department: row.department,
               role: row.role,
               employment_type: row.employment_type,
