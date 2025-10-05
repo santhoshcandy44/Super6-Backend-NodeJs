@@ -323,17 +323,17 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         console.log(typeof salaryMax);
 
 
-        if (salaryMin !== -1 && salaryMax !== -1) {
-          console.log("Fileter a[[ied");
-          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
-          params.push(salaryMin, salaryMax);
-        } else if (salaryMin !== -1) {
-          query += ` AND j.salary_min >= ?`;
-          params.push(salaryMin);
-        } else if (salaryMax !== -1) {
-          query += ` AND j.salary_max <= ?`;
-          params.push(salaryMax);
-        }
+        // if (salaryMin !== -1 && salaryMax !== -1) {
+        //   console.log("Fileter a[[ied");
+        //   query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+        //   params.push(salaryMin, salaryMax);
+        // } else if (salaryMin !== -1) {
+        //   query += ` AND j.salary_min >= ?`;
+        //   params.push(salaryMin);
+        // } else if (salaryMax !== -1) {
+        //   query += ` AND j.salary_max <= ?`;
+        //   params.push(salaryMax);
+        // }
 
         if (!lastTimeStamp) {
           query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
