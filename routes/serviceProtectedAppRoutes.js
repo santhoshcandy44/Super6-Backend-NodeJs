@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
-const authenticateToken = require('../middlewares/authMiddleware'); 
+const authenticateToken = require('../middlewares/authMiddleware');
 const servicesProtectedController = require('../controllers/servicesProtectedController');
 const multer = require('multer');
 const he = require('he');
@@ -8,7 +8,7 @@ const he = require('he');
 const router = express.Router();
 const upload = multer();
 
-router.get('/services', 
+router.get('/services',
     authenticateToken,
     [
         query('user_id')
@@ -17,15 +17,19 @@ router.get('/services',
 
         query('page')
             .optional()
-            .isInt().withMessage('Invalid page format'), 
+            .isInt().withMessage('Invalid page format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page format'),
 
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') 
+            .isString().withMessage('Query string must be a valid string format')
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) 
-            .withMessage('Query string must be between 1 and 100 characters long'), 
+            .isLength({ min: 0, max: 100 })
+            .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('last_timestamp')
             .optional()
@@ -39,18 +43,18 @@ router.get('/services',
                     throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
                 }
                 // req.query.last_timestamp = decodedValue; 
-                return true; 
+                return true;
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
 
         query('last_total_relevance')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format') 
+            .isFloat().withMessage('Last total relevance must be a valid float format')
     ],
-    servicesProtectedController.getServices 
+    servicesProtectedController.getServices
 );
 
-router.get('/guest-services', 
+router.get('/guest-services',
     (req, res, next) => {
         let originalValue = req.query.industries;
         if (originalValue) {
@@ -61,11 +65,11 @@ router.get('/guest-services',
                 return res.status(400).json({ error: 'Industries must be an array' });
             }
             const validIndustries = originalValue.map(item => {
-                const numItem = parseInt(item, 10); 
+                const numItem = parseInt(item, 10);
                 if (!Number.isInteger(numItem) || numItem <= 0) {
                     throw new Error(`Industry ID ${item} is not a valid positive integer`);
                 }
-                return numItem; 
+                return numItem;
             });
             req.query.industries = validIndustries;
         }
@@ -75,18 +79,22 @@ router.get('/guest-services',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
         query('page')
             .optional()
             .isInt().withMessage('Invalid page format'),
 
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page format'),
+
         query('s')
             .optional()
-            .isString().withMessage('Query string must be a valid string format') 
+            .isString().withMessage('Query string must be a valid string format')
             .trim()
             .escape()
-            .isLength({ min: 0, max: 100 }) 
+            .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
@@ -104,7 +112,7 @@ router.get('/guest-services',
             .escape(),
 
         query('industries')
-            .optional() 
+            .optional()
             .isArray()
             .withMessage('Industries must be an array of integers')
             .custom(value => {
@@ -116,7 +124,7 @@ router.get('/guest-services',
 
         query('last_timestamp')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format') 
+            .isString().withMessage('Last Timestamp must be a valid string format')
             .trim()
             .escape()
             .custom((value, { req }) => {
@@ -132,10 +140,10 @@ router.get('/guest-services',
 
         query('last_total_relevance')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format') 
+            .isFloat().withMessage('Last total relevance must be a valid float format')
 
     ],
-    servicesProtectedController.guestGetServices 
+    servicesProtectedController.guestGetServices
 );
 
 router.get('/guest-feed-published-services/:user_id(\\d+)',
@@ -151,52 +159,52 @@ router.get('/feed-published-services/:user_id(\\d+)',
     [
         param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
     ],
-    servicesProtectedController.getPublishedServicesFeedUser 
+    servicesProtectedController.getPublishedServicesFeedUser
 );
 
 router.get('/published-services/:user_id(\\d+)',
-    authenticateToken, 
+    authenticateToken,
     [
         query('user_id')
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-             query('page')
-                        .optional()
-                        .isInt().withMessage('Invalid page format')
-                        .toInt(),
-            
-                    query('page_size')
-                        .optional()
-                        .isInt().withMessage('Invalid page size format')
-                        .toInt(),
-            
-                    query('last_timestamp')
-                        .optional()
-                        .isString().withMessage('Last Timestamp must be a valid string format')
-                        .trim()
-                        .escape()
-                        .custom((value, { req }) => {
-                            const decodedValue = decodeURIComponent(value);
-                            const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-                            if (!timestampRegex.test(decodedValue)) {
-                                throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-                            }
-                            return true;
-                        })
-                        .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
+        query('page')
+            .optional()
+            .isInt().withMessage('Invalid page format')
+            .toInt(),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
+
+        query('last_timestamp')
+            .optional()
+            .isString().withMessage('Last Timestamp must be a valid string format')
+            .trim()
+            .escape()
+            .custom((value, { req }) => {
+                const decodedValue = decodeURIComponent(value);
+                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+                if (!timestampRegex.test(decodedValue)) {
+                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
+                }
+                return true;
+            })
+            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
     servicesProtectedController.getPublishedServices
 );
 
 router.patch('/:service_id(\\d+)/update-service-info',
-    authenticateToken, 
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
-        
+
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
 
         body('title')
@@ -206,7 +214,7 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .escape()
             .notEmpty()
             .withMessage('Title cannot be empty')
-            .isLength({ min: 1, max: 100 }) 
+            .isLength({ min: 1, max: 100 })
             .withMessage('Title must be between 1 and 100 characters'),
 
         body('short_description')
@@ -216,7 +224,7 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .escape()
             .notEmpty()
             .withMessage('Short Description cannot be empty')
-            .isLength({ min: 1, max: 250 }) 
+            .isLength({ min: 1, max: 250 })
             .withMessage('Short Description must be between 1 and 250 characters'),
 
         body('long_description')
@@ -238,17 +246,17 @@ router.patch('/:service_id(\\d+)/update-service-info',
         req.body.industry = he.decode(req.body.industry);
         next();
     },
-    servicesProtectedController.updateServiceInfo 
+    servicesProtectedController.updateServiceInfo
 );
 
 router.patch('/:service_id(\\d+)/update-service-plans',
-    authenticateToken, 
+    authenticateToken,
     (req, res, next) => {
         if (req.body.plans) {
             try {
                 const decodedPlans = decodeURIComponent(req.body.plans);
-                req.body.plans = JSON.parse(decodedPlans); 
-                next(); 
+                req.body.plans = JSON.parse(decodedPlans);
+                next();
             } catch (error) {
                 return res.status(400).json({ message: 'Invalid plans format' });
             }
@@ -258,12 +266,12 @@ router.patch('/:service_id(\\d+)/update-service-plans',
     },
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
-       
+
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
 
         body('plans')
-            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')  
-            .bail() 
+            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')
+            .bail()
             .custom((plans) => {
                 if (plans.length > 3) {
                     throw new Error(`Maximum 3 plans can be created`);
@@ -275,7 +283,7 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     }
 
                     if (typeof plan.plan_name !== 'string') {
-                        throw new Error(`Plan name must be a string ${index + 1}`); 
+                        throw new Error(`Plan name must be a string ${index + 1}`);
                     }
 
                     if (plan.plan_name.length > 20) {
@@ -287,11 +295,11 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     }
 
                     if (plan.plan_description.length > 200) {
-                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`);  
+                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`);
                     }
 
                     if (typeof plan.plan_price !== 'number') {
-                        throw new Error(`Plan price must be a number in plan ${index + 1}`); 
+                        throw new Error(`Plan price must be a number in plan ${index + 1}`);
                     }
 
                     const validCurrencies = ['INR', 'USD'];
@@ -300,16 +308,16 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     }
 
                     if (typeof plan.plan_delivery_time !== 'number') {
-                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`); 
+                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`);
                     }
 
                     const validDurationUnits = ['HR', 'D', 'W', 'M'];
-                    if (!validDurationUnits.includes(plan.duration_unit)) { 
+                    if (!validDurationUnits.includes(plan.duration_unit)) {
                         throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
                     }
 
                     if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); 
+                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`);
                     }
 
                     plan.plan_features.forEach((feature, featureIndex) => {
@@ -322,14 +330,14 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                         }
                     });
                 });
-                return true; 
+                return true;
             })
     ],
     servicesProtectedController.updateServicePlans
 );
 
 router.patch('/:service_id(\\d+)/update-service-location',
-    authenticateToken, 
+    authenticateToken,
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
@@ -363,11 +371,11 @@ router.patch('/:service_id(\\d+)/update-service-location',
             .trim()
             .escape()
     ],
-    servicesProtectedController.updateServiceLocation 
+    servicesProtectedController.updateServiceLocation
 );
 
 router.delete('/:service_id(\\d+)/delete-service-image',
-    authenticateToken, 
+    authenticateToken,
     [
         query('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
@@ -396,13 +404,13 @@ router.post('/:service_id(\\d+)/upload-service-image',
 );
 
 router.post('/:service_id(\\d+)/update-service-image',
-    authenticateToken, 
+    authenticateToken,
     upload.single('image'),
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
         body('image_id')
-            .isInt().withMessage('Image ID must be a valid integer'), 
+            .isInt().withMessage('Image ID must be a valid integer'),
         body('image')
             .custom((value, { req }) => {
                 if (!req.file || req.file.length === 0) {
@@ -417,20 +425,20 @@ router.post('/:service_id(\\d+)/update-service-image',
 router.post('/create-service',
     authenticateToken,
     upload.fields([
-        { name: 'thumbnail', maxCount: 1 }, 
-        { name: 'images[]', maxCount: 10 }  
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'images[]', maxCount: 10 }
     ]),
     (req, res, next) => {
         if (req.body.plans) {
             try {
                 const decodedPlans = decodeURIComponent(req.body.plans);
-                req.body.plans = JSON.parse(decodedPlans); 
-                next(); 
+                req.body.plans = JSON.parse(decodedPlans);
+                next();
             } catch (error) {
                 return res.status(400).json({ message: 'Invalid plans format' });
             }
         } else {
-            next(); 
+            next();
         }
     },
     [
@@ -461,7 +469,7 @@ router.post('/create-service',
             .escape()
             .notEmpty()
             .withMessage('Long Description cannot be empty')
-            .isLength({ min: 1, max: 5000 }) 
+            .isLength({ min: 1, max: 5000 })
             .withMessage('Long Description must be between 1 and 5000 characters'),
 
         body('industry').isInt().withMessage('Industry must be a valid integer'),
@@ -470,7 +478,7 @@ router.post('/create-service',
             .isString()
             .withMessage('Country must be a valid string')
             .custom((value) => {
-                const allowedCountries = ['IN']; 
+                const allowedCountries = ['IN'];
                 if (!allowedCountries.includes(value)) {
                     throw new Error('Country must be a valid country (IN, USA)');
                 }
@@ -481,7 +489,7 @@ router.post('/create-service',
             .isString()
             .withMessage('State must be a valid string')
             .custom((value, { req }) => {
-                const country = req.body.country; 
+                const country = req.body.country;
                 if (country === 'IN') {
                     if (![
                         "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
@@ -514,15 +522,15 @@ router.post('/create-service',
             }),
 
         body('plans')
-            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array') 
-            .bail() 
+            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')
+            .bail()
             .custom((plans) => {
                 if (plans.length > 3) {
-                    throw new Error(`Maximum 3 plans can be created`); 
+                    throw new Error(`Maximum 3 plans can be created`);
                 }
                 plans.forEach((plan, index) => {
                     if (typeof plan.plan_id !== 'number') {
-                        throw new Error(`Plan ID must be a number in plan ${index + 1}`); 
+                        throw new Error(`Plan ID must be a number in plan ${index + 1}`);
                     }
 
                     if (typeof plan.plan_name !== 'string') {
@@ -538,7 +546,7 @@ router.post('/create-service',
                     }
 
                     if (plan.plan_description.length > 200) {
-                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`); 
+                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`);
                     }
 
                     if (typeof plan.plan_price !== 'number') {
@@ -551,16 +559,16 @@ router.post('/create-service',
                     }
 
                     if (typeof plan.plan_delivery_time !== 'number') {
-                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`); 
+                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`);
                     }
 
                     const validDurationUnits = ['HR', 'D', 'W', 'M'];
-                    if (!validDurationUnits.includes(plan.duration_unit)) { 
+                    if (!validDurationUnits.includes(plan.duration_unit)) {
                         throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
                     }
 
                     if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`); 
+                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`);
                     }
 
                     plan.plan_features.forEach((feature, featureIndex) => {
@@ -573,7 +581,7 @@ router.post('/create-service',
                         }
                     });
                 });
-                return true; 
+                return true;
             }),
         body('location')
             .isString()
@@ -587,13 +595,13 @@ router.post('/create-service',
 );
 
 router.post('/:service_id(\\d+)/update-service-thumbnail',
-    authenticateToken, 
-    upload.single('thumbnail'), 
+    authenticateToken,
+    upload.single('thumbnail'),
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
         body('image_id')
-            .isInt().withMessage('Image ID must be a valid integer'), 
+            .isInt().withMessage('Image ID must be a valid integer'),
         body('thumbnail')
             .custom((value, { req }) => {
                 if (!req.file || req.file.length === 0) {
@@ -606,11 +614,11 @@ router.post('/:service_id(\\d+)/update-service-thumbnail',
 );
 
 router.post(
-    '/bookmark-service', 
+    '/bookmark-service',
     authenticateToken,
     [
         body('user_id')
-            .isInt().withMessage('Invalid user id format'), 
+            .isInt().withMessage('Invalid user id format'),
 
         body('service_id')
             .isInt().withMessage('Invalid service id format'),
@@ -643,7 +651,7 @@ router.get('/search-services-suggestions/:user_id(\\d+)',
     ],
     servicesProtectedController.searchSuggestions
 );
- 
+
 router.get('/guest-services-search-suggestions/:user_id(\\d+)',
     [
         param('user_id')
