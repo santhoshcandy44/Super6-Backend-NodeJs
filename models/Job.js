@@ -313,9 +313,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           userId
         ];
 
-        console.log(params)
 
         if (filterWorkModes.length > 0) {
+          console.log(params)
+
           const placeholders = filterWorkModes.map(() => `?`).join(', ');
           query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
           params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
@@ -1153,7 +1154,7 @@ LIMIT ? OFFSET ?`;
     params.push(pageSize, offset);
 
     const [results] = await db.execute(query, params);
-    
+
     const jobs = {};
     await (async () => {
       for (const row of results) {
