@@ -347,7 +347,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         params.push(radius);
 
         const offset = (page - 1) * pageSize;
-        params.push(1, 0);
+        params.push(pageSize, offset);
       }
     } else {
       if (queryParam) {
@@ -637,6 +637,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await connection.execute(query, params);
+    console.log(results);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
