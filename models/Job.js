@@ -1192,7 +1192,7 @@ LIMIT ? OFFSET ?`;
                   return [];
                 }
               })(),
-              industry_type: row.industry_type,
+              industry_type: row.industry,
               department: row.department,
               role: row.role,
               employment_type: row.employment_type,
