@@ -14,7 +14,7 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
-
+        console.log(req.query);
         let industries = await JobIndustries.getIndustries(user_id);
         industries = industries.filter((value) => 
             value.is_selected
@@ -50,7 +50,6 @@ exports.getJobListingsForUser = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
-        console.log(result);
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
     } catch (error) {
         console.log(error);
