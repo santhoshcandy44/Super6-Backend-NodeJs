@@ -297,7 +297,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             AND (
       (SELECT COUNT(*) FROM user_job_industries ui WHERE ui.external_user_id = ? ) = 0  
       OR j.industry IN (SELECT ui.industry_id FROM user_job_industries ui WHERE ui.external_user_id = ?))
-
             `;
 
         params = [
