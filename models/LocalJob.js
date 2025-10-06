@@ -1779,9 +1779,7 @@ GROUP BY l.local_job_id;
                 [userId, localJobId]
             );
 
-            if (result.affectedRows === 0) {
-                throw new Error('No bookmark found to delete');
-            }
+            if (result.affectedRows === 0) throw new Error('No bookmark found to delete');
             await connection.commit();
             return { "Success": true };
         } catch (error) {
