@@ -17,6 +17,7 @@ exports.getServices = async (req, res) => {
         industries = industries.filter((value) => 
             value.is_selected
         )
+        console.log(req.query);
         if (!s && !industries || industries.length === 0) {
             return sendErrorResponse(
                 res,
