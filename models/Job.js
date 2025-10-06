@@ -320,7 +320,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         }
 
         if (salaryMin !== -1 && salaryMax !== -1) {
-          console.log("Fileter a[[ied");
           query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
           params.push(salaryMin, salaryMax);
         } else if (salaryMin !== -1) {
@@ -638,7 +637,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await connection.execute(query, params);
-    console.log(results);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {

@@ -12,15 +12,18 @@ router.get('/job-listings',
   [
     query('user_id')
       .optional()
-      .isInt().withMessage('Invalid user id format'),
+      .isInt().withMessage('Invalid user id format')
+      .toInt(),
 
     query('page')
       .optional()
-      .isInt().withMessage('Invalid page format'),
+      .isInt().withMessage('Invalid page format')
+      .toInt(),
 
     query('page_size')
       .optional()
-      .isInt().withMessage('Invalid page size format'),
+      .isInt().withMessage('Invalid page size format')
+      .toInt(),
 
     query('s')
       .optional()
@@ -73,11 +76,13 @@ router.get('/job-listings',
 
     query('salary_min')
       .optional()
-      .isInt({ min: -1 }).withMessage('Salary min must be a number or -1'),
+      .isInt({ min: -1 }).withMessage('Salary min must be a number or -1')
+      .toInt(),
 
     query('salary_max')
       .optional()
       .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
+      .toInt()
   ],
   jobsProtectedController.getJobListingsForUser
 );
