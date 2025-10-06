@@ -14,11 +14,14 @@ exports.getJobListingsForUser = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, latitude, longitude, page, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
+
+        const querySearch = !s ? '' : s;
+
         let industries = await JobIndustries.getIndustries(user_id);
         industries = industries.filter((value) => 
             value.is_selected
         )
-        if (!industries || industries.length === 0) {
+        if (!querySearch && (!industries || industries.length === 0)) {
             return sendErrorResponse(
                 res,
                 400,
@@ -27,7 +30,6 @@ exports.getJobListingsForUser = async (req, res) => {
                 'EMPTY_JOB_INDUSTRIES');
         }
 
-        const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
