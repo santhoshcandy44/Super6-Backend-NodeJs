@@ -13,12 +13,12 @@ exports.getServices = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, page, page_size, last_timestamp, last_total_relevance } = req.query;
+        const querySearch = !s ? '' : s;
         let industries = await Industries.getIndustries(user_id);
         industries = industries.filter((value) => 
             value.is_selected
         )
-        console.log(req.query);
-        if (!s && !industries || industries.length === 0) {
+        if (!querySearch && (!industries || industries.length === 0)) {
             return sendErrorResponse(
                 res,
                 400,
@@ -26,7 +26,6 @@ exports.getServices = async (req, res) => {
                 null,
                 'EMPTY_SERVICE_INDUSTRIES');
         }
-        const querySearch = !s ? '' : s;
         const queryPage = !page ? 1 : page;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
@@ -62,7 +61,7 @@ exports.guestGetServices = async (req, res) => {
                 400,
                 'Industries cannot be empty',
                 null,
-                'EMPTY_JOB_INDUSTRIES');
+                'EMPTY_SERVICE_INDUSTRIES');
         }
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
