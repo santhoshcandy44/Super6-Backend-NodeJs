@@ -199,6 +199,7 @@ exports.bookmarkLocalJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Loclal job bookmarked successfully");
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
