@@ -218,6 +218,7 @@ exports.removeBookmarkLocalJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Bookmark removed successfully");
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };

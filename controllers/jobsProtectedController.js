@@ -44,7 +44,6 @@ exports.getJobListingsForUser = async (req, res) => {
             .map(mode => mode.trim().toLowerCase())
             .filter(mode => VALID_WORK_MODES.includes(mode));
 
-        console.log(req.query);    
         const countryCode = req.headers['x-country-code'];
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
