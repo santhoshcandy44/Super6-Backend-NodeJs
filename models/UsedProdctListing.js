@@ -3,7 +3,7 @@ const sharp = require('sharp');
 const he = require('he');
 const moment = require('moment');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
-const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
@@ -135,6 +135,10 @@ class UsedProductListing {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
                     params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
@@ -143,10 +147,9 @@ class UsedProductListing {
                     params.push(radius);
                 }
 
-                query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ? OFFSET ?`;
-                const offset = (page - 1) * pageSize;
-            
-                params.push(pageSize, offset);
+                query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ?`;
+
+                params.push(pageSize);
             } else {
                 query = `
                     SELECT
@@ -239,7 +242,7 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query+= ' AND s.id > ?'
+                query += ' AND s.id > ?'
 
                 params.push(afterId)
 
@@ -267,6 +270,7 @@ WHERE
 
                 query = `
                     SELECT
+                        s.id,
                         s.product_id AS product_id,
                         s.name,
                         s.description,
@@ -354,6 +358,11 @@ WHERE
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
+
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
                                 (
@@ -372,13 +381,13 @@ WHERE
                                 )`;
                 }
 
-                query += ` ORDER BY total_relevance DESC LIMIT ? OFFSET ?`;
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
+                query += ` ORDER BY total_relevance DESC LIMIT ?`;
+                params.push(pageSize);
 
             } else {
                 query = `
                 SELECT
+                    s.id,
                     s.product_id AS product_id,
                     s.name,
                     s.description,
@@ -460,11 +469,14 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
 
-                const offset = (page - 1) * pageSize;
+                query += ' AND s.id > ?'
 
-                params.push(pageSize, offset);
+                params.push(afterId)
+
+                query += ` GROUP BY product_id LIMIT ?`;
+
+                params.push(pageSize);
             }
         }
 
@@ -480,7 +492,7 @@ WHERE
                 }
             }
         }
-        
+
         const services = {};
 
         await (async () => {
@@ -510,7 +522,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
-                            id:row.id,
+                            id: row.id,
                             product_id: product_id,
                             created_used_product_listings: [],
                             name: row.name,
@@ -550,7 +562,7 @@ WHERE
         return Object.values(services);
     }
 
-    static async guestGetUsedProductListings(userId, queryParam, page, pageSize, lastTimeStamp,
+    static async guestGetUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp,
         lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
         const connection = await db.getConnection();
         let query, params;
@@ -574,6 +586,7 @@ WHERE
 
                 query = `
                     SELECT
+                        s.id,
                         s.product_id AS product_id,
                         s.name,
                         s.description,
@@ -655,11 +668,18 @@ WHERE
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180 `;
 
+                params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon]
+
                 if (lastTimeStamp != null) {
                     query += `AND s.created_at < ?`;
+                    params.push(lastTimeStamp)
                 } else {
                     query += `AND s.created_at < CURRENT_TIMESTAMP`;
                 }
+
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
@@ -670,30 +690,27 @@ WHERE
                         (total_relevance = ? AND distance <= ?) 
                         OR (total_relevance < ? AND distance <= ?)  
                     ) `;
+                    params.push(radius, lastTotalRelevance, radius, radius, radius)
                 } else {
                     query += ` GROUP BY product_id HAVING
                         distance < ? AND (
                             name_relevance > 0 OR
                             description_relevance > 0
                         )`
+                    params.push(radius)
                 }
 
                 query += ` ORDER BY
                         distance ASC,
                         total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                    LIMIT ?`;
 
+                params.push(pageSize)
 
-                const offset = (page - 1) * pageSize;
-
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, lastTimeStamp, radius, lastTotalRelevance, radius, lastTotalRelevance, radius, pageSize, offset];
-                } else {
-                    params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon, radius, pageSize, offset];
-                }
             } else {
                 query = `
                     SELECT
+                    s.id,
     s.product_id AS product_id,
     s.name,
     s.description,
@@ -766,24 +783,25 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180`
 
+                params = [userLon, userLat, userLat, userLon];
+
                 if (!lastTimeStamp) {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
+
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
 
                 query += ` GROUP BY product_id HAVING
     distance < ?
     ORDER BY
-distance LIMIT ? OFFSET ?`;
+distance LIMIT ?`;
 
-                const offset = (page - 1) * pageSize;
-
-                if (lastTimeStamp) {
-                    params = [userLon, userLat, userLat, userLon, lastTimeStamp, radius, pageSize, offset];
-                } else {
-                    params = [userLon, userLat, userLat, userLon, radius, pageSize, offset];
-                }
+                params.push(radius, pageSize)
             }
         } else {
             if (queryParam) {
@@ -797,11 +815,11 @@ distance LIMIT ? OFFSET ?`;
                             last_searched = NOW();`,
                         [queryParam, searchTermConcatenated]
                     );
-
                 }
 
                 query = `
                     SELECT
+                       s.id,
                         s.product_id AS product_id,
                         s.name,
                         s.description,
@@ -875,11 +893,19 @@ distance LIMIT ? OFFSET ?`;
                         sl.latitude BETWEEN -90 AND 90
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
+                        params = [queryParam, queryParam, queryParam, queryParam];
+
+
                 if (lastTimeStamp != null) {
                     query += ` AND s.created_at < ?`;
+                    params.push(lastTimeStamp)
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
+
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
@@ -889,7 +915,8 @@ distance LIMIT ? OFFSET ?`;
                         ) AND (
                         (total_relevance = ? )  -- Fetch records with the same relevance
                         OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    ) `;
+                    )`;
+                    params.push(lastTotalRelevance, lastTotalRelevance);
                 } else {
                     query += ` GROUP BY product_id HAVING
                         (
@@ -902,16 +929,12 @@ distance LIMIT ? OFFSET ?`;
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-                const offset = (page - 1) * pageSize;
+                    params.push(pageSize)
 
-                if (lastTotalRelevance != null && lastTimeStamp != null) {
-                    params = [queryParam, queryParam, queryParam, queryParam, lastTimeStamp, lastTotalRelevance, lastTotalRelevance, pageSize, offset];
-                } else {
-                    params = [queryParam, queryParam, queryParam, queryParam, pageSize, offset];
-                }
             } else {
                 query = `
-                SELECT
+                SELECT 
+                    s.id,
                     s.product_id AS product_id,
                     s.name,
                     s.description,
@@ -971,22 +994,24 @@ distance LIMIT ? OFFSET ?`;
 
                     WHERE
                     sl.latitude BETWEEN -90 AND 90
-                    AND sl.longitude BETWEEN -180 AND 180`
+                    AND sl.longitude BETWEEN -180 AND 180`;
+                   
+                    params = [];
 
                 if (!lastTimeStamp) {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < ?`;
                 }
 
+                query += ' AND s.id > ?'
+
+                params.push(afterId)
+
                 query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
 
-                const offset = (page - 1) * pageSize;
-                if (lastTimeStamp) {
-                    params = [lastTimeStamp, pageSize, offset];
-                } else {
-                    params = [pageSize, offset];
-                }
+                params.push(pageSize);
             }
         }
 
@@ -998,7 +1023,7 @@ distance LIMIT ? OFFSET ?`;
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.guestGetUsedProductListings(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
+                    return await this.guestGetUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
                 }
             }
         }
@@ -1034,7 +1059,7 @@ distance LIMIT ? OFFSET ?`;
                             },
 
                             created_used_product_listings: result,
-
+                            id:row.id,
                             product_id: productId,
                             name: row.name,
                             description: row.description,
@@ -1091,6 +1116,7 @@ distance LIMIT ? OFFSET ?`;
 
         const [results] = await db.query(`
                 SELECT
+                    s.id,
                     s.product_id AS product_id,
                     s.name,
                     s.description,
@@ -1176,6 +1202,7 @@ distance LIMIT ? OFFSET ?`;
                         online: Boolean(row.user_online_status),
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
+                    id:row.id,
                     product_id: productId,
                     name: row.name,
                     description: row.description,
@@ -1323,7 +1350,7 @@ distance LIMIT ? OFFSET ?`;
                     const newFileName = `${uuidv4()}-${file.originalname}`;
                     const s3Key = `media/${media_id}/used-product-listings/${product_id}/${newFileName}`;
 
-                    const uploadResult = await uploadToS3( file.buffer, s3Key, file.mimetype);
+                    const uploadResult = await uploadToS3(file.buffer, s3Key, file.mimetype);
                     uploadedFiles.push(uploadResult.Key);
 
                     const metadata = await sharp(file.buffer).metadata();
@@ -1491,7 +1518,7 @@ distance LIMIT ? OFFSET ?`;
         }
     }
 
-    static async getPublishedUsedProductListings(userId, page, pageSize, lastTimeStamp) {
+    static async getPublishedUsedProductListings(userId, afterId, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1565,13 +1592,16 @@ distance LIMIT ? OFFSET ?`;
             params.push(lastTimeStamp);
         }
 
+
+        query += ' AND s.id > ?'
+
+        params.push(afterId)
+
         query += ` GROUP BY product_id 
                ORDER BY p.created_at DESC
-               LIMIT ? OFFSET ?`;
+               LIMIT ?`;
 
-        const offset = (page - 1) * pageSize;
-
-        params.push(pageSize, offset);
+        params.push(pageSize);
 
         const [results] = await db.execute(query, params);
 
@@ -1595,6 +1625,7 @@ distance LIMIT ? OFFSET ?`;
                             : null,
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
+                    id:row.id,
                     product_id: productId,
                     name: row.name,
                     price: row.price,
