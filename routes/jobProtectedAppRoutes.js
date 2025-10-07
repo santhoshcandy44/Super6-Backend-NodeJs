@@ -193,7 +193,7 @@ router.get('/guest-job-listings',
       .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
       .toInt()
   ],
-  jobsProtectedController.guestGetJobListings
+  jobsProtectedController.getJobListingsForUser
 );
 
 router.post(
