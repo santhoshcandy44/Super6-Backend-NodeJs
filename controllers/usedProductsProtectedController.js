@@ -54,7 +54,7 @@ exports.guestGetUsedProductListings = async (req, res) => {
     }
 };
 
-exports.getFeedUserPublishedUsedProductListings = async (req, res) => {
+exports.geUserFeedPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -77,7 +77,7 @@ exports.getFeedUserPublishedUsedProductListings = async (req, res) => {
     }
 };
 
-exports.getUserPublishedUsedProductListings = async (req, res) => {
+exports.getGuestFeedPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
