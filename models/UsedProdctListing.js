@@ -512,7 +512,7 @@ WHERE
                             },
                             id:row.id,
                             product_id: product_id,
-                            created_used_product_listings: result,
+                            created_used_product_listings: [],
                             name: row.name,
                             description: row.description,
                             price: row.price,
