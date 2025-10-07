@@ -84,6 +84,7 @@ exports.getUserPublishedUsedProductListings = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
+        const userId = req.user.user_id;
         const { user_id } = req.params;
         const { after_id, page_size, last_timestamp } = req.query;
         const queryAfterId = after_id ? after_id : -1;
