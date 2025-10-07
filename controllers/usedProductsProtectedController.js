@@ -71,9 +71,9 @@ exports.getUserFeedPublishedUsedProductListings = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
-        console.log(result);
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
@@ -108,8 +108,8 @@ exports.getPublishedUsedProductListings = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const user_id = req.user.user_id;
-        const { user_id: userId } = req.params;
+        const userId = req.user.user_id;
+        const { user_id } = req.params;
         if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve used product listings");
         const { after_id, page_size, last_timestamp } = req.query;
         const queryAfterId = after_id ? after_id : -1;
