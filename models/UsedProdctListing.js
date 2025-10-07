@@ -524,7 +524,7 @@ WHERE
                             },
                             id: row.id,
                             product_id: product_id,
-                            created_used_product_listings: [],
+                            created_used_product_listings: result,
                             name: row.name,
                             description: row.description,
                             price: row.price,
