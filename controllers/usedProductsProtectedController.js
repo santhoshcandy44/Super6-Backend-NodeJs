@@ -18,9 +18,6 @@ exports.getUsedProductListingsForUser = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
-       
-        console.log(req.query);
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -57,15 +54,20 @@ exports.guestGetUsedProductListings = async (req, res) => {
     }
 };
 
-exports.getUserPublishedUsedProductListingsFeedGuest = async (req, res) => {
+exports.getFeedUserPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
+        const userId = req.user.user_id;
         const { user_id } = req.params;
-        const result = await UsedProductListing.getPublishedUsedProductListings(user_id)
+        const { after_id, page_size, last_timestamp } = req.query;
+        const queryAfterId = after_id ? after_id : -1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
@@ -75,16 +77,19 @@ exports.getUserPublishedUsedProductListingsFeedGuest = async (req, res) => {
     }
 };
 
-exports.getPublishedUsedProductListingsFeedUser = async (req, res) => {
+exports.getUserPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.user.user_id;
         const { user_id } = req.params;
-        const result = await ServiceModel.getUserPublishedServicesFeedUser(userId, user_id)
+        const { after_id, page_size, last_timestamp } = req.query;
+        const queryAfterId = after_id ? after_id : -1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
