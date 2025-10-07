@@ -23,6 +23,7 @@ exports.getUsedProductListingsForUser = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
