@@ -54,7 +54,7 @@ exports.guestGetUsedProductListings = async (req, res) => {
     }
 };
 
-exports.geUserFeedPublishedUsedProductListings = async (req, res) => {
+exports.getUserFeedPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
