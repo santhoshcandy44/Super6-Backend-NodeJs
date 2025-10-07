@@ -14,9 +14,9 @@ router.get('/used-product-listings',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after id format'),
 
         query('page_size')
             .optional()

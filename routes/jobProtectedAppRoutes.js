@@ -87,6 +87,115 @@ router.get('/job-listings',
   jobsProtectedController.getJobListingsForUser
 );
 
+router.get('/guest-job-listings',
+  authenticateToken,
+  [
+    query('user_id')
+      .optional()
+      .isInt().withMessage('Invalid user id format')
+      .toInt(),
+
+    query('page')
+      .optional()
+      .isInt().withMessage('Invalid page format')
+      .toInt(),
+
+    query('page_size')
+      .optional()
+      .isInt().withMessage('Invalid page size format')
+      .toInt(),
+
+    query('s')
+      .optional()
+      .isString().withMessage('Query string must be a valid string format')
+      .trim()
+      .escape()
+      .isLength({ min: 0, max: 100 })
+      .withMessage('Query string must be between 1 and 100 characters long'),
+
+    query('latitude')
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude must be a valid float between -90 and 90')
+      .trim()
+      .escape(),
+
+    query('longitude')
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude must be a valid float between -180 and 180')
+      .trim()
+      .escape(),
+
+    query('industries')
+      .optional({ checkFalsy: true })
+      .customSanitizer((value) => {
+        let parsed;
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+          return null;
+        }
+
+        const industriesArray = Array.isArray(parsed)
+          ? parsed
+          : null;
+
+        if (!industriesArray) return null;
+
+        const validIndustries = industriesArray.map((item) => {
+          const num = parseInt(item, 10);
+          if (!Number.isInteger(num) || num <= 0) {
+            throw new Error(`Industry ID "${item}" is not a valid positive integer`);
+          }
+          return num;
+        });
+
+        return validIndustries;
+      })
+      .isArray()
+      .withMessage('Industries must be an array of positive integers'),
+
+    query('last_timestamp')
+      .optional()
+      .isString().withMessage('Last Timestamp must be a valid string format')
+      .trim()
+      .escape()
+      .custom((value, { req }) => {
+        const decodedValue = decodeURIComponent(value);
+        const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
+        if (!timestampRegex.test(decodedValue)) {
+          throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
+        }
+
+        // req.query.last_timestamp = decodedValue; 
+        return true;
+      })
+      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
+
+    query('last_total_relevance')
+      .optional()
+      .isFloat().withMessage('Last total relevance must be a valid float format'),
+
+    query('work_modes')
+      .optional()
+      .isString().withMessage('Work modes must be a comma-separated string')
+      .customSanitizer(value => value.split(',').map(mode => mode.trim())),
+
+    query('salary_min')
+      .optional()
+      .isInt({ min: -1 }).withMessage('Salary min must be a number or -1')
+      .toInt(),
+
+    query('salary_max')
+      .optional()
+      .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
+      .toInt()
+  ],
+  jobsProtectedController.guestGetJobListings
+);
+
 router.post(
   '/bookmark-job',
   authenticateToken,

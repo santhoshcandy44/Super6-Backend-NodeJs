@@ -9,7 +9,7 @@ const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
 class UsedProductListing {
 
-    static async getUsedProductListingsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
+    static async getUsedProductListingsForUser(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
 
         const connection = await db.getConnection();
 
@@ -42,6 +42,7 @@ class UsedProductListing {
 
                 query = `
                     SELECT
+                        s.id,
                         s.product_id AS product_id,
                         s.name,
                         s.description,
@@ -149,6 +150,7 @@ class UsedProductListing {
             } else {
                 query = `
                     SELECT
+                    s.id,
     s.product_id AS product_id,
     s.name,
     s.price,
@@ -228,7 +230,6 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
-
                 params = [userLon, userLat, userId, userLat, userLon];
 
                 if (!lastTimeStamp) {
@@ -238,15 +239,17 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
+                query+= ' AND s.id > ?'
+
+                params.push(afterId)
+
                 query += ` GROUP BY product_id HAVING distance < ?`;
 
                 params.push(radius);
 
-                query += ` ORDER BY distance LIMIT ? OFFSET ?`;
+                query += ` ORDER BY distance LIMIT ?`;
 
-                const offset = (page - 1) * pageSize;
-
-                params.push(pageSize, offset);
+                params.push(pageSize);
             }
         } else {
             if (queryParam) {
@@ -507,6 +510,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
+                            id:s.id,
                             product_id: product_id,
                             created_used_product_listings: result,
                             name: row.name,

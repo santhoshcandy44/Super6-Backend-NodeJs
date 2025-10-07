@@ -10,14 +10,14 @@ exports.getUsedProductListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, page, page_size, last_timestamp, last_total_relevance } = req.query;
+        const { s, after_id, page_size, last_timestamp, last_total_relevance } = req.query;
         const querySearch = !s ? '' : s;
-        const queryPage = !page ? 1 : page;
+        const queryAfterId = !after_id ? 1 : after_id;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

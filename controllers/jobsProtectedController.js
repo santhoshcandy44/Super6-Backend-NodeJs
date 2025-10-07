@@ -59,6 +59,46 @@ exports.getJobListingsForUser = async (req, res) => {
     }
 };
 
+exports.guestGetJobListingsForUser = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const user_id = req.user.user_id;
+        const { s, latitude, longitude, page, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
+
+        const querySearch = !s ? '' : s;
+        const queryPage = !page ? 1 : page;
+        const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
+        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
+        const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
+        const VALID_WORK_MODES = ['remote', 'office', 'hybrid', 'flexible'];
+        const workModesArray = Array.isArray(work_modes)
+            ? work_modes
+            : typeof work_modes === 'string'
+                ? work_modes.split(',')
+                : [];
+        const normalizedWorkModes = workModesArray
+            .map(mode => mode.trim().toLowerCase())
+            .filter(mode => VALID_WORK_MODES.includes(mode));
+
+        const countryCode = req.headers['x-country-code'];
+        const salaryMin = salary_min !== undefined ? salary_min : -1;
+        const salaryMax = salary_max !== undefined ? salary_max : -1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const result = await Job.getJobPostingsUser(user_id, decodedQuery, latitude, longitude, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to retrieve jobs");
+        }
+        return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
+    } catch (error) {
+        console.log(error);
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
+    }
+};
+
 exports.getSavedJobs = async (req, res) => {
     try {
         const errors = validationResult(req);
