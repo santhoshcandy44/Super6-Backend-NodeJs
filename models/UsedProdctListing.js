@@ -1528,6 +1528,7 @@ distance LIMIT ?`;
 
         let query = `
             SELECT
+                p.id,
                 p.product_id AS product_id,
                 p.name,
                 p.description,
@@ -1593,7 +1594,7 @@ distance LIMIT ?`;
         }
 
 
-        query += ' AND s.id > ?'
+        query += ' AND p.id > ?'
 
         params.push(afterId)
 
