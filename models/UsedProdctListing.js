@@ -510,7 +510,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
-                            id:s.id,
+                            id:row.id,
                             product_id: product_id,
                             created_used_product_listings: result,
                             name: row.name,
