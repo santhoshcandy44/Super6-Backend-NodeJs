@@ -20,7 +20,6 @@ exports.getUsedProductListingsForUser = async (req, res) => {
         const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
        
         console.log(req.query);
-        console.log(result);
 
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
