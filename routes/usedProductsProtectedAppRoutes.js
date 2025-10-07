@@ -59,9 +59,9 @@ router.get('/guest-used-product-listings',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after id format'),
 
         query('page_size')
             .optional()
@@ -119,9 +119,9 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format')
+            .isInt().withMessage('Invalid after id format')
             .toInt(),
 
         query('page_size')
