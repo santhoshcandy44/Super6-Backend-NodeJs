@@ -2,7 +2,7 @@ const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const LocalJob = require('../models/LocalJob');
 
-exports.getLocalJobsForUser = async (req, res) => {
+exports.getLocalJobs = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -10,14 +10,14 @@ exports.getLocalJobsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, page, page_size, last_timestamp, last_total_relevance } = req.query;
+        const { s, after_id, page_size, last_timestamp, last_total_relevance } = req.query;
         const querySearch = !s ? '' : s;
-        const queryPage = !page ? 1 : page;
+        const queryAfterId = !after_id ? -1 : after_id;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await LocalJob.getLocalJobsForUser(user_id, decodedQuery, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await LocalJob.getLocalJobsForUser(user_id, decodedQuery, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
@@ -27,23 +27,23 @@ exports.getLocalJobsForUser = async (req, res) => {
     }
 };
 
-exports.guestGetLocalJobs = async (req, res) => {
+exports.getGuestLocalJobs = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id, s, page, page_size, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
+        const { user_id, s, after_id, page_size, last_timestamp, last_total_relevance, latitude, longitude} = req.query;
         const querySearch = !s ? '' : s;
-        const queryPage = !page ? 1 : page;
+        const queryAfterId = !after_id ? -1 : after_id;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
         const result = await LocalJob.guestGetLocalJobs(user_id, decodedQuery, 
-            queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
+            queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

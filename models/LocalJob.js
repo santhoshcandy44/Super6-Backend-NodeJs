@@ -37,6 +37,7 @@ class LocalJob {
                 }
 
                 query = `SELECT
+                l.id,
     l.local_job_id AS local_job_id,
     l.title,
     l.description,
@@ -149,6 +150,9 @@ class LocalJob {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query+=` AND l.id > ?`;
+                params.push(afterId);
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
                                 distance < ? AND (
@@ -177,14 +181,12 @@ class LocalJob {
                 query += ` ORDER BY
                             distance ASC,
                             total_relevance DESC
-                            LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-
-                params.push(pageSize, offset);
+                            LIMIT ?`;
+                params.push(pageSize);
             } else {
                 query = `
                     SELECT
+                    l.id,
     l.local_job_id AS local_job_id,
     l.title,
     l.company,
@@ -292,10 +294,8 @@ WHERE
                 query += ` GROUP BY local_job_id HAVING
     distance < ?
     ORDER BY distance
-    LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-                params.push(radius, pageSize, offset);
+    LIMIT ?`;
+                params.push(radius, pageSize);
             }
         } else {
             if (queryParam) {
@@ -314,6 +314,7 @@ WHERE
 
                 query = `
                     SELECT
+                    l.id,
                                    l.local_job_id AS local_job_id,
     l.title,
     l.description,
@@ -415,6 +416,9 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query+=` AND l.id > ?`;
+                params.push(afterId);
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
                                 (
@@ -435,13 +439,12 @@ WHERE
 
                 query += ` ORDER BY
                                 total_relevance DESC
-                            LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
+                            LIMIT ?`;
+                params.push(pageSize);
             } else {
                 query = `
                 SELECT
+                l.id,
                    l.local_job_id AS local_job_id,
     l.title,
     l.description,
@@ -528,28 +531,22 @@ WHERE
     SELECT *
     FROM local_jobs l
     WHERE l.is_active = 1
-      AND (l.user_id != ? OR ? IS NULL)
-`;
-
+      AND (l.user_id != ? OR ? IS NULL)`;
+               
+                params = [userId, userId];
+              
                 if (!lastTimeStamp) {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
                     query += ` AND l.created_at < ?`;
+                    params.push(lastTimeStamp);
                 }
 
                 query += `
     GROUP BY local_job_id
-    LIMIT ? OFFSET ?
-`;
-
-                const offset = (page - 1) * pageSize;
-
-                let params;
-                if (lastTimeStamp) {
-                    params = [userId, userId, lastTimeStamp, pageSize, offset];
-                } else {
-                    params = [userId, userId, pageSize, offset];
-                }
+    LIMIT ?`;
+            
+    params.push(pageSize);
 
             }
         }
@@ -590,6 +587,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
+                            id: row.id,
                             local_job_id: row.local_job_id,
                             title: row.title,
                             description: row.description,
@@ -631,7 +629,6 @@ WHERE
         return Object.values(items);
     }
 
-
     static async guestGetLocalJobs(userId, queryParam, page, pageSize, lastTimeStamp,
         lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
 
@@ -658,6 +655,7 @@ WHERE
 
                 query = `
                     SELECT
+                        l.id,
                         l.local_job_id AS local_job_id,
                         l.title,
                         l.description,
@@ -751,6 +749,9 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query+=` AND l.id > ?`;
+                params.push(afterId);
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
                                 distance < ? AND (
@@ -774,12 +775,11 @@ WHERE
                                 distance ASC,
                                 total_relevance DESC
                             LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
+                params.push(pageSize);
             } else {
                 query = `SELECT
-                       l.local_job_id AS local_job_id,
+                        l.id,
+                        l.local_job_id AS local_job_id,
                         l.title,
                         l.description,
                         l.company,
@@ -872,12 +872,8 @@ WHERE
                 query += ` GROUP BY local_job_id HAVING
         distance < ?
         ORDER BY distance
-        LIMIT ? OFFSET ?`;
-
-                params.push(radius);
-
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
+        LIMIT ?`;
+                params.push(radius, pageSize);
             }
         } else {
             if (queryParam) {
@@ -894,7 +890,8 @@ WHERE
                 }
 
                 query = `SELECT 
-                l.local_job_id AS local_job_id,
+                        l.id,
+                        l.local_job_id AS local_job_id,
                         l.title,
                         l.description,
                         l.company,
@@ -979,6 +976,9 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query+=` AND l.id > ?`;
+                params.push(afterId);
+
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY local_job_id HAVING
                                 (
@@ -999,15 +999,13 @@ WHERE
 
                 query += ` ORDER BY
                                 total_relevance DESC
-                            LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
-
+                            LIMIT ?`;
+                params.push(pageSize);
             } else {
                 query = `
                 SELECT
-                    l.local_job_id AS local_job_id,
+                       l.id,
+                       l.local_job_id AS local_job_id,
                         l.title,
                         l.description,
                         l.company,
@@ -1088,10 +1086,8 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query += ` GROUP BY local_job_id LIMIT ? OFFSET ?`;
-
-                const offset = (page - 1) * pageSize;
-                params.push(pageSize, offset);
+                query += ` GROUP BY local_job_id LIMIT ?`;
+                params.push(pageSize);
             }
         }
 
@@ -1132,6 +1128,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
+                            id: row.id,
                             local_job_id: row.local_job_id,
                             title: row.title,
                             description: row.description,
@@ -1300,6 +1297,7 @@ WHERE
 
             const [jobData] = await connection.execute(
                 `SELECT 
+    l.id,            
     l.local_job_id,
     l.title,
     l.description,
@@ -1380,6 +1378,7 @@ GROUP BY l.local_job_id;
                         : null,
                     created_at: new Date(jobData[0].publisher_created_at).getFullYear().toString(),
                 },
+                id: jobData[0].id,
                 local_job_id: jobData[0].local_job_id,
                 title: jobData[0].title,
                 description: jobData[0].description,
@@ -1421,7 +1420,7 @@ GROUP BY l.local_job_id;
         }
     }
 
-    static async getPublishedLocalJobs(userId, page, pageSize, lastTimeStamp) {
+    static async getPublishedLocalJobs(userId, afterId, pageSize, lastTimeStamp) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1430,6 +1429,7 @@ GROUP BY l.local_job_id;
         if (userCheckResult.length === 0) throw new Error('User not exist');
 
         let query = `SELECT
+                    l.id,    
                     l.local_job_id AS local_job_id,
                     l.title,
                     l.description,
@@ -1496,13 +1496,14 @@ GROUP BY l.local_job_id;
             params.push(lastTimeStamp);
         }
 
+        query+=` AND l.id > ?`;
+        params.push(afterId);
+
         query += ` GROUP BY local_job_id 
                ORDER BY l.created_at DESC
-               LIMIT ? OFFSET ?`;
+               LIMIT ?`;
 
-        const offset = (page - 1) * pageSize;
-
-        params.push(pageSize, offset);
+        params.push(pageSize);
 
         const [results] = await db.execute(
             query,
@@ -1529,6 +1530,7 @@ GROUP BY l.local_job_id;
                             : null,
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
+                    id: row.id,
                     local_job_id: row.local_job_id,
                     title: row.title,
                     description: row.description,
@@ -1615,11 +1617,9 @@ GROUP BY l.local_job_id;
 
         query += ` GROUP BY applicant_id 
                ORDER BY a.is_reviewed ASC, a.reviewed_at ASC
-               LIMIT ? OFFSET ?`;
+               LIMIT ?`;
 
-        const offset = (page - 1) * pageSize;
-
-        params.push(pageSize, offset);
+        params.push(pageSize);
 
         const [results] = await db.execute(
             query,

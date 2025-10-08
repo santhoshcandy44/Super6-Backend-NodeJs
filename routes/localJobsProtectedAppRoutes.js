@@ -15,9 +15,9 @@ router.get('/local-jobs',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after id format'),
 
         query('page_size')
             .optional()
@@ -51,7 +51,7 @@ router.get('/local-jobs',
             .optional()
             .isFloat().withMessage('Last total relevance must be a valid float format')
     ],
-    localJobsProtectedController.getLocalJobsForUser
+    localJobsProtectedController.getLocalJobs
 );
 
 router.get('/guest-local-jobs',
@@ -60,9 +60,9 @@ router.get('/guest-local-jobs',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after id format'),
 
         query('page_size')
             .optional()
@@ -110,7 +110,7 @@ router.get('/guest-local-jobs',
             .optional()
             .isFloat().withMessage('Last total relevance must be a valid float format')
     ],
-    localJobsProtectedController.guestGetLocalJobs
+    localJobsProtectedController.getGuestLocalJobs
 );
 
 router.get('/published-local-jobs/:user_id(\\d+)',
@@ -120,9 +120,9 @@ router.get('/published-local-jobs/:user_id(\\d+)',
             .isInt().withMessage('Invalid user id format')
             .toInt(),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format')
+            .isInt().withMessage('Invalid after id format')
             .toInt(),
 
         query('page_size')
@@ -346,9 +346,9 @@ router.get(
             .isInt().withMessage('Invalid local job id format')
             .toInt(),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format')
+            .isInt().withMessage('Invalid after id format')
             .toInt(),
 
         query('page_size')
