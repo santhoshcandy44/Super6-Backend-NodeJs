@@ -15,9 +15,9 @@ router.get('/services',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after_id format'),
 
         query('page_size')
             .optional()
@@ -75,15 +75,14 @@ router.get('/guest-services',
         }
         next();
     },
-
     [
         query('user_id')
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format'),
+            .isInt().withMessage('Invalid after id format'),
 
         query('page_size')
             .optional()
@@ -143,10 +142,10 @@ router.get('/guest-services',
             .isFloat().withMessage('Last total relevance must be a valid float format')
 
     ],
-    servicesProtectedController.guestGetServices
+    servicesProtectedController.getGuestServices
 );
 
-router.get('/guest-feed-published-services/:user_id(\\d+)',
+router.get('/guest-feed-user-published-services/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
@@ -154,7 +153,7 @@ router.get('/guest-feed-published-services/:user_id(\\d+)',
     servicesProtectedController.getUserPublishedServicesFeedGuest
 );
 
-router.get('/feed-published-services/:user_id(\\d+)',
+router.get('/feed-user-published-services/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
@@ -172,9 +171,9 @@ router.get('/published-services/:user_id(\\d+)',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('page')
+        query('after_id')
             .optional()
-            .isInt().withMessage('Invalid page format')
+            .isInt().withMessage('Invalid after id format')
             .toInt(),
 
         query('page_size')

@@ -147,7 +147,7 @@ router.get('/feed-user-published-used-product-listings/:user_id(\\d+)',
     usedProductsProtectedController.getUserFeedPublishedUsedProductListings
 );
 
-router.get('/feed-user-guest-published-used-product-listings/:user_id(\\d+)',
+router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
