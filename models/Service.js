@@ -177,7 +177,7 @@ class Service {
 
                 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
@@ -337,7 +337,7 @@ WHERE
 
     AND (
       (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
-      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`
+      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
                 params = [
                     userId, userLon, userLat,
@@ -353,7 +353,7 @@ WHERE
                 }
 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY service_id HAVING
         distance < ?
@@ -517,7 +517,7 @@ END AS thumbnail,
 
                 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
@@ -666,7 +666,7 @@ END AS thumbnail,
                     sl.latitude BETWEEN -90 AND 90
                     AND sl.longitude BETWEEN -180 AND 180  AND (
       (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
-      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`
+      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
                 let params = [userId, userId, userId, userId];
 
@@ -678,7 +678,7 @@ END AS thumbnail,
                 }
 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY service_id LIMIT ?`;
                 params.push(pageSize);
@@ -1105,7 +1105,7 @@ WHERE
     
     AND 
     ? BETWEEN -90 AND 90
-    AND ? BETWEEN -180 AND 180`
+    AND ? BETWEEN -180 AND 180`;
 
                 if (industryIds && industryIds.length > 0) {
                     const industryList = industryIds.join(', '); 
@@ -1122,7 +1122,7 @@ WHERE
                 }
                 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY service_id HAVING
     distance < ?
@@ -1426,7 +1426,7 @@ END AS thumbnail,
                 }
                 
                 query += ` AND s.id > ?`;
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY service_id LIMIT ?`;
                 params.push(pageSize);
@@ -1829,7 +1829,7 @@ END AS thumbnail,
         }
 
         query += ` AND s.id > ?`;
-        params.push(afterId)
+        params.push(afterId);
 
         query += ` GROUP BY service_id 
                ORDER BY s.created_at DESC
