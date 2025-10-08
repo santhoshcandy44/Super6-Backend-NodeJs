@@ -65,7 +65,7 @@ exports.getGuestServices = async (req, res) => {
         }
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
+        const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
         const result = await Service.getGuestServices(user_id, decodedQuery,
             queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates, queryIndustries);
         if (!result) {

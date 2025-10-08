@@ -15,9 +15,9 @@ router.get('/job-listings',
       .isInt().withMessage('Invalid user id format')
       .toInt(),
 
-    query('page')
+    query('after_id')
       .optional()
-      .isInt().withMessage('Invalid page format')
+      .isInt().withMessage('Invalid after id format')
       .toInt(),
 
     query('page_size')
@@ -33,14 +33,14 @@ router.get('/job-listings',
       .isLength({ min: 0, max: 100 })
       .withMessage('Query string must be between 1 and 100 characters long'),
 
-    query('latitude')
+    query('s_latitude')
       .optional()
       .isFloat({ min: -90, max: 90 })
       .withMessage('Latitude must be a valid float between -90 and 90')
       .trim()
       .escape(),
 
-    query('longitude')
+    query('s_longitude')
       .optional()
       .isFloat({ min: -180, max: 180 })
       .withMessage('Longitude must be a valid float between -180 and 180')
@@ -84,7 +84,7 @@ router.get('/job-listings',
       .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
       .toInt()
   ],
-  jobsProtectedController.getJobListingsForUser
+  jobsProtectedController.getJobListings
 );
 
 router.get('/guest-job-listings',
@@ -95,9 +95,9 @@ router.get('/guest-job-listings',
       .isInt().withMessage('Invalid user id format')
       .toInt(),
 
-    query('page')
+    query('after_id')
       .optional()
-      .isInt().withMessage('Invalid page format')
+      .isInt().withMessage('Invalid after id format')
       .toInt(),
 
     query('page_size')
@@ -112,6 +112,20 @@ router.get('/guest-job-listings',
       .escape()
       .isLength({ min: 0, max: 100 })
       .withMessage('Query string must be between 1 and 100 characters long'),
+
+    query('s_latitude')
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage('Latitude must be a valid float between -90 and 90')
+      .trim()
+      .escape(),
+
+    query('s_longitude')
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage('Longitude must be a valid float between -180 and 180')
+      .trim()
+      .escape(),
 
     query('latitude')
       .optional()
@@ -193,7 +207,7 @@ router.get('/guest-job-listings',
       .isInt({ min: -1 }).withMessage('Salary max must be a number or -1')
       .toInt()
   ],
-  jobsProtectedController.getJobListingsForUser
+  jobsProtectedController.guestGetJobListings
 );
 
 router.post(
@@ -630,8 +644,8 @@ router.get('/saved-jobs/:user_id(\\d+)',
   authenticateToken,
   [
     param('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
-    query('page').optional().isInt().withMessage('User ID must be a valid integer').toInt(),
-    query('page_size').optional().isInt().withMessage('User ID must be a valid integer').toInt(),
+    query('after_id').optional().isInt().withMessage('After id must be a valid integer').toInt(),
+    query('page_size').optional().isInt().withMessage('Page size must be a valid integer').toInt(),
     query('last_timestamp')
       .optional()
       .isString().withMessage('Last Timestamp must be a valid string format')

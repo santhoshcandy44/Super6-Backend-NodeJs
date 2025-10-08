@@ -135,9 +135,9 @@ class UsedProductListing {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query += ' AND s.id > ?'
+                query += ' AND s.id > ?';
 
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
@@ -242,9 +242,9 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query += ' AND s.id > ?'
+                query += ' AND s.id > ?';
 
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY product_id HAVING distance < ?`;
 
@@ -358,10 +358,9 @@ WHERE
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
+                query += ' AND s.id > ?';
 
-                query += ' AND s.id > ?'
-
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
@@ -460,7 +459,7 @@ WHERE
                     
                 WHERE
                     sl.latitude BETWEEN -90 AND 90
-                    AND sl.longitude BETWEEN -180 AND 180`
+                    AND sl.longitude BETWEEN -180 AND 180`;
 
                 if (!lastTimeStamp) {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
@@ -469,13 +468,10 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-
-                query += ' AND s.id > ?'
-
-                params.push(afterId)
+                query += ' AND s.id > ?';
+                params.push(afterId);
 
                 query += ` GROUP BY product_id LIMIT ?`;
-
                 params.push(pageSize);
             }
         }
@@ -672,14 +668,14 @@ WHERE
 
                 if (lastTimeStamp != null) {
                     query += `AND s.created_at < ?`;
-                    params.push(lastTimeStamp)
+                    params.push(lastTimeStamp);
                 } else {
                     query += `AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query += ' AND s.id > ?'
+                query += ' AND s.id > ?';
 
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
@@ -690,14 +686,14 @@ WHERE
                         (total_relevance = ? AND distance <= ?) 
                         OR (total_relevance < ? AND distance <= ?)  
                     ) `;
-                    params.push(radius, lastTotalRelevance, radius, radius, radius)
+                    params.push(radius, lastTotalRelevance, radius, radius, radius);
                 } else {
                     query += ` GROUP BY product_id HAVING
                         distance < ? AND (
                             name_relevance > 0 OR
                             description_relevance > 0
                         )`
-                    params.push(radius)
+                    params.push(radius);
                 }
 
                 query += ` ORDER BY
@@ -705,8 +701,7 @@ WHERE
                         total_relevance DESC
                     LIMIT ?`;
 
-                params.push(pageSize)
-
+                params.push(pageSize);
             } else {
                 query = `
                     SELECT
@@ -792,16 +787,15 @@ WHERE
                     params.push(lastTimeStamp);
                 }
 
-                query += ' AND s.id > ?'
-
-                params.push(afterId)
+                query += ' AND s.id > ?';
+                params.push(afterId);
 
                 query += ` GROUP BY product_id HAVING
     distance < ?
     ORDER BY
 distance LIMIT ?`;
 
-                params.push(radius, pageSize)
+                params.push(radius, pageSize);
             }
         } else {
             if (queryParam) {
@@ -898,14 +892,14 @@ distance LIMIT ?`;
 
                 if (lastTimeStamp != null) {
                     query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp)
+                    params.push(lastTimeStamp);
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query += ' AND s.id > ?'
+                query += ' AND s.id > ?';
 
-                params.push(afterId)
+                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY product_id HAVING
@@ -922,14 +916,14 @@ distance LIMIT ?`;
                         (
                             name_relevance > 0 OR
                             description_relevance > 0
-                        )`
+                        )`;
                 }
 
                 query += ` ORDER BY
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-                    params.push(pageSize)
+                    params.push(pageSize);
 
             } else {
                 query = `
@@ -1005,9 +999,9 @@ distance LIMIT ?`;
                     query += ` AND s.created_at < ?`;
                 }
 
-                query += ' AND s.id > ?'
+                query += ' AND s.id > ?';
 
-                params.push(afterId)
+                params.push(afterId);
 
                 query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
 
@@ -1589,9 +1583,9 @@ distance LIMIT ?`;
         }
 
 
-        query += ' AND p.id > ?'
+        query += ' AND p.id > ?';
 
-        params.push(afterId)
+        params.push(afterId);
 
         query += ` GROUP BY product_id 
                ORDER BY p.created_at DESC

@@ -5,7 +5,7 @@ const Job = require('../models/Job');
 const JobIndustries = require('../models/JobIndustries');
 const User = require('../models/User');
 
-exports.getJobListingsForUser = async (req, res) => {
+exports.getJobListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -13,7 +13,7 @@ exports.getJobListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, latitude, longitude, page, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
+        const { s, s_latitude, s_longitude, after_id, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
 
         const querySearch = !s ? '' : s;
 
@@ -30,7 +30,7 @@ exports.getJobListingsForUser = async (req, res) => {
                 'EMPTY_JOB_INDUSTRIES');
         }
 
-        const queryPage = !page ? 1 : page;
+        const queryAfterId = !after_id ? -1 : after_id;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
@@ -48,7 +48,7 @@ exports.getJobListingsForUser = async (req, res) => {
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Job.getJobPostingsUser(user_id, decodedQuery, latitude, longitude, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
+        const result = await Job.getJobPostings(user_id, decodedQuery, s_latitude, s_longitude, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
@@ -59,7 +59,7 @@ exports.getJobListingsForUser = async (req, res) => {
     }
 };
 
-exports.guestGetJobListingsForUser = async (req, res) => {
+exports.guestGetJobListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -67,12 +67,13 @@ exports.guestGetJobListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, latitude, longitude, page, page_size, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
+        const { s, s_latitude, s_longitude, latitude, longitude, after_id, page_size, industries, last_timestamp, last_total_relevance, work_modes, salary_min, salary_max } = req.query;
 
         const querySearch = !s ? '' : s;
-        const queryPage = !page ? 1 : page;
+        const queryAfterId = !after_id ? -1 : after_id;
         const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
         const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
+        const queryIndustries = !industries ? [] : industries;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const VALID_WORK_MODES = ['remote', 'office', 'hybrid', 'flexible'];
         const workModesArray = Array.isArray(work_modes)
@@ -88,7 +89,8 @@ exports.guestGetJobListingsForUser = async (req, res) => {
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Job.getJobPostingsUser(user_id, decodedQuery, latitude, longitude, queryPage, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
+        const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
+        const result = await Job.getGuestJobPostings(user_id, decodedQuery, s_latitude, s_longitude, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax, coordinates, queryIndustries);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
@@ -107,11 +109,11 @@ exports.getSavedJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { page, page_size, last_timestamp } = req.query;
-        const queryPage = page ? page : 1;
+        const { after_id, page_size, last_timestamp } = req.query;
+        const queryAfterId = after_id ? after_id : -1;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
         const PAGE_SIZE = page_size ? page_size : 30;
-        const result = await Job.getSavedJobs(user_id, queryPage, PAGE_SIZE, queryLastTimestamp);
+        const result = await Job.getSavedJobs(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
         }

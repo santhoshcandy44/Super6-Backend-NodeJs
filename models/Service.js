@@ -174,7 +174,6 @@ class Service {
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
-
                 
                 query += ` AND s.id > ?`;
                 params.push(afterId);
