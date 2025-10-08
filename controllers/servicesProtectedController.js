@@ -38,7 +38,7 @@ exports.getServices = async (req, res) => {
         return sendJsonResponse(res, 200, "Services retrieved successfully", result);
     } catch (error) {
         console.log(error)
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -73,29 +73,11 @@ exports.getGuestServices = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Services retrieved successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
-exports.getUserPublishedServicesFeedGuest = async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const firstError = errors.array()[0];
-            return sendErrorResponse(res, 400, firstError.msg, errors.array());
-        }
-        const { user_id } = req.params;
-        const result = await Service.getUserPublishedServices(user_id)
-        if (!result) {
-            return sendErrorResponse(res, 400, "Failed to retrieve services");
-        }
-        return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
-    } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
-    }
-};
-
-exports.getPublishedServicesFeedUser = async (req, res) => {
+exports.getFeedPublishedServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -104,13 +86,41 @@ exports.getPublishedServicesFeedUser = async (req, res) => {
         }
         const userId = req.user.user_id;
         const { user_id } = req.params;
-        const result = await Service.getUserPublishedServicesFeedUser(userId, user_id)
+        const { after_id, page_size, last_timestamp } = req.query;
+        const queryAfterId = after_id ? after_id : -1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await Service.getUserPublishedServices(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
         return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        console.log(error);
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
+    }
+};
+
+exports.getGuestFeedServices = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const userId = req.user.user_id;
+        const { user_id } = req.params;
+        const { after_id, page_size, last_timestamp } = req.query;
+        const queryAfterId = after_id ? after_id : -1;
+        const PAGE_SIZE = page_size ? page_size : 20;
+        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const result = await Service.getUserPublishedServices(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to retrieve services");
+        }
+        return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -124,18 +134,18 @@ exports.getPublishedServices = async (req, res) => {
         const user_id = req.user.user_id;
         const { user_id: userId } = req.params;
         if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve services");
-        const { page, page_size, last_timestamp } = req.query;
-        const queryPage = page ? page : 1;
+        const { after_id, page_size, last_timestamp } = req.query;
+        const afterId = after_id ? after_id : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await Service.getUserPublishedServices(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
+        const result = await Service.getUserPublishedServices(user_id, afterId, PAGE_SIZE, queryLastTimestamp)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
         return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -155,7 +165,7 @@ exports.updateServiceInfo = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Service info updated successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -357,7 +367,7 @@ exports.bookmarkService = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Service bookmarked successfully");
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -376,7 +386,7 @@ exports.removeBookmarkService = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Bookmark removed successfully");
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -395,7 +405,7 @@ exports.searchSuggestions = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
