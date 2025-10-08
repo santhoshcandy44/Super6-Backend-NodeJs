@@ -1103,16 +1103,13 @@ distance LIMIT ?`;
         return Object.values(products);
     }
 
-    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId) {
-
+    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit=1){
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
         const [results] = await db.query(`
                 SELECT
@@ -1143,8 +1140,6 @@ distance LIMIT ?`;
                     ORDER BY si.created_at DESC
                 ), 
             ']'), '[]') AS images,
-
-
 
                     sl.longitude,
                     sl.latitude,
@@ -1177,8 +1172,8 @@ distance LIMIT ?`;
                 LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
     
-                WHERE s.created_by = ? GROUP BY product_id
-            `, [userId, serviceOwnerId]);
+                WHERE s.created_by = ? GROUP BY product_id limit ?
+            `, [userId, serviceOwnerId, limit]);
 
         const products = {};
 
