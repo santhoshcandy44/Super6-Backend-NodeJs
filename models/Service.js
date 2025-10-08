@@ -701,7 +701,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
+                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
@@ -1445,7 +1445,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getUserPublishedServicesFeedUser(userId, publisher_id);
+                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1526,8 +1526,7 @@ END AS thumbnail,
         return Object.values(services);
     }
 
-    static async getUserPublishedServicesFeedUser(userId, serviceOwnerId) {
-
+    static async getFeedUserPublishedServices(userId, serviceOwnerId, limit = 5) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -1539,6 +1538,7 @@ END AS thumbnail,
 
         const [results] = await db.query(`
                 SELECT
+                    s.id,
                     s.service_id AS service_id,
                     s.title,
                     s.short_description,
@@ -1565,8 +1565,6 @@ END AS thumbnail,
                     ORDER BY si.created_at DESC
                 ), 
             ']'), '[]') AS images,
-
-
         
             COALESCE(
     CONCAT('[', 
@@ -1603,9 +1601,6 @@ END AS thumbnail,
             NULL  -- Return null if no result is found
     END AS thumbnail,
 
-
-
-
                     sl.longitude,
                     sl.latitude,
                     sl.geo,
@@ -1639,8 +1634,8 @@ END AS thumbnail,
                 LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
     
-                WHERE s.created_by = ? GROUP BY service_id
-            `, [userId, serviceOwnerId]);
+                WHERE s.created_by = ? GROUP BY service_id limit ?
+            `, [userId, serviceOwnerId, limit]);
 
         const services = {};
 

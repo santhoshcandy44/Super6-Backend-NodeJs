@@ -150,7 +150,7 @@ router.get('/guest-feed-user-published-services/:user_id(\\d+)',
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
     ],
-    servicesProtectedController.getUserPublishedServicesFeedGuest
+    servicesProtectedController.getGuestFeedUserServices
 );
 
 router.get('/feed-user-published-services/:user_id(\\d+)',
@@ -161,7 +161,7 @@ router.get('/feed-user-published-services/:user_id(\\d+)',
             .isInt().withMessage('Invalid user id format'),
 
     ],
-    servicesProtectedController.getPublishedServicesFeedUser
+    servicesProtectedController.getFeedUserPublishedServices
 );
 
 router.get('/published-services/:user_id(\\d+)',

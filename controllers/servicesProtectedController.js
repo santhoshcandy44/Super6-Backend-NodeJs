@@ -77,7 +77,7 @@ exports.getGuestServices = async (req, res) => {
     }
 };
 
-exports.getFeedPublishedServices = async (req, res) => {
+exports.getFeedUserPublishedServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -101,7 +101,7 @@ exports.getFeedPublishedServices = async (req, res) => {
     }
 };
 
-exports.getGuestFeedServices = async (req, res) => {
+exports.getGuestFeedUserServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
