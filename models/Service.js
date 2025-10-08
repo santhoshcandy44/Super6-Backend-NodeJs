@@ -36,6 +36,7 @@ class Service {
                 }
                 query = `
                     SELECT
+                        s.id,
                         s.service_id AS service_id,
                         s.title,
                         s.short_description,
@@ -209,6 +210,7 @@ class Service {
             } else {
                 query = `
                     SELECT
+    s.id,                  
     s.service_id AS service_id,
     s.title,
     s.short_description,
@@ -377,6 +379,7 @@ WHERE
 
                 query = `
                     SELECT
+                        s.id,
                         s.service_id AS service_id,
                         s.title,
                         s.short_description,
@@ -544,6 +547,7 @@ END AS thumbnail,
             } else {
                 query = `
                 SELECT
+                    s.id,
                     s.service_id AS service_id,
                     s.title,
                     s.short_description,
@@ -821,6 +825,7 @@ END AS thumbnail,
 
                 query = `
                     SELECT
+                        s.id,
                         s.service_id AS service_id,
                         s.title,
                         s.short_description,
@@ -991,6 +996,7 @@ END AS thumbnail,
             } else {
                 query = `
                     SELECT
+    s.id,                   
     s.service_id AS service_id,
     s.title,
     s.short_description,
@@ -1141,6 +1147,7 @@ distance LIMIT ?`;
 
                 query = `
                     SELECT
+                        s.id,
                         s.service_id AS service_id,
                         s.title,
                         s.short_description,
@@ -1298,6 +1305,7 @@ distance LIMIT ?`;
             } else {
                 query = `
                 SELECT
+                    s.id,
                     s.service_id AS service_id,
                     s.title,
                     s.short_description,
@@ -1716,6 +1724,7 @@ END AS thumbnail,
 
         let query = `
                 SELECT
+                    s.id,
                     s.service_id AS service_id,
                     s.title,
                     s.short_description,
@@ -2063,6 +2072,7 @@ END AS thumbnail,
 
             const selectQuery = `
                 SELECT
+                    s.id,
                     s.service_id AS service_id,
                     s.title,
                     s.short_description,
