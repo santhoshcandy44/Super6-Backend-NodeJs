@@ -6,6 +6,7 @@ const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
+const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class UsedProductListing {
 
@@ -1507,7 +1508,7 @@ distance LIMIT ?`;
         }
     }
 
-    static async getPublishedUsedProductListings(userId, afterId, pageSize, lastTimeStamp) {
+    static async getPublishedUsedProductListings(userId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
