@@ -189,30 +189,13 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('after_id')
+        query('next_token')
             .optional()
-            .isInt().withMessage('Invalid after id format')
-            .toInt(),
+            .isString().withMessage('Next token must be a valid string'),
 
-        query('page_size')
+        query('previous_token')
             .optional()
-            .isInt().withMessage('Invalid page size format')
-            .toInt(),
-
-        query('last_timestamp')
-            .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format')
-            .trim()
-            .escape()
-            .custom((value, { req }) => {
-                const decodedValue = decodeURIComponent(value);
-                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-                if (!timestampRegex.test(decodedValue)) {
-                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-                }
-                return true;
-            })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
+            .isString().withMessage('Previous token must be a valid string')
     ],
     usedProductsProtectedController.getPublishedUsedProductListings
 );

@@ -887,7 +887,7 @@ distance LIMIT ?`;
                         sl.latitude BETWEEN -90 AND 90
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
-                        params = [queryParam, queryParam, queryParam, queryParam];
+                params = [queryParam, queryParam, queryParam, queryParam];
 
 
                 if (lastTimeStamp != null) {
@@ -923,7 +923,7 @@ distance LIMIT ?`;
                         total_relevance DESC
                     LIMIT ? OFFSET ?`;
 
-                    params.push(pageSize);
+                params.push(pageSize);
 
             } else {
                 query = `
@@ -989,8 +989,8 @@ distance LIMIT ?`;
                     WHERE
                     sl.latitude BETWEEN -90 AND 90
                     AND sl.longitude BETWEEN -180 AND 180`;
-                   
-                    params = [];
+
+                params = [];
 
                 if (!lastTimeStamp) {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
@@ -1053,7 +1053,7 @@ distance LIMIT ?`;
                             },
 
                             created_used_product_listings: result,
-                            id:row.id,
+                            id: row.id,
                             product_id: productId,
                             name: row.name,
                             description: row.description,
@@ -1097,7 +1097,7 @@ distance LIMIT ?`;
         return Object.values(products);
     }
 
-    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit=5){
+    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 5) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -1191,7 +1191,7 @@ distance LIMIT ?`;
                         online: Boolean(row.user_online_status),
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
-                    id:row.id,
+                    id: row.id,
                     product_id: productId,
                     name: row.name,
                     description: row.description,
@@ -1575,20 +1575,13 @@ distance LIMIT ?`;
 
         const params = [userId];
 
-        if (!lastTimeStamp) {
-            query += ` AND p.created_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` AND p.created_at < ?`;
-            params.push(lastTimeStamp);
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+        if (payload) {
+            query += ' p.created_at < ? OR (p.created_at = ? AND p.id > ?)';
+            params.push(payload.created_at, payload.id);
         }
 
-
-        query += ' AND p.id > ?';
-
-        params.push(afterId);
-
-        query += ` GROUP BY product_id 
-               ORDER BY p.created_at DESC
+        query += ` GROUP BY product_id  ORDER BY p.created_at DESC, p.id ASC
                LIMIT ?`;
 
         params.push(pageSize);
@@ -1615,7 +1608,7 @@ distance LIMIT ?`;
                             : null,
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
-                    id:row.id,
+                    id: row.id,
                     product_id: productId,
                     name: row.name,
                     price: row.price,

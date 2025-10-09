@@ -1874,16 +1874,16 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
  LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
  LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
 
- WHERE ub.external_user_id = ? GROUP BY j.job_id`
+ WHERE ub.external_user_id = ?`
 
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
-      query += ' j.posted_at < ? OR (j.posted_at = ? AND j.id > ?)';
+      query += ' AND j.posted_at < ? OR (j.posted_at = ? AND j.id > ?)';
       params.push(payload.created_at, payload.id);
     }
 
-    query += ` ORDER BY
+    query += ` GROUP BY j.job_id ORDER BY
   j.posted_at DESC, j.id ASC
 LIMIT ?`;
 
