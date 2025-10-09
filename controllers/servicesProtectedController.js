@@ -12,7 +12,7 @@ exports.getServices = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, page_size, next_token } = req.query;
+        const { s, last_total_relevance, page_size, next_token } = req.query;
         const querySearch = !s ? '' : s;
         let industries = await Industries.getIndustries(user_id);
         industries = industries.filter((value) => 
@@ -26,10 +26,11 @@ exports.getServices = async (req, res) => {
                 null,
                 'EMPTY_SERVICE_INDUSTRIES');
         }
+        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Service.getServices(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
+        const result = await Service.getServices(user_id, decodedQuery, queryLastTotalRelevance, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

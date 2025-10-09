@@ -8,7 +8,7 @@ const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Service {
-    static async getServices(userId, queryParam, pageSize, nextToken, initialRadius = 50) {
+    static async getServices(userId, queryParam, lastTotalRelevance, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
@@ -361,11 +361,11 @@ WHERE
 
                 if (payload) {
                     query += `
-                        AND (
+
+                      AND (
                             distance > ? 
-                            OR (distance = ? AND total_relevance < ?) 
-                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
-                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                            OR (distance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND s.created_at = ? AND s.id > ?)
                         )
                     `;
 
@@ -387,7 +387,9 @@ WHERE
                 query += ` GROUP BY service_id HAVING
         distance < ?
         ORDER BY
-        distance
+        distance ASC,
+        s.created_at DESC,
+        s.id ASC
     LIMIT ?`;
 
                 params.push(radius, 10);
@@ -825,7 +827,7 @@ END AS thumbnail,
 
                 if (index == results.length - 1) lastItem = {
                     distance: row.distance,
-                    total_relevance: row.total_relevance ?? null,
+                    total_relevance: row.total_relevance ?  row.total_relevance : null,
                     created_at: row.created_at,
                     id: row.id
                 }
