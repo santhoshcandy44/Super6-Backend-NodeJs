@@ -237,7 +237,7 @@ class Service {
     s.status,
      s.short_code,
         s.country,
-                        s.state, 
+           s.state, 
      s.created_at,
 
                  COALESCE(
@@ -349,14 +349,11 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 
-    AND (
-      (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
-      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
+`;
 
                 params = [
                     userId, userLon, userLat,
                     userId, userLat, userLon,
-                    userId, userId
                 ];
 
                 if (payload) {
