@@ -1550,8 +1550,7 @@ GROUP BY l.local_job_id;
                         latitude: row.latitude,
                         geo: row.geo,
                         location_type: row.location_type
-                    } : null,
-                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
+                    } : null
                 };
 
                 if (index == results.length - 1) lastItem = {
@@ -1578,7 +1577,7 @@ GROUP BY l.local_job_id;
         };
     }
 
-    static async getLocalJobApplications(userId, localJobId, page, pageSize, lastTimeStamp) {
+    static async getLocalJobApplications(userId, localJobId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1594,12 +1593,14 @@ GROUP BY l.local_job_id;
         if (jobCheckResult.length === 0) throw new Error('Local job not found');
 
         let query = `SELECT 
+                a.id,
                 a.applicant_id AS applicant_id,
         a.local_job_id AS local_job_id,
         a.candidate_id,
         a.applied_at,
         a.is_reviewed,
         a.reviewed_at,
+
         u.first_name,
         u.last_name,
         u.email,
@@ -1623,15 +1624,18 @@ GROUP BY l.local_job_id;
 
         const params = [localJobId];
 
-        if (!lastTimeStamp) {
-            query += ` AND a.applied_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` AND a.applied_at < ?`;
-            params.push(lastTimeStamp);
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+        if (payload) {
+            query += ' AND (a.is_reviewed > ? OR (a.is_reviewed = ? AND a.reviewed_at < ?) OR (a.is_reviewed = ? AND a.reviewed_at = ? AND a.id > ?))';
+            params.push(
+                payload.is_reviewed, 
+                payload.is_reviewed, payload.reviewed_at, 
+                payload.is_reviewed, payload.reviewed_at, payload.id
+              );
         }
 
         query += ` GROUP BY applicant_id 
-               ORDER BY a.is_reviewed ASC, a.reviewed_at ASC
+               ORDER BY a.is_reviewed ASC, a.reviewed_at DESC,  a.id ASC
                LIMIT ?`;
 
         params.push(pageSize);
@@ -1642,7 +1646,7 @@ GROUP BY l.local_job_id;
         );
 
         const items = {};
-        results.forEach(row => {
+        results.forEach((row, index) => {
             const applicantId = row.applicant_id;
             if (!items[applicantId]) {
                 items[applicantId] = {
@@ -1669,9 +1673,31 @@ GROUP BY l.local_job_id;
                         created_at: new Date(row.applicant_created_at).getFullYear().toString()
                     }
                 };
+
+                if (index == results.length - 1) lastItem = {
+                    is_reviewed: row.is_reviewed,
+                    is_reviewed_at: row.is_reviewed_at,
+                    id: row.id
+                }
             }
         });
-        return Object.values(items);
+
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            is_reviewed: lastItem.is_reviewed,
+            is_reviewed_at: lastItem.is_reviewed_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async markAsReviewed(userId, localJobId, applicant_id) {
