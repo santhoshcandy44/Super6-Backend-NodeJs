@@ -172,6 +172,7 @@ class App {
     INNER JOIN users u ON s.created_by = u.user_id
     INNER JOIN industries i ON s.industry = i.industry_id
     LEFT JOIN user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
+    WHERE ub.user_id = ?
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id
     GROUP BY s.service_id
 
@@ -241,6 +242,7 @@ class App {
     INNER JOIN users u ON s.created_by = u.user_id
     LEFT JOIN user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    WHERE ub.user_id = ?
     GROUP BY s.product_id
 
     UNION ALL
@@ -309,11 +311,12 @@ class App {
     INNER JOIN users u ON l.created_by = u.user_id
     LEFT JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    WHERE ub.user_id = ?
     GROUP BY l.local_job_id
 
 ) AS all_bookmarks
 `;
-        const params = [userId, userId, userId];
+        const params = [userId, userId, userId, userId, userId, userId];
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
