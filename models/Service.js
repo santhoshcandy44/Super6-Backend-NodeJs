@@ -713,7 +713,7 @@ END AS thumbnail,
         }
 
         const [results] = await connection.execute(query, params);
-        console.log(results);
+        console.log(params);
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
