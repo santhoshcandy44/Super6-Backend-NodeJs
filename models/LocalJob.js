@@ -1477,7 +1477,7 @@ GROUP BY l.local_job_id;
                     u.profile_pic_url AS publisher_profile_pic_url,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                    u.created_at AS publisher_created_at,
+                    u.created_at AS publisher_created_at
 
                 FROM local_jobs l
                 LEFT JOIN local_job_images li ON l.local_job_id = li.local_job_id
