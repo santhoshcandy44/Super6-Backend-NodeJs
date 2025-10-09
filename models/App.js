@@ -1,11 +1,10 @@
 
 const { PROFILE_BASE_URL, MEDIA_BASE_URL, BASE_URL } = require('../config/config');
 const db = require('../config/database');
-const jobsDb = require('../config/lts360JobsDatabase');
 const { encrypt } = require('../utils/authUtils');
 const Service = require('./Service');
 const UsedProductListing = require('./UsedProdctListing');
-const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils');
+const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class App {
     static async updateUserFCMToken(userId, fcmToken) {
@@ -79,60 +78,9 @@ class App {
         if (userCheckResult.length === 0) throw new Error('User is not exist.');
 
         let query = `
-        SELECT *, CURRENT_TIMESTAMP AS initial_check_at FROM (
-            SELECT 'service' AS type, s.service_id AS id, ub.created_at AS bookmarked_at
-            FROM services s
-            INNER JOIN user_bookmark_services ub ON s.service_id = ub.service_id
-            WHERE ub.user_id = ?
-            
-            UNION ALL
-            
-            SELECT 'used_product_listing' AS type, p.product_id AS id, ub.created_at AS bookmarked_at
-            FROM used_product_listings p
-            INNER JOIN user_bookmark_used_product_listings ub ON p.product_id = ub.product_id
-            WHERE ub.user_id = ?
-            
-            UNION ALL
-            
-            SELECT 'local_job' AS type, l.local_job_id AS id, ub.created_at AS bookmarked_at
-            FROM local_jobs l
-            INNER JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id
-            WHERE ub.user_id = ?
-        ) AS all_bookmarks
-        WHERE
-    `;
-        const params = [userId, userId, userId];
-
-        if (!lastTimeStamp) {
-            query += ` all_bookmarks.bookmarked_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` all_bookmarks.bookmarked_at < ?`;
-            params.push(lastTimeStamp);
-        }
-
-        query += ` ORDER BY all_bookmarks.bookmarked_at DESC LIMIT ? OFFSET ?`;
-
-        const offset = (page - 1) * pageSize;
-
-        params.push(pageSize, offset);
-
-        const [bookmarkRows] = await db.execute(query, params);
-
-        if (bookmarkRows.length === 0) return [];
-
-        const initialCheckAt = formatMySQLDateToInitialCheckAt(bookmarkRows[0].initial_check_at);
-
-        const serviceIds = bookmarkRows.filter(r => r.type === 'service').map(r => r.id);
-        const productIds = bookmarkRows.filter(r => r.type === 'used_product_listing').map(r => r.id);
-        const localJobIds = bookmarkRows.filter(r => r.type === 'local_job').map(r => r.id);
-
-        let services = {};
-        let usedProducts = {};
-        let localJobs = {};
-
-        if (serviceIds.length) {
-            const [results] = await db.query(`               
-            SELECT
+        SELECT * FROM (
+            SELECT 'service' AS type, s.service_id AS item_id, s.id as id, 0 as p_type,
+          
                 s.service_id AS service_id,
                 s.title,
                 s.short_description,
@@ -159,8 +107,6 @@ class App {
                         ORDER BY si.created_at DESC
                     ), 
                 ']'), '[]') AS images,
-    
-    
             
                 COALESCE(
         CONCAT('[', 
@@ -180,9 +126,7 @@ class App {
                 ORDER BY sp.created_at ASC  -- Order by plan_id in ascending order
             ), 
         ']'), '[]') AS plans,  -- Ensure it returns an empty array if no plans
-    
-    
-    
+        
            
           CASE
             WHEN st.thumbnail_id IS NOT NULL THEN 
@@ -234,92 +178,11 @@ class App {
                 LEFT JOIN
         chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
         
-            WHERE
-                ub.user_id = ? AND s.service_id IN (?)
                 GROUP BY service_id 
-                `, [userId, userId, serviceIds]);
-
-            await (async () => {
-                for (const row of results) {
-                    const serviceId = row.service_id;
-                    if (!services[serviceId]) {
-                        try {
-                            const publisher_id = row.publisher_id;
-                            const result = await Service.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
-                            if (!result) {
-                                throw new Error("Failed to retrieve published services of the user");
-                            }
-                            services[serviceId] = {
-                                user: {
-                                    user_id: row.publisher_id,
-                                    first_name: row.publisher_first_name,
-                                    last_name: row.publisher_last_name,
-                                    email: row.publisher_email,
-                                    is_email_verified: !!row.publisher_email_verified,
-                                    profile_pic_url: row.publisher_profile_pic_url
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                        : null,
-
-                                    profile_pic_url_96x96: row.publisher_profile_pic_url
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                        : null,
-                                    online: Boolean(row.user_online_status),
-                                    created_at: new Date(row.publisher_created_at).getFullYear().toString()
-                                },
-                                created_services: result,
-                                service_id: serviceId,
-                                title: row.title,
-                                short_description: row.short_description,
-                                long_description: row.long_description,
-                                industry: row.industry,
-                                country: row.country,
-                                state: row.state,
-                                status: row.status,
-                                short_code: BASE_URL + "/service/" + row.short_code,
-                                thumbnail: row.thumbnail ? {
-                                    ...JSON.parse(row.thumbnail),
-                                    url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
-                                } : null,
-                                images: row.images ? JSON.parse(row.images).map(image => ({
-                                    ...image,
-                                    image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                                })) : [],
-                                plans: row.plans
-                                    ? JSON.parse(row.plans).map(plan => ({
-                                        ...plan,
-                                        plan_features: plan.plan_features
-                                            ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                                            : []
-                                    }))
-                                    : [],
-                                is_bookmarked: Boolean(row.is_bookmarked),
-                                bookmarked_at: row.bookmarked_at,
-                                location:
-                                    row.longitude &&
-                                        row.latitude &&
-                                        row.geo &&
-                                        row.location_type
-                                        ? {
-                                            longitude: row.longitude,
-                                            latitude: row.latitude,
-                                            geo: row.geo,
-                                            location_type: row.location_type
-                                        }
-                                        : null
-
-                            };
-
-                        } catch (error) {   
-                            throw new Error("Error processing service data");
-                        }
-                    }
-                }
-            })();
-        }
-
-        if (productIds.length) {
-            const [usedProductResults] = await db.query(`       
-            SELECT
+    
+            UNION ALL
+            
+            SELECT 'used_product_listing' AS type, p.product_id AS item_id, p.id as id, 1 as p_type,
                 s.product_id AS product_id,
                 s.name,
                 s.description,
@@ -376,81 +239,13 @@ class App {
     
                 LEFT JOIN
         chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
-        
-            WHERE
-                ub.user_id = ? AND s.product_id IN (?)
+       
                 GROUP BY product_id
-                `, [userId, userId, productIds]);
-            await (async () => {
-                for (const row of usedProductResults) {
-                    const productId = row.product_id;
-                    if (!usedProducts[productId]) {
-                        try {
-                            const publisher_id = row.publisher_id;
-                            const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
-                            if (!result) {
-                                throw new Error("Failed to retrieve published services of the user");
-                            }
-                            usedProducts[productId] = {
-                                user: {
-                                    user_id: row.publisher_id,
-                                    first_name: row.publisher_first_name,
-                                    last_name: row.publisher_last_name,
-                                    email: row.publisher_email,
-                                    is_email_verified: !!row.publisher_email_verified,
-                                    profile_pic_url: row.publisher_profile_pic_url
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                        : null,
+            
+            UNION ALL
+            
+            SELECT 'local_job' AS type, l.local_job_id AS item_id, l.id as id, 2 as p_type, 
 
-                                    profile_pic_url_96x96: row.publisher_profile_pic_url
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                        : null,
-                                    online: Boolean(row.user_online_status),
-                                    created_at: new Date(row.publisher_created_at).getFullYear().toString()
-                                },
-                                created_used_product_listings: result,
-                                product_id: productId,
-                                name: row.name,
-                                description: row.description,
-                                price: row.price,
-                                price_unit: row.price_unit,
-                                country: row.country,
-                                state: row.state,
-                                status: row.status,
-                                short_code: BASE_URL + "/service/" + row.short_code,
-
-                                images: row.images ? JSON.parse(row.images).map(image => ({
-                                    ...image,
-                                    image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                                })) : [],
-
-                                is_bookmarked: Boolean(row.is_bookmarked),
-                                bookmarked_at: row.bookmarked_at,
-                                location:
-                                    row.longitude &&
-                                        row.latitude &&
-                                        row.geo &&
-                                        row.location_type
-                                        ? {
-                                            longitude: row.longitude,
-                                            latitude: row.latitude,
-                                            geo: row.geo,
-                                            location_type: row.location_type
-                                        }
-                                        : null
-                            };
-                        } catch (error) {
-                            console.error(error);
-                            throw new Error("Error processing service data");
-                        }
-                    }
-                }
-            })();
-        }
-
-        if (localJobIds.length) {
-            const [localJobResults] = await db.query(`
-                SELECT
                     l.local_job_id AS local_job_id,
                     l.title,
                     l.description,
@@ -513,83 +308,246 @@ class App {
                 LEFT JOIN
                     user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
     
-                WHERE
-                    ub.user_id = ? 
-                AND l.local_job_id IN (?) GROUP BY local_job_id 
-                    `, [userId, userId, localJobIds]);
+                GROUP BY local_job_id
+           
+        ) AS all_bookmarks`;
+        const params = [userId, userId, userId];
 
-            await (async () => {
-                for (const row of localJobResults) {
-                    const localJobId = row.local_job_id;
-                    if (!localJobs[localJobId]) {
-                        try {
-                            localJobs[localJobId] = {
-                                user: {
-                                    user_id: row.publisher_id,
-                                    first_name: row.publisher_first_name,
-                                    last_name: row.publisher_last_name,
-                                    email: row.publisher_email,
-                                    is_email_verified: !!row.publisher_email_verified,
-                                    profile_pic_url: row.publisher_profile_pic_url
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                        : null,
-                                    profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
-                                        ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                        : null,
-                                    created_at: new Date(row.publisher_created_at).getFullYear().toString(),
-                                },
-                                local_job_id: row.local_job_id,
-                                title: row.title,
-                                description: row.description,
-                                company: row.company,
-                                age_min: row.age_min,
-                                age_max: row.age_max,
-                                marital_statuses: JSON.parse(row.marital_statuses),
-                                salary_unit: row.salary_unit,
-                                salary_min: row.salary_min,
-                                salary_max: row.salary_max,
-                                country: row.country,
-                                state: row.state,
-                                status: row.status,
-                                short_code: BASE_URL + "/local-job/" + row.short_code,
-                                is_bookmarked: Boolean(row.is_bookmarked),
-                                images: row.images ? JSON.parse(row.images).map(image => ({
-                                    ...image,
-                                    image_url: MEDIA_BASE_URL + "/" + image.image_url
-                                })) : [],
-                                location: row.longitude ? {
-                                    longitude: row.longitude,
-                                    latitude: row.latitude,
-                                    geo: row.geo,
-                                    location_type: row.location_type
-                                } : null
-                            };
-                        } catch (error) {
-                            throw new Error("Error processing service data");
-                        }
-                    }
-                }
-            })();
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
+        if (payload) {
+            query += 'WHERE (bookmarked_at < ? OR (bookmarked_at = ? AND p_type > ?) OR (bookmarked_at = ? AND p_type = ? AND id > ?))';
+            params.push(
+                payload.bookmarked_at,
+                payload.bookmarked_at, payload.p_type,
+                payload.bookmarked_at, payload.p_type, payload.id
+            );
         }
 
-        const combinedResults = [
-            ...Object.values(services).map(s => ({
-                type: "service",
-                initial_check_at:initialCheckAt,
-                ...s
-            })),
-            ...Object.values(usedProducts).map(up => ({
-                type: "used_product_listing",
-                initial_check_at:initialCheckAt,
-                ...up
-            })),
-            ...Object.values(localJobs).map(l => ({
-                type: "local_job",
-                initial_check_at:initialCheckAt,
-                ...l
-            }))
-        ].sort((a, b) => new Date(b.bookmarked_at || 0) - new Date(a.bookmarked_at || 0));     
-        return combinedResults;
+        query += ` ORDER BY all_bookmarks.bookmarked_at DESC, all_bookmarks.p_type ASC, all_bookmarks.id ASC LIMIT ?`;
+
+        params.push(pageSize);
+
+        const [bookmarkRows] = await db.execute(query, params);
+
+        if (bookmarkRows.length === 0) return {
+            data: [],
+            next_token: null,
+            previous_token: null
+        };
+
+
+        const items = [];
+
+        let lastItem = null
+
+        results.forEach(async (row, index) => {
+            const itemId = `${row.type}_${row.item_id}`;
+            if (!items[itemId]) {
+                if(row.type == 'service'){
+                    try {
+                        const publisher_id = row.publisher_id;
+                        const result = await Service.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        if (!result) {
+                            throw new Error("Failed to retrieve published services of the user");
+                        }
+                        items[itemId] = {
+                            type:"service",
+                            user: {
+                                user_id: row.publisher_id,
+                                first_name: row.publisher_first_name,
+                                last_name: row.publisher_last_name,
+                                email: row.publisher_email,
+                                is_email_verified: !!row.publisher_email_verified,
+                                profile_pic_url: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                    : null,
+
+                                profile_pic_url_96x96: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                    : null,
+                                online: Boolean(row.user_online_status),
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                            },
+                            created_services: result,
+                            service_id: serviceId,
+                            title: row.title,
+                            short_description: row.short_description,
+                            long_description: row.long_description,
+                            industry: row.industry,
+                            country: row.country,
+                            state: row.state,
+                            status: row.status,
+                            short_code: BASE_URL + "/service/" + row.short_code,
+                            thumbnail: row.thumbnail ? {
+                                ...JSON.parse(row.thumbnail),
+                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                            } : null,
+                            images: row.images ? JSON.parse(row.images).map(image => ({
+                                ...image,
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                            })) : [],
+                            plans: row.plans
+                                ? JSON.parse(row.plans).map(plan => ({
+                                    ...plan,
+                                    plan_features: plan.plan_features
+                                        ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                        : []
+                                }))
+                                : [],
+                            is_bookmarked: Boolean(row.is_bookmarked),
+                            bookmarked_at: row.bookmarked_at,
+                            location:
+                                row.longitude &&
+                                    row.latitude &&
+                                    row.geo &&
+                                    row.location_type
+                                    ? {
+                                        longitude: row.longitude,
+                                        latitude: row.latitude,
+                                        geo: row.geo,
+                                        location_type: row.location_type
+                                    }
+                                    : null
+
+                        };
+                    } catch (error) {
+                        throw new Error("Error processing service data");
+                    }
+                }else if(row.type == 'used_product_listing'){
+                    try {
+                        const publisher_id = row.publisher_id;
+                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
+                        if (!result) {
+                            throw new Error("Failed to retrieve published services of the user");
+                        }
+                        items[itemId] = {
+                            type:'used_product_listing',
+                            user: {
+                                user_id: row.publisher_id,
+                                first_name: row.publisher_first_name,
+                                last_name: row.publisher_last_name,
+                                email: row.publisher_email,
+                                is_email_verified: !!row.publisher_email_verified,
+                                profile_pic_url: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                    : null,
+
+                                profile_pic_url_96x96: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                    : null,
+                                online: Boolean(row.user_online_status),
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                            },
+                            created_used_product_listings: result,
+                            product_id: productId,
+                            name: row.name,
+                            description: row.description,
+                            price: row.price,
+                            price_unit: row.price_unit,
+                            country: row.country,
+                            state: row.state,
+                            status: row.status,
+                            short_code: BASE_URL + "/service/" + row.short_code,
+
+                            images: row.images ? JSON.parse(row.images).map(image => ({
+                                ...image,
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                            })) : [],
+
+                            is_bookmarked: Boolean(row.is_bookmarked),
+                            bookmarked_at: row.bookmarked_at,
+                            location:
+                                row.longitude &&
+                                    row.latitude &&
+                                    row.geo &&
+                                    row.location_type
+                                    ? {
+                                        longitude: row.longitude,
+                                        latitude: row.latitude,
+                                        geo: row.geo,
+                                        location_type: row.location_type
+                                    }
+                                    : null
+                        };
+                    } catch (error) {
+                        console.error(error);
+                        throw new Error("Error processing service data");
+                    }
+                }else if(row.type =='local_job'){
+                    try {
+                        items[itemId] = {
+                            item:"local_job",
+                            user: {
+                                user_id: row.publisher_id,
+                                first_name: row.publisher_first_name,
+                                last_name: row.publisher_last_name,
+                                email: row.publisher_email,
+                                is_email_verified: !!row.publisher_email_verified,
+                                profile_pic_url: row.publisher_profile_pic_url
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                    : null,
+                                profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
+                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                    : null,
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString(),
+                            },
+                            local_job_id: row.local_job_id,
+                            title: row.title,
+                            description: row.description,
+                            company: row.company,
+                            age_min: row.age_min,
+                            age_max: row.age_max,
+                            marital_statuses: JSON.parse(row.marital_statuses),
+                            salary_unit: row.salary_unit,
+                            salary_min: row.salary_min,
+                            salary_max: row.salary_max,
+                            country: row.country,
+                            state: row.state,
+                            status: row.status,
+                            short_code: BASE_URL + "/local-job/" + row.short_code,
+                            is_bookmarked: Boolean(row.is_bookmarked),
+                            images: row.images ? JSON.parse(row.images).map(image => ({
+                                ...image,
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url
+                            })) : [],
+                            location: row.longitude ? {
+                                longitude: row.longitude,
+                                latitude: row.latitude,
+                                geo: row.geo,
+                                location_type: row.location_type
+                            } : null
+                        };
+                    } catch (error) {
+                        throw new Error("Error processing service data");
+                    }
+                }
+                 
+                if (index == results.length - 1) lastItem = {
+                    bookmarked_at: row.bookmarked_at,
+                    p_type: row.p_type,
+                    id: row.id
+                }
+            }
+        });
+
+
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            bookmarked_at: row.bookmarked_at,
+            p_type: row.p_type,
+            id: row.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 }
 
