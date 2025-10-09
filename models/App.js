@@ -332,6 +332,8 @@ class App {
 
         const [results] = await db.execute(query, params);
 
+        console.log(results);
+
         if (results.length === 0) return {
             data: [],
             next_token: null,
