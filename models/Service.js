@@ -19,6 +19,7 @@ class Service {
 
         let query, params;
         var radius = initialRadius;
+        const payload = nextToken ? decodeCursor(nextToken) : null;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
@@ -169,8 +170,6 @@ class Service {
                     queryParam, queryParam, queryParam, queryParam, queryParam, queryParam,
                     userId, userLat, userLon
                 ];
-
-                const payload = nextToken ? decodeCursor(nextToken) : null;
 
                 if (payload) {
                     query += `
@@ -359,9 +358,6 @@ WHERE
                     userId, userLat, userLon,
                     userId, userId
                 ];
-
-
-                const payload = nextToken ? decodeCursor(nextToken) : null;
 
                 if (payload) {
                     query += `
