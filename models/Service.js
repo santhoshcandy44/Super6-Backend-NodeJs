@@ -724,6 +724,8 @@ END AS thumbnail,
             }
         }
 
+        console.log(results);
+
         const services = {};
         let lastItem = null
 
