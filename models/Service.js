@@ -729,7 +729,7 @@ END AS thumbnail,
 
         await (async () => {
             for (let index = 0; index < results.length; index++) {
-                const row = result[index];
+                const row = results[index];
                 const serviceId = row.service_id;
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
