@@ -1589,8 +1589,9 @@ distance LIMIT ?`;
         const [results] = await db.execute(query, params);
 
         const products = {};
+        let lastItem = null
 
-        results.forEach(row => {
+        results.forEach((row, index) => {
             const productId = row.product_id;
             if (!products[productId]) {
                 products[productId] = {
@@ -1633,10 +1634,29 @@ distance LIMIT ?`;
                     is_bookmarked: Boolean(row.is_bookmarked),
                     initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
                 };
+
+                if (index == results.length - 1) lastItem = {
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         });
 
-        return Object.values(products);
+        const allItems = Object.values(products)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async deleteUsedProductListing(user_id, product_id) {
