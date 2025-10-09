@@ -330,9 +330,9 @@ class App {
 
         params.push(pageSize);
 
-        const [bookmarkRows] = await db.execute(query, params);
+        const [results] = await db.execute(query, params);
 
-        if (bookmarkRows.length === 0) return {
+        if (results.length === 0) return {
             data: [],
             next_token: null,
             previous_token: null
@@ -342,7 +342,7 @@ class App {
 
         let lastItem = null
 
-        bookmarkRows.forEach(async (row, index) => {
+        results.forEach(async (row, index) => {
             const itemId = `${row.type}_${row.item_id}`;
             if (!items[itemId]) {
                 if(row.type == 'service'){
