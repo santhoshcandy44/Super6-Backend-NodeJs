@@ -713,6 +713,8 @@ END AS thumbnail,
         }
 
         const [results] = await connection.execute(query, params);
+        console.log(results);
+
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
             if (availableResults < pageSize) {
@@ -724,7 +726,6 @@ END AS thumbnail,
             }
         }
 
-        console.log(results);
 
         const services = {};
         let lastItem = null
