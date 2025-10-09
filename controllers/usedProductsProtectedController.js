@@ -122,6 +122,7 @@ exports.getPublishedUsedProductListings = async (req, res) => {
         console.log(result);
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
