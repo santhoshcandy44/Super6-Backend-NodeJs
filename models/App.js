@@ -182,7 +182,8 @@ class App {
     
             UNION ALL
             
-            SELECT 'used_product_listing' AS type, p.product_id AS item_id, p.id as id, 1 as p_type,
+            SELECT 'used_product_listing' AS type,
+             s.product_id AS item_id, s.id as id, 1 as p_type,
                 s.product_id AS product_id,
                 s.name,
                 s.description,
