@@ -349,7 +349,9 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 
-    `;
+    AND (
+      (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
+      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
                 params = [
                     userId, userLon, userLat,
@@ -382,7 +384,14 @@ WHERE
                 }
 
 
-               
+                query += ` GROUP BY service_id HAVING
+        distance < ?
+        ORDER BY
+        distance
+    LIMIT ?`;
+
+                params.push(radius, pageSize);
+                console.log(params);
             }
         } else {
             if (queryParam) {
