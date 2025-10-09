@@ -383,13 +383,13 @@ WHERE
                     );
                 }
 
-                query += ` GROUP BY service_id HAVING
-        distance < ?
-        ORDER BY
-        distance
-    LIMIT ?`;
+    //             query += ` GROUP BY service_id HAVING
+    //     distance < ?
+    //     ORDER BY
+    //     distance
+    // LIMIT ?`;
 
-                params.push(radius, 10);
+    //             params.push(radius, 10);
             }
         } else {
             if (queryParam) {
