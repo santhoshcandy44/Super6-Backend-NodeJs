@@ -348,7 +348,7 @@ class App {
                 if(row.type == 'service'){
                     try {
                         const publisher_id = row.publisher_id;
-                        const result = await Service.getUserPublishedServicesFeedUser(publisher_id, publisher_id);
+                        const result = await Service.getFeedUserPublishedServices(publisher_id, publisher_id);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
@@ -371,7 +371,7 @@ class App {
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             created_services: result,
-                            service_id: serviceId,
+                            service_id: row.item_id,
                             title: row.title,
                             short_description: row.short_description,
                             long_description: row.long_description,
@@ -441,7 +441,7 @@ class App {
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             created_used_product_listings: result,
-                            product_id: productId,
+                            product_id: row.item_id,
                             name: row.name,
                             description: row.description,
                             price: row.price,
@@ -493,7 +493,7 @@ class App {
                                     : null,
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString(),
                             },
-                            local_job_id: row.local_job_id,
+                            local_job_id: row.item_id,
                             title: row.title,
                             description: row.description,
                             company: row.company,
