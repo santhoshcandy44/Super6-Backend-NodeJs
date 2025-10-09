@@ -1879,8 +1879,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
-      query += ' AND j.posted_at < ? OR (j.posted_at = ? AND j.id > ?)';
-      params.push(payload.created_at, payload.id);
+      query += ' AND (j.posted_at < ? OR (j.posted_at = ? AND j.id > ?))';
+      params.push(payload.created_at, payload.created_at, payload.id);
     }
 
     query += ` GROUP BY j.job_id ORDER BY
