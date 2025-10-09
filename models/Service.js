@@ -732,7 +732,7 @@ END AS thumbnail,
         let lastItem = null
 
         await (async () => {
-            for (let index = 0; i < results.length; i++) {
+            for (let index = 0; index < results.length; index++) {
                 const serviceId = row.service_id;
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
