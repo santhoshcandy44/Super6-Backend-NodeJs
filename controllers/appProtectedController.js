@@ -60,11 +60,10 @@ exports.getBookmarks = async (req, res) => {
         const user_id = req.user.user_id;
         const { user_id: userId } = req.params;
         if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to bookmarks");
-        const { page, page_size, last_timestamp } = req.query;
-        const queryPage = page ? page : 1;
+        const { page_size, next_token } = req.query;
+        const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await App.getUserBookmarks(user_id, queryPage, PAGE_SIZE, queryLastTimestamp)
+        const result = await App.getUserBookmarks(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

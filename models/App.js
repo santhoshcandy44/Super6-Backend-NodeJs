@@ -71,7 +71,7 @@ class App {
         }
     }
 
-    static async getUserBookmarks(userId, page, pageSize, lastTimeStamp) {
+    static async getUserBookmarks(userId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
