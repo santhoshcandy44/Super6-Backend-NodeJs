@@ -341,198 +341,200 @@ class App {
         const items = [];
 
         let lastItem = null
+            (async () => {
+                for (let index = 0; index < results.length; index++) {
+                    
+                    const itemId = `${row.type}_${row.item_id}`;
+                    if (!items[itemId]) {
+                        if (row.type == 'service') {
+                            try {
+                                const publisher_id = row.publisher_id;
+                                const result = await Service.getFeedUserPublishedServices(publisher_id, publisher_id);
+                                if (!result) {
+                                    throw new Error("Failed to retrieve published services of the user");
+                                }
+                                items[itemId] = {
+                                    type: "service",
+                                    user: {
+                                        user_id: row.publisher_id,
+                                        first_name: row.publisher_first_name,
+                                        last_name: row.publisher_last_name,
+                                        email: row.publisher_email,
+                                        is_email_verified: !!row.publisher_email_verified,
+                                        profile_pic_url: row.publisher_profile_pic_url
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                            : null,
 
-        results.forEach(async (row, index) => {
-            const itemId = `${row.type}_${row.item_id}`;
-            if (!items[itemId]) {
-                if(row.type == 'service'){
-                    try {
-                        const publisher_id = row.publisher_id;
-                        const result = await Service.getFeedUserPublishedServices(publisher_id, publisher_id);
-                        if (!result) {
-                            throw new Error("Failed to retrieve published services of the user");
-                        }
-                        items[itemId] = {
-                            type:"service",
-                            user: {
-                                user_id: row.publisher_id,
-                                first_name: row.publisher_first_name,
-                                last_name: row.publisher_last_name,
-                                email: row.publisher_email,
-                                is_email_verified: !!row.publisher_email_verified,
-                                profile_pic_url: row.publisher_profile_pic_url
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                    : null,
+                                        profile_pic_url_96x96: row.publisher_profile_pic_url
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                            : null,
+                                        online: Boolean(row.user_online_status),
+                                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                                    },
+                                    created_services: result,
+                                    service_id: row.item_id,
+                                    title: row.title,
+                                    short_description: row.short_description,
+                                    long_description: row.long_description,
+                                    industry: row.industry,
+                                    country: row.country,
+                                    state: row.state,
+                                    status: row.status,
+                                    short_code: BASE_URL + "/service/" + row.short_code,
+                                    thumbnail: row.thumbnail ? {
+                                        ...JSON.parse(row.thumbnail),
+                                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
+                                    } : null,
+                                    images: row.images ? JSON.parse(row.images).map(image => ({
+                                        ...image,
+                                        image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                    })) : [],
+                                    plans: row.plans
+                                        ? JSON.parse(row.plans).map(plan => ({
+                                            ...plan,
+                                            plan_features: plan.plan_features
+                                                ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                                : []
+                                        }))
+                                        : [],
+                                    is_bookmarked: Boolean(row.is_bookmarked),
+                                    bookmarked_at: row.bookmarked_at,
+                                    location:
+                                        row.longitude &&
+                                            row.latitude &&
+                                            row.geo &&
+                                            row.location_type
+                                            ? {
+                                                longitude: row.longitude,
+                                                latitude: row.latitude,
+                                                geo: row.geo,
+                                                location_type: row.location_type
+                                            }
+                                            : null
 
-                                profile_pic_url_96x96: row.publisher_profile_pic_url
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                    : null,
-                                online: Boolean(row.user_online_status),
-                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
-                            },
-                            created_services: result,
-                            service_id: row.item_id,
-                            title: row.title,
-                            short_description: row.short_description,
-                            long_description: row.long_description,
-                            industry: row.industry,
-                            country: row.country,
-                            state: row.state,
-                            status: row.status,
-                            short_code: BASE_URL + "/service/" + row.short_code,
-                            thumbnail: row.thumbnail ? {
-                                ...JSON.parse(row.thumbnail),
-                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url // Prepend the base URL to the thumbnail URL
-                            } : null,
-                            images: row.images ? JSON.parse(row.images).map(image => ({
-                                ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [],
-                            plans: row.plans
-                                ? JSON.parse(row.plans).map(plan => ({
-                                    ...plan,
-                                    plan_features: plan.plan_features
-                                        ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
-                                        : []
-                                }))
-                                : [],
-                            is_bookmarked: Boolean(row.is_bookmarked),
-                            bookmarked_at: row.bookmarked_at,
-                            location:
-                                row.longitude &&
-                                    row.latitude &&
-                                    row.geo &&
-                                    row.location_type
-                                    ? {
+                                };
+                            } catch (error) {
+                                throw new Error("Error processing service data");
+                            }
+                        } else if (row.type == 'used_product_listing') {
+                            try {
+                                const publisher_id = row.publisher_id;
+                                const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
+                                if (!result) {
+                                    throw new Error("Failed to retrieve published services of the user");
+                                }
+                                items[itemId] = {
+                                    type: 'used_product_listing',
+                                    user: {
+                                        user_id: row.publisher_id,
+                                        first_name: row.publisher_first_name,
+                                        last_name: row.publisher_last_name,
+                                        email: row.publisher_email,
+                                        is_email_verified: !!row.publisher_email_verified,
+                                        profile_pic_url: row.publisher_profile_pic_url
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                            : null,
+
+                                        profile_pic_url_96x96: row.publisher_profile_pic_url
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                            : null,
+                                        online: Boolean(row.user_online_status),
+                                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                                    },
+                                    created_used_product_listings: result,
+                                    product_id: row.item_id,
+                                    name: row.name,
+                                    description: row.description,
+                                    price: row.price,
+                                    price_unit: row.price_unit,
+                                    country: row.country,
+                                    state: row.state,
+                                    status: row.status,
+                                    short_code: BASE_URL + "/service/" + row.short_code,
+
+                                    images: row.images ? JSON.parse(row.images).map(image => ({
+                                        ...image,
+                                        image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
+                                    })) : [],
+
+                                    is_bookmarked: Boolean(row.is_bookmarked),
+                                    bookmarked_at: row.bookmarked_at,
+                                    location:
+                                        row.longitude &&
+                                            row.latitude &&
+                                            row.geo &&
+                                            row.location_type
+                                            ? {
+                                                longitude: row.longitude,
+                                                latitude: row.latitude,
+                                                geo: row.geo,
+                                                location_type: row.location_type
+                                            }
+                                            : null
+                                };
+                            } catch (error) {
+                                console.error(error);
+                                throw new Error("Error processing service data");
+                            }
+                        } else if (row.type == 'local_job') {
+                            try {
+                                items[itemId] = {
+                                    type: "local_job",
+                                    user: {
+                                        user_id: row.publisher_id,
+                                        first_name: row.publisher_first_name,
+                                        last_name: row.publisher_last_name,
+                                        email: row.publisher_email,
+                                        is_email_verified: !!row.publisher_email_verified,
+                                        profile_pic_url: row.publisher_profile_pic_url
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                                            : null,
+                                        profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
+                                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                                            : null,
+                                        created_at: new Date(row.publisher_created_at).getFullYear().toString(),
+                                    },
+                                    local_job_id: row.item_id,
+                                    title: row.title,
+                                    description: row.description,
+                                    company: row.company,
+                                    age_min: row.age_min,
+                                    age_max: row.age_max,
+                                    marital_statuses: JSON.parse(row.marital_statuses),
+                                    salary_unit: row.salary_unit,
+                                    salary_min: row.salary_min,
+                                    salary_max: row.salary_max,
+                                    country: row.country,
+                                    state: row.state,
+                                    status: row.status,
+                                    short_code: BASE_URL + "/local-job/" + row.short_code,
+                                    is_bookmarked: Boolean(row.is_bookmarked),
+                                    images: row.images ? JSON.parse(row.images).map(image => ({
+                                        ...image,
+                                        image_url: MEDIA_BASE_URL + "/" + image.image_url
+                                    })) : [],
+                                    location: row.longitude ? {
                                         longitude: row.longitude,
                                         latitude: row.latitude,
                                         geo: row.geo,
                                         location_type: row.location_type
-                                    }
-                                    : null
-
-                        };
-                    } catch (error) {
-                        throw new Error("Error processing service data");
-                    }
-                }else if(row.type == 'used_product_listing'){
-                    try {
-                        const publisher_id = row.publisher_id;
-                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
-                        if (!result) {
-                            throw new Error("Failed to retrieve published services of the user");
+                                    } : null
+                                };
+                            } catch (error) {
+                                throw new Error("Error processing service data");
+                            }
                         }
-                        items[itemId] = {
-                            type:'used_product_listing',
-                            user: {
-                                user_id: row.publisher_id,
-                                first_name: row.publisher_first_name,
-                                last_name: row.publisher_last_name,
-                                email: row.publisher_email,
-                                is_email_verified: !!row.publisher_email_verified,
-                                profile_pic_url: row.publisher_profile_pic_url
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                    : null,
-
-                                profile_pic_url_96x96: row.publisher_profile_pic_url
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                    : null,
-                                online: Boolean(row.user_online_status),
-                                created_at: new Date(row.publisher_created_at).getFullYear().toString()
-                            },
-                            created_used_product_listings: result,
-                            product_id: row.item_id,
-                            name: row.name,
-                            description: row.description,
-                            price: row.price,
-                            price_unit: row.price_unit,
-                            country: row.country,
-                            state: row.state,
-                            status: row.status,
-                            short_code: BASE_URL + "/service/" + row.short_code,
-
-                            images: row.images ? JSON.parse(row.images).map(image => ({
-                                ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url // Prepend the base URL to the image URL
-                            })) : [],
-
-                            is_bookmarked: Boolean(row.is_bookmarked),
-                            bookmarked_at: row.bookmarked_at,
-                            location:
-                                row.longitude &&
-                                    row.latitude &&
-                                    row.geo &&
-                                    row.location_type
-                                    ? {
-                                        longitude: row.longitude,
-                                        latitude: row.latitude,
-                                        geo: row.geo,
-                                        location_type: row.location_type
-                                    }
-                                    : null
-                        };
-                    } catch (error) {
-                        console.error(error);
-                        throw new Error("Error processing service data");
                     }
-                }else if(row.type =='local_job'){
-                    try {
-                        items[itemId] = {
-                            type:"local_job",
-                            user: {
-                                user_id: row.publisher_id,
-                                first_name: row.publisher_first_name,
-                                last_name: row.publisher_last_name,
-                                email: row.publisher_email,
-                                is_email_verified: !!row.publisher_email_verified,
-                                profile_pic_url: row.publisher_profile_pic_url
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
-                                    : null,
-                                profile_pic_url_96x96: row.publisher_profile_pic_url_96x96
-                                    ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
-                                    : null,
-                                created_at: new Date(row.publisher_created_at).getFullYear().toString(),
-                            },
-                            local_job_id: row.item_id,
-                            title: row.title,
-                            description: row.description,
-                            company: row.company,
-                            age_min: row.age_min,
-                            age_max: row.age_max,
-                            marital_statuses: JSON.parse(row.marital_statuses),
-                            salary_unit: row.salary_unit,
-                            salary_min: row.salary_min,
-                            salary_max: row.salary_max,
-                            country: row.country,
-                            state: row.state,
-                            status: row.status,
-                            short_code: BASE_URL + "/local-job/" + row.short_code,
-                            is_bookmarked: Boolean(row.is_bookmarked),
-                            images: row.images ? JSON.parse(row.images).map(image => ({
-                                ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url
-                            })) : [],
-                            location: row.longitude ? {
-                                longitude: row.longitude,
-                                latitude: row.latitude,
-                                geo: row.geo,
-                                location_type: row.location_type
-                            } : null
-                        };
-                    } catch (error) {
-                        throw new Error("Error processing service data");
+
+                    console.log(index);
+
+                    if (index == results.length - 1) lastItem = {
+                        bookmarked_at: row.bookmarked_at,
+                        p_type: row.p_type,
+                        id: row.id
                     }
                 }
-            }
-            
-            console.log(index);
-
-            if (index == results.length - 1) lastItem = {
-                bookmarked_at: row.bookmarked_at,
-                p_type: row.p_type,
-                id: row.id
-            }
-        });
+            })();
 
         const allItems = Object.values(items)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
