@@ -77,241 +77,244 @@ class App {
         );
         if (userCheckResult.length === 0) throw new Error('User is not exist.');
 
-        let query = `
-        SELECT * FROM (
-            SELECT 'service' AS type, s.service_id AS item_id, s.id as id, 0 as p_type,
-          
-                s.service_id AS service_id,
-                s.title,
-                s.short_description,
-                s.long_description,
-                i.industry_id AS industry,
-                s.status,
-                        s.short_code,
-                           s.country,
-                            s.state, 
-    
-                       COALESCE(
-                CONCAT('[', 
-                    GROUP_CONCAT(
-                        DISTINCT CASE 
-                            WHEN si.id IS NOT NULL THEN JSON_OBJECT(
-                                'image_id', si.id,
-                                'image_url', si.image_url,
-                                'width', si.width,
-                                'height', si.height,
-                                'size', si.size,
-                                'format', si.format
-                            )
-                        END
-                        ORDER BY si.created_at DESC
-                    ), 
-                ']'), '[]') AS images,
-            
-                COALESCE(
-        CONCAT('[', 
-            GROUP_CONCAT(
-                DISTINCT CASE 
-                    WHEN sp.id IS NOT NULL THEN JSON_OBJECT(
-                        'plan_id', sp.id,
-                        'plan_name', sp.name,
-                        'plan_description', sp.description,
-                        'plan_price', sp.price,
-                        'price_unit', sp.price_unit,
-                        'plan_features', sp.features,
-                        'plan_delivery_time', sp.delivery_time,
-                        'duration_unit', sp.duration_unit
-                    )
-                END
-                ORDER BY sp.created_at ASC  -- Order by plan_id in ascending order
-            ), 
-        ']'), '[]') AS plans,  -- Ensure it returns an empty array if no plans
-        
-           
-          CASE
-            WHEN st.thumbnail_id IS NOT NULL THEN 
-                JSON_OBJECT(
-                    'id', st.thumbnail_id,
-                    'url', st.image_url,
-                    'width', st.width,
-                    'height', st.height,
-                    'size', st.size,
-                    'format', st.format
-                )
-            ELSE
-                NULL  -- Return null if no result is found
+        let query = `SELECT * FROM (
+    -- Services
+    SELECT
+        'service' AS type,
+        s.service_id AS item_id,
+        s.id AS id,
+        0 AS p_type,
+        s.service_id AS service_id,
+        s.title,
+        s.short_description,
+        s.long_description,
+        i.industry_id AS industry,
+        s.status,
+        s.short_code,
+        s.country,
+        s.state,
+        COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN si.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', si.id,
+                            'image_url', si.image_url,
+                            'width', si.width,
+                            'height', si.height,
+                            'size', si.size,
+                            'format', si.format
+                        )
+                    END
+                    ORDER BY si.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+        COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN sp.id IS NOT NULL THEN JSON_OBJECT(
+                            'plan_id', sp.id,
+                            'plan_name', sp.name,
+                            'plan_description', sp.description,
+                            'plan_price', sp.price,
+                            'price_unit', sp.price_unit,
+                            'plan_features', sp.features,
+                            'plan_delivery_time', sp.delivery_time,
+                            'duration_unit', sp.duration_unit
+                        )
+                    END
+                    ORDER BY sp.created_at ASC
+                ), 
+            ']'), '[]') AS plans,
+        CASE
+            WHEN st.thumbnail_id IS NOT NULL THEN JSON_OBJECT(
+                'id', st.thumbnail_id,
+                'url', st.image_url,
+                'width', st.width,
+                'height', st.height,
+                'size', st.size,
+                'format', st.format
+            )
+            ELSE NULL
         END AS thumbnail,
-     
-    
-                u.user_id AS publisher_id,
-                u.first_name AS publisher_first_name,
-                u.last_name AS publisher_last_name,
-                u.email AS publisher_email,
-                u.is_email_verified AS publisher_email_verified,
-                u.profile_pic_url AS publisher_profile_pic_url,
-                u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS publisher_created_at,
-    
-        -- User online status (0 = offline, 1 = online)
+        u.user_id AS publisher_id,
+        u.first_name AS publisher_first_name,
+        u.last_name AS publisher_last_name,
+        u.email AS publisher_email,
+        u.is_email_verified AS publisher_email_verified,
+        u.profile_pic_url AS publisher_profile_pic_url,
+        u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
+        u.created_at AS publisher_created_at,
         ci.online AS user_online_status,
-    
-                CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-    
-                ub.created_at As bookmarked_at
-    
-            FROM
-                services s
-            LEFT JOIN
-                service_images si ON s.service_id = si.service_id
-            LEFT JOIN
-                service_plans sp ON s.service_id = sp.service_id
-    
-            LEFT JOIN service_thumbnail st ON s.service_id = st.service_id
-    
-            INNER JOIN
-                users u ON s.created_by = u.user_id
-            INNER JOIN
-                industries i ON s.industry = i.industry_id
-            LEFT JOIN
-                user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
-    
-                LEFT JOIN
-        chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
-        
-                GROUP BY service_id 
-    
-            UNION ALL
-            
-            SELECT 'used_product_listing' AS type,
-             s.product_id AS item_id, s.id as id, 1 as p_type,
-                s.product_id AS product_id,
-                s.name,
-                s.description,
-                s.price,
-                s.price_unit,
-                s.status,
-                        s.short_code,
-                           s.country,
-                            s.state, 
-    
-                       COALESCE(
-                CONCAT('[', 
-                    GROUP_CONCAT(
-                        DISTINCT CASE 
-                            WHEN si.id IS NOT NULL THEN JSON_OBJECT(
-                                'image_id', si.id,
-                                'image_url', si.image_url,
-                                'width', si.width,
-                                'height', si.height,
-                                'size', si.size,
-                                'format', si.format
-                            )
-                        END
-                        ORDER BY si.created_at DESC
-                    ), 
-                ']'), '[]') AS images,
-    
-                u.user_id AS publisher_id,
-                u.first_name AS publisher_first_name,
-                u.last_name AS publisher_last_name,
-                u.email AS publisher_email,
-                u.is_email_verified AS publisher_email_verified,
-                u.profile_pic_url AS publisher_profile_pic_url,
-                u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                            u.created_at AS publisher_created_at,
-    
-        -- User online status (0 = offline, 1 = online)
+        CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+        ub.created_at AS bookmarked_at,
+
+        -- Columns for union consistency
+        NULL AS product_id,
+        NULL AS name,
+        NULL AS description,
+        NULL AS price,
+        NULL AS price_unit,
+        NULL AS company,
+        NULL AS age_min,
+        NULL AS age_max,
+        NULL AS marital_statuses,
+        NULL AS salary_unit,
+        NULL AS salary_min,
+        NULL AS salary_max,
+        NULL AS local_job_id
+
+    FROM services s
+    LEFT JOIN service_images si ON s.service_id = si.service_id
+    LEFT JOIN service_plans sp ON s.service_id = sp.service_id
+    LEFT JOIN service_thumbnail st ON s.service_id = st.service_id
+    INNER JOIN users u ON s.created_by = u.user_id
+    INNER JOIN industries i ON s.industry = i.industry_id
+    LEFT JOIN user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
+    LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    GROUP BY s.service_id
+
+    UNION ALL
+
+    -- Used product listings
+    SELECT
+        'used_product_listing' AS type,
+        s.product_id AS item_id,
+        s.id AS id,
+        1 AS p_type,
+        NULL AS service_id,
+        NULL AS title,
+        NULL AS short_description,
+        NULL AS long_description,
+        NULL AS industry,
+        s.status,
+        s.short_code,
+        s.country,
+        s.state,
+        COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN si.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', si.id,
+                            'image_url', si.image_url,
+                            'width', si.width,
+                            'height', si.height,
+                            'size', si.size,
+                            'format', si.format
+                        )
+                    END
+                    ORDER BY si.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+        NULL AS plans,
+        NULL AS thumbnail,
+        u.user_id AS publisher_id,
+        u.first_name AS publisher_first_name,
+        u.last_name AS publisher_last_name,
+        u.email AS publisher_email,
+        u.is_email_verified AS publisher_email_verified,
+        u.profile_pic_url AS publisher_profile_pic_url,
+        u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
+        u.created_at AS publisher_created_at,
         ci.online AS user_online_status,
-    
-                CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+        CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+        ub.created_at AS bookmarked_at,
 
-                ub.created_at As bookmarked_at
+        s.product_id AS product_id,
+        s.name,
+        s.description,
+        s.price,
+        s.price_unit,
+        NULL AS company,
+        NULL AS age_min,
+        NULL AS age_max,
+        NULL AS marital_statuses,
+        NULL AS salary_unit,
+        NULL AS salary_min,
+        NULL AS salary_max,
+        NULL AS local_job_id
 
-            FROM
-                used_product_listings s
-            LEFT JOIN
-                used_product_listing_images si ON s.product_id = si.product_id
-        
-            INNER JOIN
-                users u ON s.created_by = u.user_id
-       
-            LEFT JOIN
-                user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
-    
-                LEFT JOIN
-        chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
-       
-                GROUP BY product_id
-            
-            UNION ALL
-            
-            SELECT 'local_job' AS type, l.local_job_id AS item_id, l.id as id, 2 as p_type, 
+    FROM used_product_listings s
+    LEFT JOIN used_product_listing_images si ON s.product_id = si.product_id
+    INNER JOIN users u ON s.created_by = u.user_id
+    LEFT JOIN user_bookmark_used_product_listings ub ON s.product_id = ub.product_id AND ub.user_id = ?
+    LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    GROUP BY s.product_id
 
-                    l.local_job_id AS local_job_id,
-                    l.title,
-                    l.description,
-                    l.company,
-                    l.age_min,
-                    l.age_max,
-                    l.marital_statuses,
-                    l.salary_unit,
-                    l.salary_min,
-                    l.salary_max,
-                    l.status,
-                            l.short_code,
-                               l.country,
-                                l.state, 
-        
-                           COALESCE(
-                    CONCAT('[', 
-                        GROUP_CONCAT(
-                            DISTINCT CASE 
-                                WHEN li.id IS NOT NULL THEN JSON_OBJECT(
-                                    'image_id', li.id,
-                                    'image_url', li.image_url,
-                                    'width', li.width,
-                                    'height', li.height,
-                                    'size', li.size,
-                                    'format', li.format
-                                )
-                            END
-                            ORDER BY li.created_at DESC
-                        ), 
-                    ']'), '[]') AS images,
-        
-                    u.user_id AS publisher_id,
-                    u.first_name AS publisher_first_name,
-                    u.last_name AS publisher_last_name,
-                    u.email AS publisher_email,
-                    u.is_email_verified AS publisher_email_verified,
-                    u.profile_pic_url AS publisher_profile_pic_url,
-                    u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
-                                u.created_at AS publisher_created_at,
-        
-            -- User online status (0 = offline, 1 = online)
-            ci.online AS user_online_status,
-        
-                    CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-    
-                    ub.created_at As bookmarked_at
-                FROM
-                    local_jobs l
-                    
-                LEFT JOIN
-                    local_job_images li ON l.local_job_id = li.local_job_id
-            
-                INNER JOIN
-                    users u ON l.created_by = u.user_id
-                   
-                    LEFT JOIN
-            chat_info ci ON u.user_id = ci.user_id  
-    
-                LEFT JOIN
-                    user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
-    
-                GROUP BY local_job_id
-           
-        ) AS all_bookmarks`;
+    UNION ALL
+
+    -- Local jobs
+    SELECT
+        'local_job' AS type,
+        l.local_job_id AS item_id,
+        l.id AS id,
+        2 AS p_type,
+        NULL AS service_id,
+        l.title,
+        NULL AS short_description,
+        NULL AS long_description,
+        NULL AS industry,
+        l.status,
+        l.short_code,
+        l.country,
+        l.state,
+        COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN li.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', li.id,
+                            'image_url', li.image_url,
+                            'width', li.width,
+                            'height', li.height,
+                            'size', li.size,
+                            'format', li.format
+                        )
+                    END
+                    ORDER BY li.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+        NULL AS plans,
+        NULL AS thumbnail,
+        u.user_id AS publisher_id,
+        u.first_name AS publisher_first_name,
+        u.last_name AS publisher_last_name,
+        u.email AS publisher_email,
+        u.is_email_verified AS publisher_email_verified,
+        u.profile_pic_url AS publisher_profile_pic_url,
+        u.profile_pic_url_96x96 AS publisher_profile_pic_url_96x96,
+        u.created_at AS publisher_created_at,
+        ci.online AS user_online_status,
+        CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+        ub.created_at AS bookmarked_at,
+
+        NULL AS product_id,
+        NULL AS name,
+        NULL AS description,
+        NULL AS price,
+        NULL AS price_unit,
+        l.company,
+        l.age_min,
+        l.age_max,
+        l.marital_statuses,
+        l.salary_unit,
+        l.salary_min,
+        l.salary_max,
+        l.local_job_id AS local_job_id
+
+    FROM local_jobs l
+    LEFT JOIN local_job_images li ON l.local_job_id = li.local_job_id
+    INNER JOIN users u ON l.created_by = u.user_id
+    LEFT JOIN user_bookmark_local_jobs ub ON l.local_job_id = ub.local_job_id AND ub.user_id = ?
+    LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    GROUP BY l.local_job_id
+
+) AS all_bookmarks
+ORDER BY all_bookmarks.bookmarked_at DESC, all_bookmarks.p_type ASC, all_bookmarks.id ASC
+LIMIT ?
+`;
         const params = [userId, userId, userId];
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
