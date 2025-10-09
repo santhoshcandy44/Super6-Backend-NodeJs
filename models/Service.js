@@ -371,12 +371,9 @@ WHERE
                     params.push(
                         payload.distance,
                         payload.distance,
-                        payload.total_relevance,
                         payload.distance,
-                        payload.total_relevance,
                         payload.created_at,
                         payload.distance,
-                        payload.total_relevance,
                         payload.created_at,
                         payload.id
                     );
