@@ -523,12 +523,12 @@ class App {
                         throw new Error("Error processing service data");
                     }
                 }
-                 
-                if (index == results.length - 1) lastItem = {
-                    bookmarked_at: row.bookmarked_at,
-                    p_type: row.p_type,
-                    id: row.id
-                }
+            }
+            
+            if (index == results.length - 1) lastItem = {
+                bookmarked_at: row.bookmarked_at,
+                p_type: row.p_type,
+                id: row.id
             }
         });
 
