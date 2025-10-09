@@ -345,13 +345,13 @@ WHERE
     sl.latitude BETWEEN -90 AND 90
     AND sl.longitude BETWEEN -180 AND 180
     
-
+   
 
 `;
 
                 params = [
                     userId, userLon, userLat,
-                    userId, userLat, userLon,
+                    userId
                 ];
 
                 if (payload) {
