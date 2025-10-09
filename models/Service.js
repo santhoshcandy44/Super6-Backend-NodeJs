@@ -416,6 +416,7 @@ WHERE
                         s.short_code,
                            s.country,
                         s.state, 
+                        s.created-at,
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -534,16 +535,26 @@ END AS thumbnail,
                     userId
                 ];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+                
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-
-                query += ` AND s.id > ?`;
-                params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
@@ -566,7 +577,10 @@ END AS thumbnail,
                 }
 
                 query += ` ORDER BY
-                            total_relevance DESC
+                            total_relevance DESC,
+                            s.created_at DESC,
+                            s.id ASC
+
                         LIMIT ?`;
 
                 params.push(pageSize);
@@ -583,6 +597,7 @@ END AS thumbnail,
                     s.short_code,
                        s.country,
                         s.state, 
+                        s.created_at,
 
                      (SELECT COUNT(ui.industry_id)
      FROM user_industries ui
@@ -695,17 +710,10 @@ END AS thumbnail,
 
                 let params = [userId, userId, userId, userId];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                }
+                
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
 
-                query += ` GROUP BY service_id LIMIT ?`;
+                query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id LIMIT ?`;
                 params.push(pageSize);
             }
         }
