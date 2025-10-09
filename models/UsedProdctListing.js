@@ -1579,8 +1579,7 @@ distance LIMIT ?`;
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
         if (payload) {
-            console.log(payload);
-            query += ' p.created_at < ? OR (p.created_at = ? AND p.id > ?)';
+            query += ' AND p.created_at < ? OR (p.created_at = ? AND p.id > ?)';
             params.push(payload.created_at, payload.id);
         }
 
@@ -1645,7 +1644,6 @@ distance LIMIT ?`;
             }
         });
 
-        console.log(lastItem);
         const allItems = Object.values(products)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
