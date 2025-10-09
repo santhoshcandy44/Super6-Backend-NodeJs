@@ -119,7 +119,7 @@ exports.getPublishedUsedProductListings = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
-        console.log(result);
+        console.log(next_token);
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);
