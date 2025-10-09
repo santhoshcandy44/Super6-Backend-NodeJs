@@ -1,7 +1,6 @@
 const db = require('../config/lts360JobsDatabase.js')
 const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
-const moment = require('moment');
 const ApplicantProfile = require('./ApplicantProfile.js');
 const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');

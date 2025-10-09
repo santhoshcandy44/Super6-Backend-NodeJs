@@ -6,6 +6,7 @@ const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/a
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
+const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class LocalJob {
     static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
