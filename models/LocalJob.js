@@ -2,7 +2,7 @@ const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
 const { formatMySQLDateToInitialCheckAt } = require(`./utils/dateUtils.js`)
-const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
@@ -150,7 +150,7 @@ class LocalJob {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query+=` AND l.id > ?`;
+                query += ` AND l.id > ?`;
                 params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
@@ -416,7 +416,7 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query+=` AND l.id > ?`;
+                query += ` AND l.id > ?`;
                 params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
@@ -532,9 +532,9 @@ WHERE
     FROM local_jobs l
     WHERE l.is_active = 1
       AND (l.user_id != ? OR ? IS NULL)`;
-               
+
                 params = [userId, userId];
-              
+
                 if (!lastTimeStamp) {
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 } else {
@@ -545,8 +545,8 @@ WHERE
                 query += `
     GROUP BY local_job_id
     LIMIT ?`;
-            
-    params.push(pageSize);
+
+                params.push(pageSize);
 
             }
         }
@@ -749,7 +749,7 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query+=` AND l.id > ?`;
+                query += ` AND l.id > ?`;
                 params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
@@ -976,7 +976,7 @@ WHERE
                     query += ` AND l.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                query+=` AND l.id > ?`;
+                query += ` AND l.id > ?`;
                 params.push(afterId);
 
                 if (lastTotalRelevance !== null) {
@@ -1245,7 +1245,7 @@ WHERE
                 for (const file of files) {
                     const newFileName = `${uuidv4()}-${file.originalname}`;
                     const s3Key = `media/${media_id}/local-jobs/${local_job_id}/${newFileName}`;
-                    
+
                     const uploadResult = await uploadToS3(file.buffer, s3Key, file.mimetype);
                     uploadedFiles.push(uploadResult.Key);
 
@@ -1412,7 +1412,7 @@ GROUP BY l.local_job_id;
                     for (const fileKey of uploadedFiles) {
                         await deleteFromS3(fileKey);
                     }
-                } catch (delError) {}
+                } catch (delError) { }
             }
             throw error;
         } finally {
@@ -1420,7 +1420,7 @@ GROUP BY l.local_job_id;
         }
     }
 
-    static async getPublishedLocalJobs(userId, afterId, pageSize, lastTimeStamp) {
+    static async getPublishedLocalJobs(userId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1445,6 +1445,7 @@ GROUP BY l.local_job_id;
                        l.country,
                         l.state, 
                     l.status,
+                    l.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -1478,29 +1479,23 @@ GROUP BY l.local_job_id;
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                     u.created_at AS publisher_created_at,
 
-                    CURRENT_TIMESTAMP as initial_check_at
-
                 FROM local_jobs l
                 LEFT JOIN local_job_images li ON l.local_job_id = li.local_job_id
                 LEFT JOIN local_job_location ll ON l.local_job_id = ll.local_job_id
             
                 INNER JOIN users u ON l.created_by = u.user_id
                 WHERE l.created_by = ?`;
-                
+
         const params = [userId];
 
-        if (!lastTimeStamp) {
-            query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` AND l.created_at < ?`;
-            params.push(lastTimeStamp);
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+        if (payload) {
+            query += ' AND (l.created_at < ? OR (l.created_at = ? AND l.id > ?))';
+            params.push(payload.created_at, payload.created_at, payload.id);
         }
 
-        query+=` AND l.id > ?`;
-        params.push(afterId);
-
         query += ` GROUP BY local_job_id 
-               ORDER BY l.created_at DESC
+               ORDER BY l.created_at DESC, l.id ASC
                LIMIT ?`;
 
         params.push(pageSize);
@@ -1511,8 +1506,9 @@ GROUP BY l.local_job_id;
         );
 
         const items = {};
+        let lastItem = null
 
-        results.forEach(row => {
+        results.forEach((row, index) => {
             const localJobId = row.local_job_id;
             if (!items[localJobId]) {
                 items[localJobId] = {
@@ -1557,10 +1553,29 @@ GROUP BY l.local_job_id;
                     } : null,
                     initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
                 };
+
+                if (index == results.length - 1) lastItem = {
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         });
 
-        return Object.values(items);
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async getLocalJobApplications(userId, localJobId, page, pageSize, lastTimeStamp) {
