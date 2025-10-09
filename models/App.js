@@ -478,7 +478,7 @@ class App {
                 }else if(row.type =='local_job'){
                     try {
                         items[itemId] = {
-                            item:"local_job",
+                            type:"local_job",
                             user: {
                                 user_id: row.publisher_id,
                                 first_name: row.publisher_first_name,
@@ -540,9 +540,6 @@ class App {
             p_type: row.p_type,
             id: row.id
         } : null;
-
-
-        console.log(allItems);
 
         return {
             data: allItems,
