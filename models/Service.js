@@ -8,7 +8,7 @@ const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Service {
-    static async getServices(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
+    static async getServices(userId, queryParam, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
@@ -723,7 +723,7 @@ END AS thumbnail,
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getServicesForUser(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, radius)
+                    return await this.getServices(userId, queryParam, pageSize, nextToken, radius)
                 }
             }
         }
