@@ -343,7 +343,7 @@ class App {
         let lastItem = null;
         (async () => {
             for (let index = 0; index < results.length; index++) {
-
+                const row = results[index];
                 const itemId = `${row.type}_${row.item_id}`;
                 if (!items[itemId]) {
                     if (row.type == 'service') {
