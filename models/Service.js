@@ -390,7 +390,7 @@ WHERE
         distance
     LIMIT ?`;
 
-                params.push(radius, pageSize);
+                params.push(radius, 10);
                 console.log(params);
             }
         } else {
