@@ -237,7 +237,7 @@ class Service {
     s.status,
      s.short_code,
         s.country,
-           s.state, 
+                        s.state, 
      s.created_at,
 
                  COALESCE(
@@ -345,16 +345,19 @@ WHERE
     sl.latitude BETWEEN -90 AND 90
     AND sl.longitude BETWEEN -180 AND 180
     
-   
+    AND 
+    ? BETWEEN -90 AND 90
+    AND ? BETWEEN -180 AND 180 
 
-`;
+    AND (
+      (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
+      OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
                 params = [
-                    userId, userLon, userLat,
-                    userId
+                    userLon, userLat,
+                    userId, userLat, userLon,
+                    userId, userId
                 ];
-
-                console.log(params);
 
                 if (payload) {
                     query += `
@@ -380,13 +383,14 @@ WHERE
                     );
                 }
 
-    //             query += ` GROUP BY service_id HAVING
-    //     distance < ?
-    //     ORDER BY
-    //     distance
-    // LIMIT ?`;
 
-    //             params.push(radius, 10);
+                query += ` GROUP BY service_id HAVING
+        distance < ?
+        ORDER BY
+        distance
+    LIMIT ?`;
+
+                params.push(radius, 10);
             }
         } else {
             if (queryParam) {
