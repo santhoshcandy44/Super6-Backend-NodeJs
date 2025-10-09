@@ -825,7 +825,7 @@ END AS thumbnail,
 
                 if (index == results.length - 1) lastItem = {
                     distance: row.distance,
-                    total_relevance: row.total_relevance,
+                    total_relevance: row.total_relevance ?? null,
                     created_at: row.created_at,
                     id: row.id
                 }
