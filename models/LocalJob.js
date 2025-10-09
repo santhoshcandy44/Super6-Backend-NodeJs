@@ -1646,6 +1646,8 @@ GROUP BY l.local_job_id;
         );
 
         const items = {};
+        let lastItem = null
+        
         results.forEach((row, index) => {
             const applicantId = row.applicant_id;
             if (!items[applicantId]) {
