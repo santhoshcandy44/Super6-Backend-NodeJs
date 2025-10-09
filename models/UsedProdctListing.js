@@ -1576,8 +1576,8 @@ distance LIMIT ?`;
         `;
 
         const params = [userId];
-
         const payload = nextToken ? decodeCursor(nextToken) : null;
+
         if (payload) {
             query += ' AND (p.created_at < ? OR (p.created_at = ? AND p.id > ?))';
             params.push(payload.created_at, payload.created_at, payload.id);

@@ -2,7 +2,7 @@ const db = require('../config/database')
 const sharp = require('sharp');
 const he = require('he');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config');
-const { uploadToS3, deleteFromS3, deleteDirectoryFromS3} = require('../config/awsS3.js')
+const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 
@@ -174,7 +174,7 @@ class Service {
                 } else {
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
-                
+
                 query += ` AND s.id > ?`;
                 params.push(afterId);
 
@@ -514,7 +514,7 @@ END AS thumbnail,
                     query += ` AND s.created_at < CURRENT_TIMESTAMP`;
                 }
 
-                
+
                 query += ` AND s.id > ?`;
                 params.push(afterId);
 
@@ -804,7 +804,7 @@ END AS thumbnail,
         const connection = await db.getConnection();
 
         let query, params;
-        var radius = initialRadius; 
+        var radius = initialRadius;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
@@ -950,7 +950,7 @@ END AS thumbnail,
 
                 if (industryIds && industryIds.length > 0) {
                     const industryList = industryIds.join(', ');
-                    query += ` AND s.industry IN (${industryList})`; 
+                    query += ` AND s.industry IN (${industryList})`;
                 }
 
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
@@ -961,7 +961,7 @@ END AS thumbnail,
                 } else {
                     query += `AND s.created_at < CURRENT_TIMESTAMP`;
                 }
-                
+
                 query += ` AND s.id > ?`;
                 params.push(afterId);
 
@@ -975,22 +975,22 @@ END AS thumbnail,
                         (total_relevance = ? AND distance <= ?) 
                         OR (total_relevance < ? AND distance <= ?)  
                     ) `;
-                     params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
                 } else {
                     query += ` GROUP BY service_id HAVING
                         distance < ? AND (
                             title_relevance > 0 OR
                             short_description_relevance > 0 OR
                             long_description_relevance > 0
-                        )`;                        
-                    params.push(radius);   
+                        )`;
+                    params.push(radius);
                 }
 
                 query += ` ORDER BY
                         distance ASC,
                         total_relevance DESC
                     LIMIT ?`;
-                 
+
                 params.push(pageSize);
             } else {
                 query = `
@@ -1107,8 +1107,8 @@ WHERE
     AND ? BETWEEN -180 AND 180`;
 
                 if (industryIds && industryIds.length > 0) {
-                    const industryList = industryIds.join(', '); 
-                    query += ` AND s.industry IN (${industryList})`;  
+                    const industryList = industryIds.join(', ');
+                    query += ` AND s.industry IN (${industryList})`;
                 }
 
                 params = [userLon, userLat, userLat, userLon];
@@ -1119,16 +1119,16 @@ WHERE
                     query += ` AND s.created_at < ?`;
                     params.push(lastTimeStamp);
                 }
-                
+
                 query += ` AND s.id > ?`;
                 params.push(afterId);
 
                 query += ` GROUP BY service_id HAVING
     distance < ?
     ORDER BY
-distance LIMIT ?`; 
-                 params.push(radius, pageSize);
-                
+distance LIMIT ?`;
+                params.push(radius, pageSize);
+
             }
         } else {
             if (queryParam) {
@@ -1260,8 +1260,8 @@ distance LIMIT ?`;
                         AND sl.longitude BETWEEN -180 AND 180 `;
 
                 if (industryIds && industryIds.length > 0) {
-                    const industryList = industryIds.join(', '); 
-                    query += ` AND s.industry IN (${industryList})`; 
+                    const industryList = industryIds.join(', ');
+                    query += ` AND s.industry IN (${industryList})`;
                 }
 
                 params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam]
@@ -1300,7 +1300,7 @@ distance LIMIT ?`;
                         total_relevance DESC
                     LIMIT ?`;
 
-                params.push(pageSize);    
+                params.push(pageSize);
             } else {
                 query = `
                 SELECT
@@ -1410,11 +1410,11 @@ END AS thumbnail,
                     sl.latitude BETWEEN -90 AND 90
                     AND sl.longitude BETWEEN -180 AND 180`;
 
-                params = [];    
+                params = [];
 
                 if (industryIds && industryIds.length > 0) {
-                    const industryList = industryIds.join(', '); 
-                    query += ` AND s.industry IN (${industryList})`; 
+                    const industryList = industryIds.join(', ');
+                    query += ` AND s.industry IN (${industryList})`;
                 }
 
                 if (!lastTimeStamp) {
@@ -1423,7 +1423,7 @@ END AS thumbnail,
                 } else {
                     query += ` AND s.created_at < ?`;
                 }
-                
+
                 query += ` AND s.id > ?`;
                 params.push(afterId);
 
@@ -1472,7 +1472,7 @@ END AS thumbnail,
                                     ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                                     : null,
                                 online: Boolean(row.user_online_status),
-                                created_at:  new Date(row.publisher_created_at).getFullYear().toString(),
+                                created_at: new Date(row.publisher_created_at).getFullYear().toString(),
                             },
 
                             created_services: result,
@@ -1487,7 +1487,7 @@ END AS thumbnail,
                             status: row.status,
                             images: row.images ? JSON.parse(row.images).map(image => ({
                                 ...image,
-                                image_url: MEDIA_BASE_URL + "/" + image.image_url 
+                                image_url: MEDIA_BASE_URL + "/" + image.image_url
                             })) : [],
 
                             plans: row.plans
@@ -1502,7 +1502,7 @@ END AS thumbnail,
                             short_code: BASE_URL + "/service/" + row.short_code,
                             thumbnail: row.thumbnail ? {
                                 ...JSON.parse(row.thumbnail),
-                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url 
+                                url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
                             initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
@@ -1664,7 +1664,7 @@ END AS thumbnail,
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
                         online: Boolean(row.user_online_status),
-                        created_at:  new Date(row.publisher_created_at).getFullYear().toString()
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
 
                     },
                     id: row.id,
@@ -1685,7 +1685,7 @@ END AS thumbnail,
 
                     images: row.images ? JSON.parse(row.images).map(image => ({
                         ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url 
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
                     })) : [],
 
                     plans: row.plans
@@ -1713,7 +1713,7 @@ END AS thumbnail,
         return Object.values(services);
     }
 
-    static async getUserPublishedServices(userId, afterId, pageSize, lastTimeStamp) {
+    static async getUserPublishedServices(userId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [userId]
@@ -1733,6 +1733,8 @@ END AS thumbnail,
                     s.short_code,
                        s.country,
                         s.state, 
+                        s.created_at,
+                    
     
                  COALESCE(
             CONCAT('[', 
@@ -1817,21 +1819,18 @@ END AS thumbnail,
                 INNER JOIN users u ON s.created_by = u.user_id
                 WHERE s.created_by = ?`;
 
-                
+
         const params = [userId];
 
-        if (!lastTimeStamp) {
-            query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-        } else {
-            query += ` AND s.created_at < ?`;
-            params.push(lastTimeStamp);
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
+        if (payload) {
+            query += ' AND (s.created_at < ? OR (s.created_at = ? AND s.id > ?))';
+            params.push(payload.created_at, payload.created_at, payload.id);
         }
 
-        query += ` AND s.id > ?`;
-        params.push(afterId);
-
         query += ` GROUP BY service_id 
-               ORDER BY s.created_at DESC
+               ORDER BY s.created_at DESC, s.id ASC
                LIMIT ?`;
 
         params.push(pageSize);
@@ -1839,8 +1838,9 @@ END AS thumbnail,
         const [results] = await db.execute(query, params);
 
         const services = {};
+        let lastItem = null
 
-        results.forEach(row => {
+        results.forEach((row, index) => {
             const serviceId = row.service_id;
             if (!services[serviceId]) {
                 services[serviceId] = {
@@ -1857,7 +1857,7 @@ END AS thumbnail,
                         profile_pic_url_96x96: row.publisher_profile_pic_url
                             ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
                             : null,
-                        created_at:  new Date(row.publisher_created_at).getFullYear().toString()
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
                     id: row.id,
                     service_id: serviceId,
@@ -1876,7 +1876,7 @@ END AS thumbnail,
 
                     images: row.images ? JSON.parse(row.images).map(image => ({
                         ...image,
-                        image_url: MEDIA_BASE_URL + "/" + image.image_url 
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
                     })) : [],
 
                     plans: row.plans
@@ -1895,13 +1895,31 @@ END AS thumbnail,
                             geo: row.geo,
                             location_type: row.location_type
                         }
-                        : null,
-
-                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)    
+                        : null
                 };
+
+                if (index == results.length - 1) lastItem = {
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         });
-        return Object.values(services);
+
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans_json, files, locationJson) {
@@ -1953,11 +1971,11 @@ END AS thumbnail,
 
                 const metadata = await sharp(file.buffer).metadata();
                 image_urls.push({
-                    url: s3Key,  
-                    width: metadata.width,       
-                    height: metadata.height,     
-                    size: file.size,            
-                    format: metadata.format,    
+                    url: s3Key,
+                    width: metadata.width,
+                    height: metadata.height,
+                    size: file.size,
+                    format: metadata.format,
                 });
 
             }
@@ -2027,14 +2045,14 @@ END AS thumbnail,
             return { success: true, service_id };
         } catch (error) {
             if (connection) {
-                await connection.rollback(); 
+                await connection.rollback();
                 try {
                     for (const fileKey of uploadedFiles) {
                         await deleteFromS3(fileKey);
                     }
-                } catch (deleteError) {}
+                } catch (deleteError) { }
             }
-            throw error; 
+            throw error;
         } finally {
             if (connection) {
                 connection.release();
@@ -2397,7 +2415,7 @@ END AS thumbnail,
                 if (oldS3Key) {
                     try {
                         await deleteFromS3(oldS3Key);
-                    } catch (err) {  }
+                    } catch (err) { }
                 }
 
                 const [output] = await connection.execute(
@@ -2453,7 +2471,7 @@ END AS thumbnail,
 
             try {
                 await deleteFromS3(s3Key);
-            } catch (err) {}
+            } catch (err) { }
             return {
                 success: true,
                 message: 'Image deleted successfully'
@@ -2469,7 +2487,7 @@ END AS thumbnail,
 
     static async updateThumbnail(user_id, service_id, imageId, file) {
         let connection;
-        let s3Key;  
+        let s3Key;
 
         try {
             connection = await db.getConnection();
@@ -2500,7 +2518,7 @@ END AS thumbnail,
                         contentType = 'image/gif';
                         break;
                     default:
-                        contentType = file.mimetype;  
+                        contentType = file.mimetype;
                         break;
                 }
 
@@ -2529,7 +2547,7 @@ END AS thumbnail,
                 );
 
                 await connection.commit();
-                const insertedId = result.insertId; 
+                const insertedId = result.insertId;
 
                 const [output] = await connection.execute(
                     `SELECT * FROM service_thumbnail WHERE service_id = ? AND thumbnail_id = ?`,
@@ -2549,7 +2567,7 @@ END AS thumbnail,
                 }
 
                 const oldImageUrl = rows[0].image_url;
-                const oldS3Key = oldImageUrl.replace(BASE_URL, ''); 
+                const oldS3Key = oldImageUrl.replace(BASE_URL, '');
 
                 const newFileName = `${uuidv4()}-${file.originalname}`;
 
@@ -2567,7 +2585,7 @@ END AS thumbnail,
                         contentType = 'image/gif';
                         break;
                     default:
-                        contentType = file.mimetype;  
+                        contentType = file.mimetype;
                         break;
                 }
 
@@ -2609,10 +2627,10 @@ END AS thumbnail,
                 if (s3Key) {
                     try {
                         await deleteFromS3(s3Key);
-                    } catch (err) {}
+                    } catch (err) { }
                 }
             }
-            throw error;  
+            throw error;
         } finally {
             if (connection) {
                 await connection.release();
@@ -2846,7 +2864,7 @@ END AS thumbnail,
             const s3Key = 'media/' + media_id.toString() + '/services/' + service_id.toString();
 
             await deleteDirectoryFromS3(s3Key);
-    
+
             await connection.commit();
             return { status: 'success', message: 'Service and related data deleted successfully' };
         } catch (error) {
