@@ -335,12 +335,6 @@ class App {
 
         const [results] = await db.execute(query, params);
 
-        if (results.length === 0) return {
-            data: [],
-            next_token: null,
-            previous_token: null
-        };
-
         const items = [];
         let lastItem = null;
 
@@ -544,9 +538,7 @@ class App {
             p_type: row.p_type,
             id: row.id
         } : null;
-
-        console.log(lastItem);
-
+        
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(

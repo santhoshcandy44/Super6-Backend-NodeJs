@@ -47,6 +47,8 @@ class Service {
                         s.short_code,
                         s.country,
                         s.state, 
+                        s.created_at,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -119,7 +121,6 @@ class Service {
                                 ci.online AS user_online_status,
 
                         CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                         ST_Distance_Sphere(
                             POINT(?, ?),
@@ -169,15 +170,31 @@ class Service {
                     userId, userLat, userLon
                 ];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                }
+                const payload = nextToken ? decodeCursor(nextToken) : null;
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
+                if (payload) {
+                    query += `
+                        AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
 
                 if (lastTotalRelevance !== null) {
                     query += ` GROUP BY service_id HAVING
@@ -202,7 +219,9 @@ class Service {
 
                 query += ` ORDER BY
                             distance ASC,
-                            total_relevance DESC
+                            total_relevance DESC,
+                            s.created_at DESC,
+                            s.id ASC
                         LIMIT ?`;
 
                 params.push(pageSize);
@@ -220,10 +239,7 @@ class Service {
      s.short_code,
         s.country,
                         s.state, 
-
-                        (SELECT COUNT(ui.industry_id)
-     FROM user_industries ui
-     WHERE ui.user_id = ? ) AS industries_count, 
+     s.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -297,7 +313,6 @@ END AS thumbnail,
     ci.online AS user_online_status,
 
     CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-    CURRENT_TIMESTAMP AS initial_check_at,
 
     
      ST_Distance_Sphere(
@@ -345,15 +360,33 @@ WHERE
                     userId, userId
                 ];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+
+                const payload = nextToken ? decodeCursor(nextToken) : null;
+
+                if (payload) {
+                    query += `
+                        AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
 
                 query += ` GROUP BY service_id HAVING
         distance < ?
@@ -464,7 +497,6 @@ END AS thumbnail,
 
                             
                         CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
 
                         -- Full-text search relevance scores
@@ -640,7 +672,6 @@ END AS thumbnail,
     ci.online AS user_online_status, 
 
                             CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at
 
 
                 FROM
@@ -698,9 +729,10 @@ END AS thumbnail,
         }
 
         const services = {};
+        let lastItem = null
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; i < results.length; i++) {
                 const serviceId = row.service_id;
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
@@ -743,7 +775,6 @@ END AS thumbnail,
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
                             created_services: result,
-                            id: row.id,
                             service_id: serviceId,
                             title: row.title,
                             short_description: row.short_description,
@@ -773,7 +804,6 @@ END AS thumbnail,
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
 
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
                             industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
                             is_bookmarked: Boolean(row.is_bookmarked),
@@ -792,11 +822,35 @@ END AS thumbnail,
                         throw new Error("Error processing service data");
                     }
                 }
+
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance,
+                    total_relevance: row.total_relevance,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
 
         await connection.release();
-        return Object.values(services);
+
+        console.log(lastItem);
+
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async getGuestServices(userId, queryParam, afterId, pageSize, lastTimeStamp,
@@ -904,8 +958,6 @@ END AS thumbnail,
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                         u.created_at AS publisher_created_at,
-
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                            -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -1073,8 +1125,6 @@ END AS thumbnail,
     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
     u.created_at AS publisher_created_at,
 
-    
-    CURRENT_TIMESTAMP AS initial_check_at,
     ci.online AS user_online_status,
     
      ST_Distance_Sphere(
@@ -1226,7 +1276,7 @@ distance LIMIT ?`;
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                             u.created_at AS publisher_created_at,
-                        CURRENT_TIMESTAMP AS initial_check_at,
+
                             ci.online AS user_online_status,
 
                         -- Full-text search relevance scores
@@ -1505,7 +1555,6 @@ END AS thumbnail,
                                 ...JSON.parse(row.thumbnail),
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                             total_relevance: row.total_relevance,
 
                             industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
