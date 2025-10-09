@@ -336,7 +336,6 @@ class App {
             previous_token: null
         };
 
-
         const items = [];
 
         let lastItem = null
@@ -531,7 +530,6 @@ class App {
             }
         });
 
-
         const allItems = Object.values(items)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
@@ -540,6 +538,9 @@ class App {
             p_type: row.p_type,
             id: row.id
         } : null;
+
+
+        console.log(allItems);
 
         return {
             data: allItems,
