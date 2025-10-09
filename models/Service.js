@@ -354,6 +354,8 @@ WHERE
                     userId
                 ];
 
+                console.log(params);
+
                 if (payload) {
                     query += `
                         AND (
