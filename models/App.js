@@ -339,9 +339,9 @@ class App {
         };
 
         const items = [];
-
         let lastItem = null;
-        (async () => {
+
+        await (async () => {
             for (let index = 0; index < results.length; index++) {
                 const row = results[index];
                 const itemId = `${row.type}_${row.item_id}`;
@@ -525,9 +525,6 @@ class App {
                         }
                     }
                 }
-
-                console.log(index);
-
                 if (index == results.length - 1) lastItem = {
                     bookmarked_at: row.bookmarked_at,
                     p_type: row.p_type,
