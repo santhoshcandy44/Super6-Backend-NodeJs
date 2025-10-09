@@ -95,6 +95,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Published local jobs retrieved successfully", result);      
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
