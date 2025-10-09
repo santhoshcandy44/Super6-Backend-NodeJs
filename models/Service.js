@@ -4,7 +4,6 @@ const he = require('he');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
-const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Service {
@@ -722,7 +721,7 @@ END AS thumbnail,
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getServices(userId, queryParam, pageSize, nextToken, radius)
+                    return await this.getServices(userId, queryParam, lastTotalRelevance, pageSize, nextToken, radius)
                 }
             }
         }
