@@ -342,7 +342,7 @@ class App {
 
         let lastItem = null
 
-        results.forEach(async (row, index) => {
+        bookmarkRows.forEach(async (row, index) => {
             const itemId = `${row.type}_${row.item_id}`;
             if (!items[itemId]) {
                 if(row.type == 'service'){
