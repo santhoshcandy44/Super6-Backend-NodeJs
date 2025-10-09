@@ -383,7 +383,6 @@ WHERE
                     );
                 }
 
-
                 query += ` GROUP BY service_id HAVING
         distance < ?
         ORDER BY
@@ -391,7 +390,6 @@ WHERE
     LIMIT ?`;
 
                 params.push(radius, 10);
-                console.log(params);
             }
         } else {
             if (queryParam) {
