@@ -172,8 +172,8 @@ class App {
     INNER JOIN users u ON s.created_by = u.user_id
     INNER JOIN industries i ON s.industry = i.industry_id
     LEFT JOIN user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
-    WHERE ub.user_id = ?
     LEFT JOIN chat_info ci ON u.user_id = ci.user_id
+    WHERE ub.user_id = ?
     GROUP BY s.service_id
 
     UNION ALL
