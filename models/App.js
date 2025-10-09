@@ -312,8 +312,6 @@ class App {
     GROUP BY l.local_job_id
 
 ) AS all_bookmarks
-ORDER BY all_bookmarks.bookmarked_at DESC, all_bookmarks.p_type ASC, all_bookmarks.id ASC
-LIMIT ?
 `;
         const params = [userId, userId, userId];
 
