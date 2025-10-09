@@ -345,9 +345,7 @@ WHERE
     sl.latitude BETWEEN -90 AND 90
     AND sl.longitude BETWEEN -180 AND 180
     
-    AND 
-    ? BETWEEN -90 AND 90
-    AND ? BETWEEN -180 AND 180 
+
 
 `;
 
