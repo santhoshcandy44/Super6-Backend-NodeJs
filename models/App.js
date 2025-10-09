@@ -525,7 +525,6 @@ class App {
                 }
             }
             
-            console.log(index);
             console.log(results.length);
 
             if (index == results.length - 1) lastItem = {
