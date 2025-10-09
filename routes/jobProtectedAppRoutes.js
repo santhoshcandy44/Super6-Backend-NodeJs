@@ -644,20 +644,14 @@ router.get('/saved-jobs/:user_id(\\d+)',
   authenticateToken,
   [
     param('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
-    query('after_id').optional().isInt().withMessage('After id must be a valid integer').toInt(),
-    query('page_size').optional().isInt().withMessage('Page size must be a valid integer').toInt(),
-    query('last_timestamp')
+    
+    query('next_token')
       .optional()
-      .isString().withMessage('Last Timestamp must be a valid string format')
-      .trim()
-      .custom((value) => {
-        const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-        if (!timestampRegex.test(value)) {
-          throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-        }
-        return true;
-      })
-      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
+      .isString().withMessage('Next token must be a valid string'),
+
+    query('previous_token')
+      .optional()
+      .isString().withMessage('Previous token must be a valid string')
   ],
   jobsProtectedController.getSavedJobs
 );

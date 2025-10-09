@@ -109,14 +109,14 @@ exports.getSavedJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { after_id, page_size, last_timestamp } = req.query;
-        const queryAfterId = after_id ? after_id : -1;
-        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
+        const {page_size, next_token} = req.query;
+        const nextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 30;
-        const result = await Job.getSavedJobs(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp);
+        const result = await Job.getSavedJobs(user_id, PAGE_SIZE, nextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve saved jobs");
         }
+        console.log(result);
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result)
     } catch (error) {
         console.log(error);

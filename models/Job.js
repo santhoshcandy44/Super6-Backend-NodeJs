@@ -4,6 +4,7 @@ const { MEDIA_BASE_URL } = require('../config/config.js');
 const moment = require('moment');
 const ApplicantProfile = require('./ApplicantProfile.js');
 const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
+const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Job {
   static async getJobPostings(userId,
@@ -1792,8 +1793,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
   }
 
-  static async getSavedJobs(userId, afterId, pageSize, lastTimeStamp) {
-
+  static async getSavedJobs(userId, pageSize, nextToken) {
     let query = `SELECT
      j.id,
      j.job_id,
@@ -1877,19 +1877,14 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
  WHERE ub.external_user_id = ? GROUP BY j.job_id`
 
     const params = [userId, userId, userId]
-
-    if (lastTimeStamp != null) {
-      query += ` AND j.posted_at < ?`;
-      params.push(lastTimeStamp);
-    } else {
-      query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
+    const payload = nextToken ? decodeCursor(nextToken) : null;
+    if (payload) {
+      query += ' j.posted_at < ? OR (j.posted_at = ? AND j.id > ?)';
+      params.push(payload.created_at, payload.id);
     }
 
-    query += ' AND j.id > ?';
-    params.push(afterId);
-
     query += ` ORDER BY
-  j.posted_at DESC
+  j.posted_at DESC, j.id ASC
 LIMIT ?`;
 
     params.push(pageSize);
@@ -1897,108 +1892,123 @@ LIMIT ?`;
     const [results] = await db.execute(query, params);
 
     const jobs = {};
+    let lastItem = null
     await (async () => {
-      for (const row of results) {
+      for (let i = 0; i < results.length; i++) {
+        const row = results[i];
         const job_id = row.id;
         if (!jobs[job_id]) {
-          try {
-            jobs[job_id] = {
-              id: row.id,
-              job_id: row.job_id,
-              title: row.title,
-              work_mode: row.work_mode,
-              location: row.location,
-              description: row.description,
-              education: row.education,
-              experience_type: row.experience_type,
-              experience_range_min: row.experience_range_min,
-              experience_range_max: row.experience_range_max,
-              experience_fixed: row.experience_fixed,
+          jobs[job_id] = {
+            job_id: row.job_id,
+            title: row.title,
+            work_mode: row.work_mode,
+            location: row.location,
+            description: row.description,
+            education: row.education,
+            experience_type: row.experience_type,
+            experience_range_min: row.experience_range_min,
+            experience_range_max: row.experience_range_max,
+            experience_fixed: row.experience_fixed,
 
-              salary_min: row.salary_min,
-              salary_max: row.salary_max,
-              salary_min_formatted: await this.formatSalaryWithSettings(row.salary_min, row.salary_currency, row.currencySymbol),
-              salary_max_formatted: await this.formatSalaryWithSettings(row.salary_max, row.salary_currency, row.currencySymbol),
-              salary_not_disclosed: Boolean(row.salary_not_disclosed),
+            salary_min: row.salary_min,
+            salary_max: row.salary_max,
+            salary_min_formatted: await this.formatSalaryWithSettings(row.salary_min, row.salary_currency, row.currencySymbol),
+            salary_max_formatted: await this.formatSalaryWithSettings(row.salary_max, row.salary_currency, row.currencySymbol),
+            salary_not_disclosed: Boolean(row.salary_not_disclosed),
 
-              salary_currency: row.salary_currency,
-              must_have_skills: (() => {
-                try {
-                  const parsed = JSON.parse(row.must_have_skills);
-                  return Array.isArray(parsed) ? parsed.map(String) : [];
-                } catch {
-                  return [];
-                }
-              })(),
-              good_to_have_skills: (() => {
-                try {
-                  const parsed = JSON.parse(row.good_to_have_skills);
-                  return Array.isArray(parsed) ? parsed.map(String) : [];
-                } catch {
-                  return [];
-                }
-              })(),
-              industry_type: row.industry,
-              department: row.department,
-              role: row.role,
-              employment_type: row.employment_type,
-              vacancies: row.vacancies,
-              highlights: (() => {
-                try {
-                  const parsed = JSON.parse(row.highlights);
-                  return Array.isArray(parsed) ? parsed.map(String) : [];
-                } catch {
-                  return [];
-                }
-              })(),
-              posted_by: row.posted_by_id,
-              posted_at: row.posted_at,
-              expiry_date: row.expiry_date,
-              // status: row.status,
-              // approval_status: row.approval_status,
-              slug: MEDIA_BASE_URL + '/job/' + row.slug,
+            salary_currency: row.salary_currency,
+            must_have_skills: (() => {
+              try {
+                const parsed = JSON.parse(row.must_have_skills);
+                return Array.isArray(parsed) ? parsed.map(String) : [];
+              } catch {
+                return [];
+              }
+            })(),
+            good_to_have_skills: (() => {
+              try {
+                const parsed = JSON.parse(row.good_to_have_skills);
+                return Array.isArray(parsed) ? parsed.map(String) : [];
+              } catch {
+                return [];
+              }
+            })(),
+            industry_type: row.industry,
+            department: row.department,
+            role: row.role,
+            employment_type: row.employment_type,
+            vacancies: row.vacancies,
+            highlights: (() => {
+              try {
+                const parsed = JSON.parse(row.highlights);
+                return Array.isArray(parsed) ? parsed.map(String) : [];
+              } catch {
+                return [];
+              }
+            })(),
+            posted_by: row.posted_by_id,
+            posted_at: row.posted_at,
+            expiry_date: row.expiry_date,
+            // status: row.status,
+            // approval_status: row.approval_status,
+            slug: MEDIA_BASE_URL + '/job/' + row.slug,
 
-              organization_id: row.organization_id,
+            organization_id: row.organization_id,
 
-              organization: {
-                id: row.organization_id,
-                name: row.organization_name,
-                logo: row.organization_logo,
-                email: row.organization_email,
-                address: row.organization_address,
-                website: row.website,
-                country: row.country,
-                state: row.state,
-                city: row.city,
-                postal_code: row.postal_code,
-              },
+            organization: {
+              id: row.organization_id,
+              name: row.organization_name,
+              logo: row.organization_logo,
+              email: row.organization_email,
+              address: row.organization_address,
+              website: row.website,
+              country: row.country,
+              state: row.state,
+              city: row.city,
+              postal_code: row.postal_code,
+            },
 
-              recruiter: {
-                id: row.posted_by_id,
-                first_name: row.first_name,
-                last_name: row.last_name,
-                email: row.recruiter_email,
-                role: row.recruiter_role,
-                company: row.company,
-                phone: row.phone,
-                profile_picture: row.profile_picture,
-                bio: row.bio,
-                years_of_experience: row.years_of_experience,
-                is_verified: !!row.is_verified,
-              },
-              is_applied: !!row.is_applied,
-              is_bookmarked: !!row.is_bookmarked,
-              initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-              total_relevance: row.total_relevance ? row._total_relevance : null
-            };
-          } catch (error) {
-            throw new Error("Error processing job posting data");
+            recruiter: {
+              id: row.posted_by_id,
+              first_name: row.first_name,
+              last_name: row.last_name,
+              email: row.recruiter_email,
+              role: row.recruiter_role,
+              company: row.company,
+              phone: row.phone,
+              profile_picture: row.profile_picture,
+              bio: row.bio,
+              years_of_experience: row.years_of_experience,
+              is_verified: !!row.is_verified,
+            },
+            is_applied: !!row.is_applied,
+            is_bookmarked: !!row.is_bookmarked,
+            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
+            total_relevance: row.total_relevance ? row._total_relevance : null
+          };
+          if (i == results.length - 1) lastItem = {
+            created_at: row.posted_at,
+            id: row.id
           }
         }
       }
     })();
 
-    return Object.values(jobs);
+    const allItems = Object.values(jobs)
+    const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+    const hasPreviousPage = payload != null;
+    const payloadToEncode = hasNextPage && lastItem ? {
+      created_at: lastItem.posted_at,
+      id: lastItem.id
+    } : null;
+
+    return {
+      data: allItems,
+      next_token: payloadToEncode ? encodeCursor(
+        payloadToEncode
+      ) : null,
+      previous_token: hasPreviousPage ? nextToken : null
+    };
   }
 
   static async formatSalaryWithSettings(salary, currencyType = 'INR', currencySymbol = '₹') {
