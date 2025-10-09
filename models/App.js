@@ -525,7 +525,7 @@ class App {
                 }
             }
             
-            console.log(results.length);
+            console.log(index);
 
             if (index == results.length - 1) lastItem = {
                 bookmarked_at: row.bookmarked_at,
