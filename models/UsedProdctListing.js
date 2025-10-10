@@ -24,6 +24,8 @@ class UsedProductListing {
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
+        console.log(payload);
+
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
@@ -597,8 +599,6 @@ WHERE
                         throw new Error("Error processing service data");
                     }
                 }
-
-                console.log(row.distance);
 
                 if (index == results.length - 1) lastItem = {
                     distance: row.distance ? row.distance : null,
