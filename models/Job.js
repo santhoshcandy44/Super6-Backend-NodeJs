@@ -701,6 +701,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const jobs = {};
+    let lastItem = null;
     await (async () => {
       for (let index = 0; index < results.length; index++) {
         const row = results[index];
