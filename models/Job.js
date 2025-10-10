@@ -354,14 +354,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         if (payload) {
           query += ` AND (
-                 (j.posted_at = ? AND j.id > ?)
+                 (j.posted_at = ?)
               )
           `;
 
           params.push(
           
             payload.posted_at,
-            payload.id
           );
 
           console.log(params);
