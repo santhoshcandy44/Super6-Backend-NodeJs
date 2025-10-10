@@ -294,7 +294,7 @@ class App {
 
         NULL AS product_id,
         NULL AS name,
-        NULL AS description,
+        l.description,
         NULL AS price,
         NULL AS price_unit,
         l.company,
