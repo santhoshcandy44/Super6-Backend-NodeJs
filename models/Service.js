@@ -2022,11 +2022,11 @@ END AS thumbnail,
                         }
                         : null
                 };
+            }
 
-                if (index == results.length - 1) lastItem = {
-                    created_at: row.created_at,
-                    id: row.id
-                }
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
             }
         });
 

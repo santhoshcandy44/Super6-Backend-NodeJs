@@ -132,7 +132,7 @@ exports.getPublishedServices = async (req, res) => {
         const {page_size, next_token} = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Service.getUserPublishedServices(user_id, 1, queryNextToken)
+        const result = await Service.getUserPublishedServices(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
