@@ -2021,10 +2021,10 @@ LIMIT ?`;
             is_applied: !!row.is_applied,
             is_bookmarked: !!row.is_bookmarked
           };
-          if (i == results.length - 1) lastItem = {
-            created_at: row.posted_at,
-            id: row.id
-          }
+        }
+        if (i == results.length - 1) lastItem = {
+          created_at: row.posted_at,
+          id: row.id
         }
       }
     })();
