@@ -1893,6 +1893,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
      ci.longitude,
 
      CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+
     ub.created_at As bookmarked_at,
 
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
@@ -1916,12 +1917,12 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
-      query += ' AND (j.bookmarked_at < ? OR (j.bookmarked_at = ? AND j.id > ?))';
+      query += ' AND (bookmarked_at < ? OR (bookmarked_at = ? AND j.id > ?))';
       params.push(payload.bookmarked_at, payload.bookmarked_at, payload.id);
     }
 
     query += ` GROUP BY j.job_id ORDER BY
-  j.bookmarked_at DESC, j.id ASC
+  bookmarked_at DESC, j.id ASC
 LIMIT ?`;
 
     params.push(pageSize);
