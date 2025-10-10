@@ -617,6 +617,8 @@ WHERE
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
+            distance: row.distance ? row.distance : null,
+            total_relevance: row.total_relevance ? row.total_relevance : null,
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
