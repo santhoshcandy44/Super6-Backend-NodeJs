@@ -1917,7 +1917,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
-      query += ' AND (bookmarked_at < ? OR (bookmarked_at = ? AND j.id > ?))';
+      query += ' HAVING (bookmarked_at < ? OR (bookmarked_at = ? AND j.id > ?))';
       params.push(payload.bookmarked_at, payload.bookmarked_at, payload.id);
     }
 
