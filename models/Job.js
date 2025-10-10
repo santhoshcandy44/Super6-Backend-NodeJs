@@ -1916,12 +1916,12 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
-      query += ' AND (j.posted_at < ? OR (j.posted_at = ? AND j.id > ?))';
-      params.push(payload.posted_at, payload.posted_at, payload.id);
+      query += ' AND (j.bookmarked_at < ? OR (j.bookmarked_at = ? AND j.id > ?))';
+      params.push(payload.bookmarked_at, payload.bookmarked_at, payload.id);
     }
 
     query += ` GROUP BY j.job_id ORDER BY
-  j.posted_at DESC, j.id ASC
+  j.bookmarked_at DESC, j.id ASC
 LIMIT ?`;
 
     params.push(pageSize);
@@ -2023,7 +2023,7 @@ LIMIT ?`;
           };
         }
         if (i == results.length - 1) lastItem = {
-          posted_at: row.posted_at,
+          bookmarked_at: row.bookmarked_at,
           id: row.id
         }
       }
@@ -2033,11 +2033,11 @@ LIMIT ?`;
     const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
     const hasPreviousPage = payload != null;
     const payloadToEncode = hasNextPage && lastItem ? {
-      posted_at: lastItem.posted_at,
+      bookmarked_at: lastItem.bookmarked_at,
       id: lastItem.id
     } : null;
 
-    console.log(userId);
+    console.log(lastItem);
 
     return {
       data: allItems,
