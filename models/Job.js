@@ -683,7 +683,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       }
     }
 
-    const [results] = await connection.execute(query, params);
+    const [results] = await rootDbconnection.execute(query, params);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
@@ -822,7 +822,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         id: lastItem.id
     } : null;
 
-    console.log(lastItem);
     return {
         data: allItems,
         next_token: payloadToEncode ? encodeCursor(
