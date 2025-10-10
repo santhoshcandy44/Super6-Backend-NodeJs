@@ -14,7 +14,7 @@ exports.getJobListings = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, s_latitude, s_longitude, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
-
+        console.log(req.query);
         const querySearch = !s ? '' : s;
 
         let industries = await JobIndustries.getIndustries(user_id);
