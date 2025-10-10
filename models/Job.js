@@ -30,7 +30,9 @@ class Job {
         ? { latitude: latitudeParam, longitude: longitudeParam }
         : userCoordsData || {};
 
-    if (userLat && userLon) {
+    // if (userLat && userLon) {
+      if (false) {
+
       if (queryParam) {
         // if (initialRadius == 50) {
         //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
