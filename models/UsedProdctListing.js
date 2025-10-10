@@ -523,8 +523,6 @@ WHERE
             }
         }
 
-        console.log(params);
-
         const [results] = await connection.execute(query, params);
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
@@ -610,6 +608,8 @@ WHERE
                 }
             }
         })();
+
+        console.log(lastItem);
 
         await connection.release();
 
