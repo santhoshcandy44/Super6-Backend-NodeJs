@@ -359,9 +359,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           `;
 
           params.push(
-            payload.distance,
-            payload.distance,
-            payload.posted_at,
+       
             payload.distance,
             payload.posted_at,
             payload.id
