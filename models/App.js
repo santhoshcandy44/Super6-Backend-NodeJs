@@ -541,7 +541,7 @@ class App {
 
         console.log(lastItem);
         return {
-            data: alItems,
+            data: allItems,
             next_token: payloadToEncode ? encodeCursor(
                 payloadToEncode
             ) : null,
