@@ -252,11 +252,10 @@ WHERE
 `
                 params = [userLon, userLat, userId, userLat, userLon];
 
+                query += ` GROUP BY product_id HAVING distance < ?`;
 
                 if (payload) {
-                    query += `
-
-                      AND (
+                    query += ` AND (
                             distance > ? 
                             OR (distance = ? AND s.created_at < ?) 
                             OR (distance = ? AND s.created_at = ? AND s.id > ?)
@@ -273,9 +272,6 @@ WHERE
                         payload.id
                     );
                 }
-
-
-                query += ` GROUP BY product_id HAVING distance < ?`;
 
                 params.push(radius);
 
