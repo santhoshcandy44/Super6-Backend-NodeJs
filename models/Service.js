@@ -371,7 +371,6 @@ WHERE
                     params.push(
                         payload.distance,
                         payload.distance,
-                        payload.distance,
                         payload.created_at,
                         payload.distance,
                         payload.created_at,
