@@ -522,11 +522,11 @@ class App {
                         }
                     }
                 }
-                if (index == results.length - 1) lastItem = {
-                    bookmarked_at: row.bookmarked_at,
-                    p_type: row.p_type,
-                    id: row.id
-                }
+            }
+            if (index == results.length - 1) lastItem = {
+                bookmarked_at: row.bookmarked_at,
+                p_type: row.p_type,
+                id: row.id
             }
         })();
 
@@ -534,10 +534,12 @@ class App {
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
-            bookmarked_at: row.bookmarked_at,
-            p_type: row.p_type,
-            id: row.id
+            bookmarked_at: lastItem.bookmarked_at,
+            p_type: lastItem.p_type,
+            id: lastItem.id
         } : null;
+
+        console.log(lastItem);
         
         return {
             data: allItems,
