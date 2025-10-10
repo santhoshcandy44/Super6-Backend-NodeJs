@@ -533,7 +533,7 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getUsedProductListingsForUser(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, radius)
+                    return await this.getUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, radius)
                 }
             }
         }
