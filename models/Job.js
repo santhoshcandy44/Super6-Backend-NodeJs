@@ -2037,7 +2037,8 @@ LIMIT ?`;
       id: lastItem.id
     } : null;
 
-    console.log(payloadToEncode);
+    console.log(userId);
+
     return {
       data: allItems,
       next_token: payloadToEncode ? encodeCursor(
