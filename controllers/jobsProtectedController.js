@@ -49,7 +49,7 @@ exports.getJobListings = async (req, res) => {
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const result = await Job.getJobPostings(user_id, decodedQuery, s_latitude, s_longitude, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, normalizedWorkModes, salaryMin, salaryMax);
-        if (!result) {
+        if (result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);

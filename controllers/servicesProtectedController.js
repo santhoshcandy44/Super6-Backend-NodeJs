@@ -12,7 +12,7 @@ exports.getServices = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, last_total_relevance, page_size, next_token } = req.query;
+        const { s, page_size, next_token } = req.query;
         const querySearch = !s ? '' : s;
         let industries = await Industries.getIndustries(user_id);
         industries = industries.filter((value) => 
@@ -26,11 +26,10 @@ exports.getServices = async (req, res) => {
                 null,
                 'EMPTY_SERVICE_INDUSTRIES');
         }
-        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
         const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Service.getServices(user_id, decodedQuery, queryLastTotalRelevance, PAGE_SIZE, queryNextToken);
+        const result = await Service.getServices(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -48,11 +47,9 @@ exports.getGuestServices = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id, s, after_id, page_size, industries, last_timestamp, last_total_relevance, latitude, longitude } = req.query;
+        const { user_id, s, latitude, longitude, industries, page_size, next_token} = req.query;
         const querySearch = !s ? '' : s;
-        const queryAfterId = !after_id ? -1 : after_id;
-        const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
-        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
+        const queryNextToken = !next_token ? null : next_token;
         const queryIndustries = !industries ? [] : industries;
         if (!querySearch && (!queryIndustries || queryIndustries.length === 0)) {
             return sendErrorResponse(
@@ -65,8 +62,7 @@ exports.getGuestServices = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
-        const result = await Service.getGuestServices(user_id, decodedQuery,
-            queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates, queryIndustries);
+        const result = await Service.getGuestServices(user_id, decodedQuery, coordinates, queryIndustries, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

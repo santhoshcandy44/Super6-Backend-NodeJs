@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Service {
-    static async getServices(userId, queryParam, lastTotalRelevance, pageSize, nextToken, initialRadius = 50) {
+    static async getServices(userId, queryParam, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
@@ -194,7 +194,7 @@ class Service {
                     );
                 }
 
-                if (lastTotalRelevance !== null) {
+                if (payload.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 distance < ? AND (
                                     title_relevance > 0 OR
@@ -204,7 +204,7 @@ class Service {
                                 (total_relevance = ? AND distance <= ?)
                                 OR (total_relevance < ? AND distance <= ?)
                             )`;
-                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
                     query += ` GROUP BY service_id HAVING
                                 distance < ? AND (
@@ -535,7 +535,7 @@ END AS thumbnail,
                     userId
                 ];
 
-                
+
                 if (payload) {
                     query += `
                         AND (
@@ -556,7 +556,7 @@ END AS thumbnail,
                 }
 
 
-                if (lastTotalRelevance !== null) {
+                if (payload.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 (
                                     title_relevance > 0 OR
@@ -566,7 +566,7 @@ END AS thumbnail,
                                     (total_relevance = ?)
                                     OR (total_relevance < ?)
                                 )`;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
                     query += ` GROUP BY service_id HAVING
                                 (
@@ -710,10 +710,23 @@ END AS thumbnail,
 
                 let params = [userId, userId, userId, userId];
 
-                
 
+                if (payload) {
+                    query += `
+                        AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
 
-                query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id LIMIT ?`;
+                    params.push(
+                        payload.created_at,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
+                query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(pageSize);
             }
         }
@@ -726,7 +739,7 @@ END AS thumbnail,
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getServices(userId, queryParam, lastTotalRelevance, pageSize, nextToken, radius)
+                    return await this.getServices(userId, queryParam, pageSize, nextToken, radius)
                 }
             }
         }
@@ -829,8 +842,8 @@ END AS thumbnail,
                 }
 
                 if (index == results.length - 1) lastItem = {
-                    distance: row.distance,
-                    total_relevance: row.total_relevance ?  row.total_relevance : null,
+                    distance: row.distance ?: row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
                     created_at: row.created_at,
                     id: row.id
                 }
@@ -839,7 +852,6 @@ END AS thumbnail,
 
         await connection.release();
 
-        console.log(lastItem);
 
         const allItems = Object.values(services)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
@@ -858,13 +870,16 @@ END AS thumbnail,
         };
     }
 
-    static async getGuestServices(userId, queryParam, afterId, pageSize, lastTimeStamp,
-        lastTotalRelevance = null, userCoordsData = null, industryIds = [], initialRadius = 50) {
+    static async getGuestServices(userId, queryParam,
+        userCoordsData, industryIds,
+        pageSize, nextToken, initialRadius = 50) {
 
         const connection = await db.getConnection();
 
         let query, params;
         var radius = initialRadius;
+
+        const payload = nextToken ? decodeCursor(nextToken) : null;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
@@ -894,6 +909,7 @@ END AS thumbnail,
                          s.short_code,
                             s.country,
                         s.state, 
+                        s.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -930,10 +946,6 @@ END AS thumbnail,
             ORDER BY sp.created_at ASC  -- Order by plan_id in ascending order
         ), 
     ']'), '[]') AS plans,  -- Ensure it returns an empty array if no plans
-
-
-
-
     
       CASE
         WHEN st.thumbnail_id IS NOT NULL THEN 
@@ -1012,18 +1024,32 @@ END AS thumbnail,
                 }
 
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
+                
+                if (payload) {
+                    query += `
+                        AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
 
-                if (lastTimeStamp != null) {
-                    query += `AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += `AND s.created_at < CURRENT_TIMESTAMP`;
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                         distance < ? AND (
                             title_relevance > 0 OR
@@ -1033,7 +1059,7 @@ END AS thumbnail,
                         (total_relevance = ? AND distance <= ?) 
                         OR (total_relevance < ? AND distance <= ?)  
                     ) `;
-                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
                     query += ` GROUP BY service_id HAVING
                         distance < ? AND (
@@ -1046,7 +1072,9 @@ END AS thumbnail,
 
                 query += ` ORDER BY
                         distance ASC,
-                        total_relevance DESC
+                        total_relevance DESC,
+                        s.created_at,
+                        s.id
                     LIMIT ?`;
 
                 params.push(pageSize);
@@ -1063,6 +1091,8 @@ END AS thumbnail,
      s.short_code,
         s.country,
                         s.state, 
+                        s.creaetd_at,
+
                  COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1169,20 +1199,30 @@ WHERE
 
                 params = [userLon, userLat, userLat, userLon];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+        
+                if (payload) {
+                    query += `
+                        AND (
+                            distance > ? 
+                            OR (distance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
-
-                query += ` AND s.id > ?`;
-                params.push(afterId);
-
+              
                 query += ` GROUP BY service_id HAVING
     distance < ?
     ORDER BY
-distance LIMIT ?`;
+distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(radius, pageSize);
 
             }
@@ -1212,6 +1252,8 @@ distance LIMIT ?`;
                         s.short_code,
                            s.country,
                         s.state, 
+                        s.created_at,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1322,17 +1364,28 @@ distance LIMIT ?`;
 
                 params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam]
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                    params.push(lastTimeStamp);
+                
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ?
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
+              
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                         (
                             title_relevance > 0 OR
@@ -1342,7 +1395,7 @@ distance LIMIT ?`;
                         (total_relevance = ? )  -- Fetch records with the same relevance
                         OR (total_relevance < ?)  -- Fetch records with lower relevance
                     ) `;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
                     query += ` GROUP BY service_id HAVING
                         (
@@ -1353,7 +1406,9 @@ distance LIMIT ?`;
                 }
 
                 query += ` ORDER BY
-                        total_relevance DESC
+                        total_relevance DESC,
+                        s.created_at DESC,
+                        s.id ASC
                     LIMIT ?`;
 
                 params.push(pageSize);
@@ -1370,6 +1425,8 @@ distance LIMIT ?`;
                   s.short_code,
                      s.country,
                         s.state, 
+                        s.created_at,
+
                                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1473,17 +1530,22 @@ END AS thumbnail,
                     query += ` AND s.industry IN (${industryList})`;
                 }
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < ?`;
+                
+                if (payload) {
+                    query += `
+                        AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` AND s.id > ?`;
-                params.push(afterId);
-
-                query += ` GROUP BY service_id LIMIT ?`;
+                query += ` GROUP BY service_id ORDER BY s,created_at DESC, s.id ASC LIMIT ?`;
                 params.push(pageSize);
             }
         }
@@ -1495,15 +1557,17 @@ END AS thumbnail,
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getServicesForGuestUser(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, industryIds, radius)
+                    return await this.getGuestServices(userId, queryParam, userCoordsData, industryIds, nextToken, pageSize, radius)
                 }
             }
         }
 
         const services = {};
+        let lastItem = null
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; index < results.length; index++) {
+                const row = results[index];
                 const serviceId = row.service_id;
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
@@ -1581,11 +1645,31 @@ END AS thumbnail,
                         throw new Error("Error processing service data");
                     }
                 }
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance ?: row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
 
         await connection.release();
-        return Object.values(services);
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async getFeedUserPublishedServices(userId, serviceOwnerId, limit = 5) {
