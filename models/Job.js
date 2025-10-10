@@ -695,7 +695,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             queryParam,
             latitudeParam,
             longitudeParam,
-            afterId, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, radius)
+            pageSize, nextToken, filterWorkModes, salaryMin, salaryMax, radius)
         }
       }
     }
