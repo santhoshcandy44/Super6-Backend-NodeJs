@@ -217,8 +217,6 @@ class UsedProductListing {
     ci.online AS user_online_status,
 
     CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-    CURRENT_TIMESTAMP AS initial_check_at,
-
     
      ST_Distance_Sphere(
         POINT(?, ?),
@@ -586,8 +584,6 @@ WHERE
                             })) : [],
                             short_code: BASE_URL + "/used-product/" + row.short_code,
 
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-                            total_relevance: row.total_relevance,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
                             location: row.longitude && row.latitude && row.geo && row.location_type
@@ -603,6 +599,8 @@ WHERE
                         throw new Error("Error processing service data");
                     }
                 }
+
+                console.log(row.distance);
 
                 if (index == results.length - 1) lastItem = {
                     distance: row.distance ? row.distance : null,
