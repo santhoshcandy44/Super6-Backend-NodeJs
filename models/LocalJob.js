@@ -1756,7 +1756,7 @@ GROUP BY l.local_job_id;
             id: lastItem.id
         } : null;
 
-        console.log(lastItembug if);
+        console.log(lastItem);
 
         return {
             data: allItems,
