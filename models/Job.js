@@ -809,6 +809,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       }
     })();
 
+    await connection.release();
     await rootDbconnection.release();
     
     const allItems = Object.values(jobs)
