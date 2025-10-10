@@ -378,8 +378,6 @@ WHERE
                     );
                 }
 
-                console.log(pageSize);
-
                 query += ` GROUP BY service_id HAVING
         distance < ?
         ORDER BY
@@ -388,7 +386,7 @@ WHERE
         s.id ASC
     LIMIT ?`;
 
-                params.push(radius, 10);
+                params.push(radius, pageSize);
             }
         } else {
             if (queryParam) {
