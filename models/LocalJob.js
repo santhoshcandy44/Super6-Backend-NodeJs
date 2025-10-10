@@ -312,7 +312,7 @@ WHERE
                     query += ` AND (
                             distance > ? 
                             OR (distance = ? AND l.created_at < ?) 
-                            OR (distance = ? AND l.created_at = ? AND s.id > ?)
+                            OR (distance = ? AND l.created_at = ? AND l.id > ?)
                         )
                     `;
 
@@ -581,7 +581,7 @@ WHERE
                     query += `
                         AND (
                             l.created_at < ?
-                            OR (l.created_at = ? AND s.id > ?)
+                            OR (l.created_at = ? AND l.id > ?)
                         )
                     `;
 
