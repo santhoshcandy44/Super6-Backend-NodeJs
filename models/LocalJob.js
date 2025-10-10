@@ -447,8 +447,7 @@ WHERE
                 ];
 
 
-
-                if (payload.total_relevance) {
+                if (payload.?total_relevance) {
                     query += ` GROUP BY local_job_id HAVING
                                 (
                                     title_relevance > 0 OR
