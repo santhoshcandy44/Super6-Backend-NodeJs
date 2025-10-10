@@ -533,7 +533,6 @@ END AS thumbnail,
 
 
 
-
                 if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 (
