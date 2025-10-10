@@ -1738,12 +1738,12 @@ GROUP BY l.local_job_id;
                         created_at: new Date(row.applicant_created_at).getFullYear().toString()
                     }
                 };
-
-                if (index == results.length - 1) lastItem = {
-                    is_reviewed: row.is_reviewed,
-                    is_reviewed_at: row.is_reviewed_at,
-                    id: row.id
-                }
+            }
+            
+            if (index == results.length - 1) lastItem = {
+                is_reviewed: row.is_reviewed,
+                is_reviewed_at: row.is_reviewed_at,
+                id: row.id
             }
         });
 
