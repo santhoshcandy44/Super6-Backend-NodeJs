@@ -1742,7 +1742,7 @@ GROUP BY l.local_job_id;
 
             if (index == results.length - 1) lastItem = {
                 is_reviewed: row.is_reviewed,
-                is_reviewed_at: row.is_reviewed_at,
+                reviewed_at: row.reviewed_at,
                 id: row.id
             }
         });
@@ -1752,7 +1752,7 @@ GROUP BY l.local_job_id;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
             is_reviewed: lastItem.is_reviewed,
-            is_reviewed_at: lastItem.is_reviewed_at,
+            reviewed_at: lastItem.reviewed_at,
             id: lastItem.id
         } : null;
 
