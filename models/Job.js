@@ -683,14 +683,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       }
     }
 
-    const [results] = await rootDbconnection.execute(query, params);
-    console.log(results);
+    const [results] = await connection.execute(query, params);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
         if (radius < 500) {
           radius += 30;
-          await connection.release();
+          // await connection.release();
           await rootDbconnection.release();
           return await this.getJobPostings(userId,
             queryParam,
