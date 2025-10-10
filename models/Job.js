@@ -803,7 +803,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         if (index == results.length - 1) lastItem = {
           distance: row.distance ? row.distance : null,
           total_relevance: row.total_relevance ? row.total_relevance : null,
-          created_at: row.created_at,
+          posted_at: row.posted_at,
           id: row.id
         }
       }
@@ -817,7 +817,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const payloadToEncode = hasNextPage && lastItem ? {
         distance: lastItem.distance ? lastItem.distance : null,
         total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
-        created_at: lastItem.created_at,
+        posted_at: lastItem.posted_at,
         id: lastItem.id
     } : null;
 
