@@ -1912,7 +1912,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
  LEFT JOIN applications a ON j.job_id = a.job_id AND a.applicant_id = ap.applicant_id
  LEFT JOIN job_industries ji ON ji.industry_id = j.industry_id
 
- WHERE ub.external_user_id = ?`
+ WHERE ub.external_user_id = ? GROUP BY j.job_id `
 
     const params = [userId, userId, userId]
     const payload = nextToken ? decodeCursor(nextToken) : null;
@@ -1921,7 +1921,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       params.push(payload.bookmarked_at, payload.bookmarked_at, payload.id);
     }
 
-    query += ` GROUP BY j.job_id ORDER BY
+    query += ` ORDER BY
   bookmarked_at DESC, j.id ASC
 LIMIT ?`;
 
