@@ -1593,7 +1593,6 @@ GROUP BY l.local_job_id;
                             : null,
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
                     },
-                    id: row.id,
                     local_job_id: row.local_job_id,
                     title: row.title,
                     description: row.description,
@@ -1619,11 +1618,11 @@ GROUP BY l.local_job_id;
                         location_type: row.location_type
                     } : null
                 };
+            }
 
-                if (index == results.length - 1) lastItem = {
-                    created_at: row.created_at,
-                    id: row.id
-                }
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
             }
         });
 
