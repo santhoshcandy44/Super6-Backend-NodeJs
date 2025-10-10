@@ -357,10 +357,11 @@ WHERE
                     userId, userId
                 ];
 
-                if (payload) {
-                    query += `
+              query += ` GROUP BY service_id HAVING distance < ?`;
+              params.push(radius);
 
-                      AND (
+                if (payload) {
+                    query += ` AND (
                             distance > ? 
                             OR (distance = ? AND s.created_at < ?) 
                             OR (distance = ? AND s.created_at = ? AND s.id > ?)
@@ -386,7 +387,7 @@ WHERE
         s.id ASC
     LIMIT ?`;
 
-                params.push(radius, pageSize);
+                params.push(pageSize);
             }
         } else {
             if (queryParam) {
