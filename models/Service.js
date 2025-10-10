@@ -595,11 +595,6 @@ END AS thumbnail,
                         s.state, 
                         s.created_at,
 
-                     (SELECT COUNT(ui.industry_id)
-     FROM user_industries ui
-     WHERE ui.user_id = ? ) AS industries_count, 
-
-
                                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -816,8 +811,6 @@ END AS thumbnail,
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
 
-                            total_relevance: row.total_relevance,
-                            industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
                             location: row.longitude && row.latitude && row.geo && row.location_type
@@ -1619,9 +1612,6 @@ END AS thumbnail,
                                 ...JSON.parse(row.thumbnail),
                                 url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
                             } : null,
-                            total_relevance: row.total_relevance,
-
-                            industries_count: (row.industries_count === undefined || row.industries_count === null) ? -1 : row.industries_count,
 
                             is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
