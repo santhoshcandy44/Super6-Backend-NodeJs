@@ -595,6 +595,7 @@ END AS thumbnail,
                         s.state, 
                         s.created_at,
 
+
                                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
