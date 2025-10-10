@@ -1646,7 +1646,7 @@ END AS thumbnail,
                     }
                 }
                 if (index == results.length - 1) lastItem = {
-                    distance: row.distance ?: row.distance : null,
+                    distance: row.distance ? row.distance : null,
                     total_relevance: row.total_relevance ? row.total_relevance : null,
                     created_at: row.created_at,
                     id: row.id
