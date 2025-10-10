@@ -194,7 +194,7 @@ class Service {
                     );
                 }
 
-                if (payload.total_relevance) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 distance < ? AND (
                                     title_relevance > 0 OR
@@ -556,7 +556,7 @@ END AS thumbnail,
                 }
 
 
-                if (payload.total_relevance) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 (
                                     title_relevance > 0 OR
@@ -1049,7 +1049,7 @@ END AS thumbnail,
                     );
                 }
 
-                if (payload.total_relevance) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                         distance < ? AND (
                             title_relevance > 0 OR
@@ -1385,7 +1385,7 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                 }
               
 
-                if (payload.total_relevance) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                         (
                             title_relevance > 0 OR
