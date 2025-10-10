@@ -379,7 +379,7 @@ WHERE
                     );
                 }
 
-                query += ` bug fixeORDER BY
+                query += ` ORDER BY
         distance ASC,
         s.created_at DESC,
         s.id ASC
