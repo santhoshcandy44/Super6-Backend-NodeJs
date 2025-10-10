@@ -331,27 +331,26 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           userId
         ];
 
-        // if (filterWorkModes.length > 0) {
-        //   const placeholders = filterWorkModes.map(() => `?`).join(', ');
-        //   query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
-        //   params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
-        // }
+        if (filterWorkModes.length > 0) {
+          const placeholders = filterWorkModes.map(() => `?`).join(', ');
+          query += ` AND LOWER(j.work_mode) IN (${placeholders})`;
+          params.push(...filterWorkModes.map(mode => mode.toLowerCase()));
+        }
 
-        // if (salaryMin !== -1 && salaryMax !== -1) {
-        //   query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
-        //   params.push(salaryMin, salaryMax);
-        // } else if (salaryMin !== -1) {
-        //   query += ` AND j.salary_min >= ?`;
-        //   params.push(salaryMin);
-        // } else if (salaryMax !== -1) {
-        //   query += ` AND j.salary_max <= ?`;
-        //   params.push(salaryMax);
-        // }
+        if (salaryMin !== -1 && salaryMax !== -1) {
+          query += ` AND j.salary_min >= ? AND j.salary_max <= ?`;
+          params.push(salaryMin, salaryMax);
+        } else if (salaryMin !== -1) {
+          query += ` AND j.salary_min >= ?`;
+          params.push(salaryMin);
+        } else if (salaryMax !== -1) {
+          query += ` AND j.salary_max <= ?`;
+          params.push(salaryMax);
+        }
 
         query += ` GROUP BY j.job_id HAVING distance < ?`;
         params.push(radius);
 
-        console.log(payload);
 
         if (payload) {
           query += ` AND (
@@ -369,6 +368,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             payload.posted_at,
             payload.id
           );
+
+          console.log(params);
         }
 
         query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
