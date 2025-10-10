@@ -689,7 +689,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
       if (availableResults < pageSize) {
         if (radius < 500) {
           radius += 30;
-          // await connection.release();
+          await connection.release();
           await rootDbconnection.release();
           return await this.getJobPostings(userId,
             queryParam,
