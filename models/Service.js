@@ -378,6 +378,7 @@ WHERE
                     );
                 }
 
+                console.log(limit);
 
                 query += ` GROUP BY service_id HAVING
         distance < ?
