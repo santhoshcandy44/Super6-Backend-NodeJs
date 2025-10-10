@@ -10,8 +10,7 @@ class Job {
     queryParam,
     latitudeParam,
     longitudeParam,
-    afterId,
-    pageSize, lastTimeStamp, lastTotalRelevance = null,
+    pageSize, nextToken,
     filterWorkModes, salaryMin, salaryMax,
     initialRadius = 50) {
 
@@ -174,17 +173,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (lastTimeStamp != null) {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
-        } else {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        }
-
-        query += ' AND j.id > ?';
-        params.push(afterId);
-
-        if (lastTotalRelevance !== null) {
+        if (payload?.total_relevance) {
           query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
                         title_relevance > 0 OR
@@ -193,7 +182,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                         (total_relevance = ? AND distance <= ?) OR
                         (total_relevance < ? AND distance <= ?)
                     )`;
-          params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+          params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
         } else {
           query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
@@ -203,12 +192,37 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(radius);
         }
 
-        query += `
-          ORDER BY
+
+        if (payload) {
+          query += ` AND (
+                  distance > ? 
+                  OR (distance = ? AND total_relevance < ?) 
+                  OR (distance = ? AND total_relevance = ? AND j.posted_at < ?) 
+                  OR (distance = ? AND total_relevance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.distance,
+            payload.distance,
+            payload.total_relevance,
+            payload.distance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.distance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.id
+          );
+        }
+
+
+        query += ` ORDER BY
               distance ASC,
-              total_relevance DESC
-          LIMIT ?
-      `;
+              total_relevance DESC,
+              j.posted_at DESC,
+              j.id
+          LIMIT ?`;
         params.push(pageSize);
 
       }
@@ -334,20 +348,30 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (!lastTimeStamp) {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        } else {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
+        query += ` GROUP BY j.job_id HAVING distance < ?`;
+        params.push(radius);
+
+        if (payload) {
+          query += ` AND (
+                  distance > ? 
+                  OR (distance = ? AND j.posted_at < ?) 
+                  OR (distance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.distance,
+            payload.distance,
+            payload.posted_at,
+            payload.distance,
+            payload.posted_at,
+            payload.id
+          );
         }
 
-        query += `
-              GROUP BY j.job_id
-              HAVING distance < ?
-              ORDER BY distance ASC, j.posted_at DESC
-              LIMIT ?`;
+        query += ` ORDER BY distance ASC, j.posted_at DESC, j.id LIMIT ?`;
 
-        params.push(radius, pageSize);
+        params.push(pageSize);
       }
     } else {
       if (queryParam) {
@@ -390,14 +414,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.employment_type,
                     j.vacancies,
                     j.highlights,
-                    j.posted_at,
                     j.organization_id,
                     j.expiry_date,
                     j.status,
                     j.approval_status,
                     j.slug,
                     j.posted_by_id,
-        
+                    j.posted_at,        
                   
             -- Organization Info
             o.organization_name,
@@ -482,17 +505,9 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (lastTimeStamp != null) {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
-        } else {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        }
+  
 
-        query += ' AND j.id > ?';
-        params.push(afterId);
-
-        if (lastTotalRelevance !== null) {
+        if (payload?.total_relevance) {
           query += ` GROUP BY j.job_id HAVING (
                           title_relevance > 0 OR
                           description_relevance > 0
@@ -500,7 +515,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                           (total_relevance = ?) OR
                           (total_relevance < ? )
                       )`;
-          params.push(lastTotalRelevance, lastTotalRelevance);
+          params.push(payload.total_relevance, payload.total_relevance);
         } else {
           query += ` GROUP BY j.job_id HAVING (
                           title_relevance > 0 OR
@@ -508,9 +523,31 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                       )`;
         }
 
+        if (payload) {
+          query += `
+              AND (
+                  total_relevance < ? 
+                  OR (total_relevance = ? AND j.posted_at < ?) 
+                  OR (total_relevance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+              payload.total_relevance,
+              payload.total_relevance,
+              payload.posted_at,
+              payload.total_relevance,
+              payload.posted_at,
+              payload.id
+          );
+      }
+
+
         query += `
           ORDER BY
-              total_relevance DESC
+              total_relevance DESC,
+              j.posted_at DESC,
+              j.id ASC
           LIMIT ?
       `;
         params.push(pageSize);
@@ -541,13 +578,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.employment_type,
             j.vacancies,
             j.highlights,
-            j.posted_at,
             j.organization_id,
             j.expiry_date,
             j.status,
             j.approval_status,
             j.slug,
             j.posted_by_id,
+            j.posted_at,
 
             -- Organization Info
             o.organization_name,
@@ -620,16 +657,26 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (!lastTimeStamp) {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        } else {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
-        }
+        if (payload) {
+          query += `
+              AND (
+                  j.posted_at < ?
+                  OR (j.posted_at = ? AND j.id > ?)
+              )
+          `;
 
+          params.push(
+              payload.posted_at,
+              payload.posted_at,
+              payload.id
+          );
+      }
+
+      
         query += `
     GROUP BY j.job_id
-    ORDER BY j.posted_at DESC
+    ORDER BY j.posted_at DESC,
+    j.id ASC
     LIMIT ?
 `;
         params.push(pageSize);
@@ -645,7 +692,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
-          return await this.getJobPostingsUser(userId,
+          return await this.getJobPostings(userId,
             queryParam,
             latitudeParam,
             longitudeParam,
@@ -824,13 +871,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.employment_type,
                     j.vacancies,
                     j.highlights,
-                    j.posted_at,
                     j.organization_id,
                     j.expiry_date,
                     j.status,
                     j.approval_status,
                     j.slug,
                     j.posted_by_id,
+                    j.posted_at,
         
                   
             -- Organization Info
@@ -987,13 +1034,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.employment_type,
             j.vacancies,
             j.highlights,
-            j.posted_at,
             j.organization_id,
             j.expiry_date,
             j.status,
             j.approval_status,
             j.slug,
             j.posted_by_id,
+            j.posted_at,
 
             -- Organization Info
             o.organization_name,
@@ -1134,13 +1181,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.employment_type,
                     j.vacancies,
                     j.highlights,
-                    j.posted_at,
                     j.organization_id,
                     j.expiry_date,
                     j.status,
                     j.approval_status,
                     j.slug,
                     j.posted_by_id,
+                    j.posted_at,
         
                   
             -- Organization Info
@@ -1280,13 +1327,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             j.employment_type,
             j.vacancies,
             j.highlights,
-            j.posted_at,
             j.organization_id,
             j.expiry_date,
             j.status,
             j.approval_status,
             j.slug,
             j.posted_by_id,
+            j.posted_at,
 
             -- Organization Info
             o.organization_name,
@@ -1879,7 +1926,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     const payload = nextToken ? decodeCursor(nextToken) : null;
     if (payload) {
       query += ' AND (j.posted_at < ? OR (j.posted_at = ? AND j.id > ?))';
-      params.push(payload.created_at, payload.created_at, payload.id);
+      params.push(payload.posted_at, payload.posted_at, payload.id);
     }
 
     query += ` GROUP BY j.job_id ORDER BY
