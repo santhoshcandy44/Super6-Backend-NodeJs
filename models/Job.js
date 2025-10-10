@@ -351,6 +351,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         query += ` GROUP BY j.job_id HAVING distance < ?`;
         params.push(radius);
 
+        console.log(payload);
+
         if (payload) {
           query += ` AND (
                   distance > ? 
@@ -367,7 +369,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             payload.posted_at,
             payload.id
           );
-
         }
 
         query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
@@ -685,7 +686,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await connection.execute(query, params);
-    console.log(results);
 
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
