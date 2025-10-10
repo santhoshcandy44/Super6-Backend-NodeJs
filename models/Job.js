@@ -825,6 +825,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     } : null;
 
     console.log(allItems);
+
     return {
         data: allItems,
         next_token: payloadToEncode ? encodeCursor(
