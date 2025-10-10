@@ -15,16 +15,6 @@ router.get('/job-listings',
       .isInt().withMessage('Invalid user id format')
       .toInt(),
 
-    query('after_id')
-      .optional()
-      .isInt().withMessage('Invalid after id format')
-      .toInt(),
-
-    query('page_size')
-      .optional()
-      .isInt().withMessage('Invalid page size format')
-      .toInt(),
-
     query('s')
       .optional()
       .isString().withMessage('Query string must be a valid string format')
@@ -47,27 +37,18 @@ router.get('/job-listings',
       .trim()
       .escape(),
 
-    query('last_timestamp')
+    query('page_size')
       .optional()
-      .isString().withMessage('Last Timestamp must be a valid string format')
-      .trim()
-      .escape()
-      .custom((value, { req }) => {
-        const decodedValue = decodeURIComponent(value);
-        const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+      .isInt().withMessage('Invalid page size format')
+      .toInt(),
 
-        if (!timestampRegex.test(decodedValue)) {
-          throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-        }
-
-        // req.query.last_timestamp = decodedValue; 
-        return true;
-      })
-      .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
-
-    query('last_total_relevance')
+    query('next_token')
       .optional()
-      .isFloat().withMessage('Last total relevance must be a valid float format'),
+      .isString().withMessage('Next token must be a valid string'),
+
+    query('previous_token')
+      .optional()
+      .isString().withMessage('Previous token must be a valid string'),
 
     query('work_modes')
       .optional()
@@ -644,7 +625,12 @@ router.get('/saved-jobs/:user_id(\\d+)',
   authenticateToken,
   [
     param('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
-    
+
+    query('page_size')
+      .optional()
+      .isInt().withMessage('Invalid page size format')
+      .toInt(),
+
     query('next_token')
       .optional()
       .isString().withMessage('Next token must be a valid string'),
