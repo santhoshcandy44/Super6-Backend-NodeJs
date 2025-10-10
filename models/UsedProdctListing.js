@@ -250,9 +250,11 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
-                params = [userLon, userLat, userId, userLat, userLon];
+                params = [userLon, userLat, userId, userLat, userLon, userId];
 
                 query += ` GROUP BY product_id HAVING distance < ?`;
+
+                params.push(radius);
 
                 if (payload) {
                     query += ` AND (
@@ -272,8 +274,6 @@ WHERE
                         payload.id
                     );
                 }
-
-                params.push(radius);
 
                 query += ` ORDER BY distance ASC, s.created_at DESC, s.id DESC LIMIT ?`;
 
