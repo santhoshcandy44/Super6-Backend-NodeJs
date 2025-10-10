@@ -4,7 +4,6 @@ const he = require('he');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config.js');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
-const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class UsedProductListing {
@@ -24,8 +23,7 @@ class UsedProductListing {
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-        if(false){
+        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
 
@@ -90,7 +88,6 @@ class UsedProductListing {
                                 ci.online AS user_online_status,
 
                         CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                         ST_Distance_Sphere(
                             POINT(?, ?),
@@ -341,7 +338,6 @@ WHERE
 
                             
                         CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
 
                         -- Full-text search relevance scores
@@ -472,7 +468,6 @@ WHERE
     ci.online AS user_online_status, 
 
                             CASE WHEN ub.product_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                        CURRENT_TIMESTAMP AS initial_check_at
 
 
                 FROM
@@ -694,7 +689,6 @@ WHERE
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                         u.created_at AS publisher_created_at,
 
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                            -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -816,7 +810,6 @@ WHERE
     u.created_at AS publisher_created_at,
 
     
-    CURRENT_TIMESTAMP AS initial_check_at,
     ci.online AS user_online_status,
     
      ST_Distance_Sphere(
@@ -926,7 +919,6 @@ distance LIMIT ?`;
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                             u.created_at AS publisher_created_at,
-                        CURRENT_TIMESTAMP AS initial_check_at,
                             ci.online AS user_online_status,
 
                         -- Full-text search relevance scores
@@ -1137,9 +1129,6 @@ distance LIMIT ?`;
                             })) : [],
 
                             short_code: BASE_URL + "/used-product/" + row.short_code,
-
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-                            total_relevance: row.total_relevance,
 
                             is_bookmarked: Boolean(row.is_bookmarked),
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
@@ -1702,7 +1691,6 @@ distance LIMIT ?`;
                         }
                         : null,
                     is_bookmarked: Boolean(row.is_bookmarked),
-                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at)
                 };
 
                 if (index == results.length - 1) lastItem = {
