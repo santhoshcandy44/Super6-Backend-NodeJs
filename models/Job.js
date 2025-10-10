@@ -684,6 +684,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await rootDbconnection.execute(query, params);
+    console.log(results);
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
