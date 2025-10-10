@@ -691,6 +691,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
+          console.log("trip");
           return await this.getJobPostings(userId,
             queryParam,
             latitudeParam,
