@@ -9,7 +9,7 @@ const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class UsedProductListing {
 
-    static async getUsedProductListingsForUser(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
+    static async getUsedProductListings(userId, queryParam, pageSize, nextToken, initialRadius = 50) {
 
         const connection = await db.getConnection();
 
@@ -22,6 +22,7 @@ class UsedProductListing {
 
         let query, params;
         var radius = initialRadius;
+        const payload = nextToken ? decodeCursor(nextToken) : null;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
@@ -50,8 +51,9 @@ class UsedProductListing {
                         s.price_unit,
                         s.status,
                         s.short_code,
-                        s.state, 
                         s.country,
+                        s.state, 
+                        s.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -128,26 +130,40 @@ class UsedProductListing {
 
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+
+                if (payload) {
+                    query += `
+                        AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
-
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
-                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
                     query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0)`;
                     params.push(radius);
                 }
 
-                query += ` ORDER BY distance ASC, total_relevance DESC LIMIT ?`;
+                query += ` ORDER BY distance ASC, total_relevance DESC, s.created.at DESC, s.id ASC LIMIT ?`;
 
                 params.push(pageSize);
             } else {
@@ -163,6 +179,7 @@ class UsedProductListing {
      s.short_code,
         s.country,
                         s.state, 
+                        s.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -235,22 +252,34 @@ WHERE
 `
                 params = [userLon, userLat, userId, userLat, userLon];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ? `;
-                    params.push(lastTimeStamp);
+
+                if (payload) {
+                    query += `
+
+                      AND (
+                            distance > ? 
+                            OR (distance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.distance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
-
-                params.push(afterId);
 
                 query += ` GROUP BY product_id HAVING distance < ?`;
 
                 params.push(radius);
 
-                query += ` ORDER BY distance LIMIT ?`;
+                query += ` ORDER BY distance ASC, s.created_at DESC, s.id DESC LIMIT ?`;
 
                 params.push(pageSize);
             }
@@ -280,6 +309,8 @@ WHERE
                         s.short_code,
                            s.country,
                         s.state, 
+                        s.created_at,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -351,18 +382,27 @@ WHERE
 
                 params = [queryParam, queryParam, queryParam, queryParam, userId];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
-
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY product_id HAVING
                                 (
                                     name_relevance > 0 OR
@@ -371,7 +411,7 @@ WHERE
                                 (total_relevance = ? )
                                 OR (total_relevance < ?)
                             )`;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
                     query += ` GROUP BY product_id HAVING
                                 (
@@ -380,7 +420,8 @@ WHERE
                                 )`;
                 }
 
-                query += ` ORDER BY total_relevance DESC LIMIT ?`;
+                query += ` ORDER BY total_relevance DESC,    s.created_at DESC,
+                            s.id ASC LIMIT ?`;
                 params.push(pageSize);
 
             } else {
@@ -396,6 +437,7 @@ WHERE
                     s.short_code,
                        s.country,
                         s.state, 
+                        s.created_at,
 
                                      COALESCE(
             CONCAT('[', 
@@ -461,17 +503,24 @@ WHERE
                     sl.latitude BETWEEN -90 AND 90
                     AND sl.longitude BETWEEN -180 AND 180`;
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+                let params = [userId];
+
+                if (payload) {
+                    query += `
+                        AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.created_at,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
-                params.push(afterId);
-
-                query += ` GROUP BY product_id LIMIT ?`;
+                query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(pageSize);
             }
         }
@@ -489,19 +538,21 @@ WHERE
             }
         }
 
-        const services = {};
+        const items = {};
+        let lastItem = null
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; index < results.length; index++) {
+                const row = results[index];
                 const product_id = row.product_id;
-                if (!services[product_id]) {
+                if (!items[product_id]) {
                     const publisher_id = row.publisher_id;
                     try {
                         const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
                         if (!result) {
-                            throw new Error("Failed to retrieve published services of the user");
+                            throw new Error("Failed to retrieve published used product listings of the user");
                         }
-                        services[product_id] = {
+                        items[product_id] = {
                             user: {
                                 user_id: row.publisher_id,
                                 first_name: row.publisher_first_name,
@@ -518,7 +569,6 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
-                            id: row.id,
                             product_id: product_id,
                             created_used_product_listings: result,
                             name: row.name,
@@ -551,11 +601,33 @@ WHERE
                         throw new Error("Error processing service data");
                     }
                 }
+
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance ? row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
 
         await connection.release();
-        return Object.values(services);
+
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async guestGetUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp,

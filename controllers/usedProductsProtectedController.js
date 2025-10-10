@@ -2,7 +2,7 @@ const { validationResult } = require('express-validator');
 const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
 const UsedProductListing = require('../models/UsedProdctListing');
 
-exports.getUsedProductListingsForUser = async (req, res) => {
+exports.getUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -10,14 +10,12 @@ exports.getUsedProductListingsForUser = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { s, after_id, page_size, last_timestamp, last_total_relevance } = req.query;
+        const { s, page_size, next_token } = req.query;
         const querySearch = !s ? '' : s;
-        const queryAfterId = !after_id ? -1 : after_id;
-        const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
-        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
+        const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await UsedProductListing.getUsedProductListingsForUser(user_id, decodedQuery, queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance);
+        const result = await UsedProductListing.getUsedProductListings(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
         if (result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -28,23 +26,20 @@ exports.getUsedProductListingsForUser = async (req, res) => {
     }
 };
 
-exports.guestGetUsedProductListings = async (req, res) => {
+exports.getGuestUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError, errors.array());
         }
-        const { user_id, s, after_id, page_size, last_timestamp, last_total_relevance, latitude, longitude } = req.query;
+        const { user_id, s, latitude, longitude, next_token, page_size } = req.query;
         const querySearch = !s ? '' : s;
-        const queryAfterId = !after_id ? -1 : after_id;
-        const queryLastTimestamp = !last_timestamp ? null : last_timestamp;
-        const queryLastTotalRelevance = !last_total_relevance ? null : last_total_relevance;
+        const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
-        const result = await UsedProductListing.guestGetUsedProductListings(user_id, decodedQuery,
-            queryAfterId, PAGE_SIZE, queryLastTimestamp, queryLastTotalRelevance, coordinates);
+        const result = await UsedProductListing.getGuestUsedProductListings(user_id, decodedQuery, coordinates, queryNextToken, PAGE_SIZE);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

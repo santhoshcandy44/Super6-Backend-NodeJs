@@ -708,7 +708,7 @@ END AS thumbnail,
       (SELECT COUNT(*) FROM user_industries ui WHERE ui.user_id = ? ) = 0  
       OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
-                let params = [userId, userId, userId, userId];
+                params = [userId, userId, userId, userId];
 
 
                 if (payload) {
@@ -743,7 +743,6 @@ END AS thumbnail,
                 }
             }
         }
-
 
         const services = {};
         let lastItem = null
