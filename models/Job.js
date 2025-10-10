@@ -702,7 +702,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
     const jobs = {};
     await (async () => {
-      for (const row of results) {
+      for (let index = 0; index < results.length ; index++) {
         const job_id = row.id;
         if (!jobs[job_id]) {
           try {
