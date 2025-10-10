@@ -851,7 +851,6 @@ END AS thumbnail,
 
         await connection.release();
 
-
         const allItems = Object.values(services)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;

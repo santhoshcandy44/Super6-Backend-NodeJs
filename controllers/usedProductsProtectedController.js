@@ -15,7 +15,7 @@ exports.getUsedProductListings = async (req, res) => {
         const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await UsedProductListing.getUsedProductListings(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
+        const result = await UsedProductListing.getUsedProductListings(user_id, decodedQuery, 1, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
