@@ -853,8 +853,8 @@ END AS thumbnail,
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
-            distance: row.distance ? lastItem.distance : null,
-            total_relevance: lastItem.total_relevance ? row.total_relevance : null,
+            distance: lastItem.distance ? lastItem.distance : null,
+            total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
