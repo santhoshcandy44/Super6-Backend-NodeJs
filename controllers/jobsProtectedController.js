@@ -14,7 +14,6 @@ exports.getJobListings = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { s, s_latitude, s_longitude, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
-        console.log(req.query);
         const querySearch = !s ? '' : s;
 
         let industries = await JobIndustries.getIndustries(user_id);
@@ -46,7 +45,7 @@ exports.getJobListings = async (req, res) => {
         const salaryMin = salary_min !== undefined ? salary_min : -1;
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Job.getJobPostings(user_id, decodedQuery, s_latitude, s_longitude, 1, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
+        const result = await Job.getJobPostings(user_id, decodedQuery, s_latitude, s_longitude, 2, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
