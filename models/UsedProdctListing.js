@@ -24,8 +24,6 @@ class UsedProductListing {
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        console.log(payload);
-
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
@@ -133,9 +131,16 @@ class UsedProductListing {
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userId, userLat, userLon];
 
 
+                if (payload?.total_relevance) {
+                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
+                } else {
+                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0)`;
+                    params.push(radius);
+                }
+
                 if (payload) {
-                    query += `
-                        AND (
+                    query += ` AND (
                             distance > ? 
                             OR (distance = ? AND total_relevance < ?) 
                             OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
@@ -157,15 +162,7 @@ class UsedProductListing {
                     );
                 }
 
-                if (payload?.total_relevance) {
-                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0) AND ((total_relevance = ? AND distance <= ?) OR (total_relevance < ? AND distance <= ?))`;
-                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
-                } else {
-                    query += ` GROUP BY product_id HAVING distance < ? AND (name_relevance > 0 OR description_relevance > 0)`;
-                    params.push(radius);
-                }
-
-                query += ` ORDER BY distance ASC, total_relevance DESC, s.created.at DESC, s.id ASC LIMIT ?`;
+                query += ` ORDER BY distance ASC, total_relevance DESC, s.created_at DESC, s.id ASC LIMIT ?`;
 
                 params.push(pageSize);
             } else {
