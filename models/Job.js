@@ -369,7 +369,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           );
         }
 
-        query += ` ORDER BY distance ASC, j.posted_at DESC, j.id LIMIT ?`;
+        query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
 
         params.push(pageSize);
       }
