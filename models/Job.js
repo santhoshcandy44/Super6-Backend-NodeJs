@@ -354,9 +354,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         if (payload) {
           query += ` AND (
-                  distance > ? 
-                  OR (distance = ? AND j.posted_at < ?) 
-                  OR (distance = ? AND j.posted_at = ? AND j.id > ?)
+                  (distance = ? AND j.posted_at = ? AND j.id > ?)
               )
           `;
 
