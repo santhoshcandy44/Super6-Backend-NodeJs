@@ -1678,7 +1678,7 @@ GROUP BY l.local_job_id;
         u.phone_number,
         u.is_phone_verified,
 
-        ul.geo, ul.location_type, ul.updated_at,
+        ul.geo, ul.location_type, ul.updated_at
         
     FROM local_job_applicants a
     LEFT JOIN user_locations ul ON a.candidate_id = ul.user_id

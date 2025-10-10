@@ -85,7 +85,7 @@ exports.getPublishedLocalJobs = async (req, res) => {
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await LocalJob.getPublishedLocalJobs(user_id, 1, queryNextToken)
+        const result = await LocalJob.getPublishedLocalJobs(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
@@ -108,7 +108,7 @@ exports.getLocalJobApplications = async (req, res) => {
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await LocalJob.getLocalJobApplications(user_id, local_job_id, PAGE_SIZE, queryNextToken)
+        const result = await LocalJob.getLocalJobApplications(user_id, local_job_id, 1, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local job applicants");
         }
