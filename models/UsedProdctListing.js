@@ -411,7 +411,7 @@ WHERE
                     );
                 }
 
-                query += ` ORDER BY total_relevance DESC,    s.created_at DESC,
+                query += ` ORDER BY total_relevance DESC, s.created_at DESC,
                             s.id ASC LIMIT ?`;
                 params.push(pageSize);
 
@@ -529,7 +529,7 @@ WHERE
         }
 
         const items = {};
-        let lastItem = null
+        let lastItem = null;
 
         await (async () => {
             for (let index = 0; index < results.length; index++) {
@@ -599,7 +599,6 @@ WHERE
             }
         })();
 
-        console.log(lastItem);
 
         await connection.release();
 

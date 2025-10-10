@@ -15,14 +15,6 @@ router.get('/local-jobs',
             .optional()
             .isInt().withMessage('Invalid user id format'),
 
-        query('after_id')
-            .optional()
-            .isInt().withMessage('Invalid after id format'),
-
-        query('page_size')
-            .optional()
-            .isInt().withMessage('Invalid page size format'),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -31,25 +23,18 @@ router.get('/local-jobs',
             .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
-        query('last_timestamp')
+        query('page_size')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format')
-            .trim()
-            .escape()
-            .custom((value, { req }) => {
-                const decodedValue = decodeURIComponent(value);
-                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-                if (!timestampRegex.test(decodedValue)) {
-                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-                }
-                // req.query.last_timestamp = decodedValue; 
-                return true;
-            })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
 
-        query('last_total_relevance')
+        query('next_token')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format')
+            .isString().withMessage('Next token must be a valid string'),
+
+        query('previous_token')
+            .optional()
+            .isString().withMessage('Previous token must be a valid string')
     ],
     localJobsProtectedController.getLocalJobs
 );
@@ -59,14 +44,6 @@ router.get('/guest-local-jobs',
         query('user_id')
             .optional()
             .isInt().withMessage('Invalid user id format'),
-
-        query('after_id')
-            .optional()
-            .isInt().withMessage('Invalid after id format'),
-
-        query('page_size')
-            .optional()
-            .isInt().withMessage('Invalid page size format'),
 
         query('s')
             .optional()
@@ -90,25 +67,18 @@ router.get('/guest-local-jobs',
             .trim()
             .escape(),
 
-        query('last_timestamp')
+        query('page_size')
             .optional()
-            .isString().withMessage('Last Timestamp must be a valid string format')
-            .trim()
-            .escape()
-            .custom((value, { req }) => {
-                const decodedValue = decodeURIComponent(value);
-                const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-                if (!timestampRegex.test(decodedValue)) {
-                    throw new Error('Last Timestamp must be in the format YYYY-MM-DD HH:MM:SS');
-                }
-                // req.query.last_timestamp = decodedValue; 
-                return true;
-            })
-            .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS'),
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
 
-        query('last_total_relevance')
+        query('next_token')
             .optional()
-            .isFloat().withMessage('Last total relevance must be a valid float format')
+            .isString().withMessage('Next token must be a valid string'),
+
+        query('previous_token')
+            .optional()
+            .isString().withMessage('Previous token must be a valid string')
     ],
     localJobsProtectedController.getGuestLocalJobs
 );
@@ -118,6 +88,11 @@ router.get('/published-local-jobs/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format')
+            .toInt(),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
             .toInt(),
 
         query('next_token')
@@ -327,6 +302,11 @@ router.get(
     [
         param('local_job_id')
             .isInt().withMessage('Invalid local job id format')
+            .toInt(),
+            
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
             .toInt(),
 
         query('next_token')

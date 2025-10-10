@@ -9,7 +9,7 @@ const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class LocalJob {
-    static async getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance = null, initialRadius = 50) {
+    static async getLocalJobs(userId, queryParam, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         const [userCoords] = await connection.execute(
             'SELECT latitude, longitude FROM user_locations WHERE user_id = ?',
@@ -19,6 +19,7 @@ class LocalJob {
         const userCoordsData = userCoords[0];
         let query, params;
         var radius = initialRadius;
+        const payload = nextToken ? decodeCursor(nextToken) : null;
 
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
@@ -53,6 +54,7 @@ class LocalJob {
         l.country,
                         l.state, 
                         l.status,
+                        l.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -89,8 +91,6 @@ class LocalJob {
 
                         CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
                         CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
-
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                         ST_Distance_Sphere(
                             POINT(?, ?),
@@ -144,17 +144,8 @@ class LocalJob {
                     userLon
                 ];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                }
 
-                query += ` AND l.id > ?`;
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY local_job_id HAVING
                                 distance < ? AND (
                                     title_relevance > 0 OR
@@ -166,8 +157,8 @@ class LocalJob {
 
                     params.push(
                         radius,
-                        lastTotalRelevance, radius,
-                        lastTotalRelevance, radius
+                        payload.total_relevance, radius,
+                        payload.total_relevance, radius
                     );
                 } else {
                     query += ` GROUP BY local_job_id HAVING
@@ -179,9 +170,35 @@ class LocalJob {
                     params.push(radius);
                 }
 
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND l.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND l.created_at = ? AND l.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
                 query += ` ORDER BY
                             distance ASC,
-                            total_relevance DESC
+                            total_relevance DESC,
+                            l.created_at ASC,
+                            l.id ASC
                             LIMIT ?`;
                 params.push(pageSize);
             } else {
@@ -202,6 +219,7 @@ class LocalJob {
         l.country,
                         l.state, 
                         l.status,
+                        l.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -239,8 +257,8 @@ class LocalJob {
     ci.online AS user_online_status,
 
     CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-    CURRENT_TIMESTAMP AS initial_check_at,
-CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+
+    CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
     
      ST_Distance_Sphere(
@@ -285,18 +303,31 @@ WHERE
                     userLon
                 ];
 
-                if (!lastTimeStamp) {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
+                query += ` GROUP BY local_job_id HAVING
+    distance < ?`;
+
+                params.push(radius);
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND l.created_at < ?) 
+                            OR (distance = ? AND l.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` GROUP BY local_job_id HAVING
-    distance < ?
-    ORDER BY distance
-    LIMIT ?`;
-                params.push(radius, pageSize);
+                query += ` ORDER BY distance ASC, l.created_at DESC, l.id DESC LIMIT ?`;
+                params.push(pageSize);
             }
         } else {
             if (queryParam) {
@@ -316,7 +347,7 @@ WHERE
                 query = `
                     SELECT
                     l.id,
-                                   l.local_job_id AS local_job_id,
+                    l.local_job_id AS local_job_id,
     l.title,
     l.description,
     l.company,
@@ -328,6 +359,10 @@ WHERE
     l.marital_statuses,
     l.short_code,
         l.country,
+        l.state,
+        l.status,
+        l.created_at,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -351,6 +386,7 @@ WHERE
                         ll.latitude,
                         ll.geo,
                         ll.location_type,
+
                         u.user_id AS publisher_id,
                         u.first_name AS publisher_first_name,
                         u.about AS about,
@@ -366,8 +402,6 @@ WHERE
                             
                         CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
                         CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
-
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
 
                         -- Full-text search relevance scores
@@ -410,17 +444,9 @@ WHERE
                     userId
                 ];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                }
 
-                query += ` AND l.id > ?`;
-                params.push(afterId);
 
-                if (lastTotalRelevance !== null) {
+                if (payload.total_relevance) {
                     query += ` GROUP BY local_job_id HAVING
                                 (
                                     title_relevance > 0 OR
@@ -429,7 +455,7 @@ WHERE
                                     (total_relevance = ?)
                                     OR (total_relevance < ?)
                                 )`;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
                     query += ` GROUP BY local_job_id HAVING
                                 (
@@ -438,8 +464,30 @@ WHERE
                                 )`;
                 }
 
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND l.created_at < ?) 
+                            OR (total_relevance = ? AND l.created_at = ? AND l.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
+
                 query += ` ORDER BY
-                                total_relevance DESC
+                                total_relevance DESC,
+                                l.created_at DESC,
+                                l.id ASC
                             LIMIT ?`;
                 params.push(pageSize);
             } else {
@@ -460,6 +508,7 @@ WHERE
         l.country,
                         l.state, 
                         l.status,
+                        l.created_at,
 
                                      COALESCE(
             CONCAT('[', 
@@ -500,8 +549,6 @@ WHERE
                             CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
                             CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
-                        CURRENT_TIMESTAMP AS initial_check_at
-
 
                 FROM
                     local_jobs l
@@ -526,26 +573,26 @@ WHERE
                     
                 WHERE
                     ll.latitude BETWEEN -90 AND 90
-                    AND ll.longitude BETWEEN -180 AND 180`
+                    AND ll.longitude BETWEEN -180 AND 180`;
 
-                let query = `
-    SELECT *
-    FROM local_jobs l
-    WHERE l.is_active = 1
-      AND (l.user_id != ? OR ? IS NULL)`;
+                params = [userId];
 
-                params = [userId, userId];
+                if (payload) {
+                    query += `
+                        AND (
+                            l.created_at < ?
+                            OR (l.created_at = ? AND s.id > ?)
+                        )
+                    `;
 
-                if (!lastTimeStamp) {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
+                    params.push(
+                        payload.created_at,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += `
-    GROUP BY local_job_id
-    LIMIT ?`;
+                query += ` GROUP BY local_job_id ORDER BY l.created_at DESC, l.id ASC LIMIT ?`;
 
                 params.push(pageSize);
 
@@ -560,14 +607,16 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getLocalJobsForUser(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, radius)
+                    return await this.getLocalJobs(userId, queryParam, pageSize, nextToken, radius)
                 }
             }
         }
         const items = {};
+        let lastItem = null;
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; index < results.length; index++) {
+                const row = results[index];
                 const local_job_id = row.local_job_id;
                 if (!items[local_job_id]) {
                     try {
@@ -588,7 +637,6 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
-                            id: row.id,
                             local_job_id: row.local_job_id,
                             title: row.title,
                             description: row.description,
@@ -615,19 +663,42 @@ WHERE
                             } : null,
                             is_bookmarked: Boolean(row.is_bookmarked),
                             is_applied: Boolean(row.is_applied),
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-                            total_relevance: row.total_relevance,
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null
                         };
                     } catch (error) {
                         throw new Error("Error processing used product listing data");
                     }
                 }
+
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance ? row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
 
         await connection.release();
-        return Object.values(items);
+
+
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            distance: lastItem.distance ? lastItem.distance : null,
+            total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async guestGetLocalJobs(userId, queryParam, page, pageSize, lastTimeStamp,
@@ -705,7 +776,6 @@ WHERE
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                         u.created_at AS publisher_created_at,
 
-                        CURRENT_TIMESTAMP AS initial_check_at,
 
                            -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
@@ -831,7 +901,6 @@ WHERE
     u.created_at AS publisher_created_at,
 
     
-    CURRENT_TIMESTAMP AS initial_check_at,
     ci.online AS user_online_status,
     
      ST_Distance_Sphere(
@@ -938,7 +1007,7 @@ WHERE
                         u.profile_pic_url AS publisher_profile_pic_url,
                         u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                             u.created_at AS publisher_created_at,
-                        CURRENT_TIMESTAMP AS initial_check_at,
+
                             ci.online AS user_online_status,
 
                         -- Full-text search relevance scores
@@ -1156,8 +1225,6 @@ WHERE
                             } : null,
                             is_bookmarked: Boolean(row.is_bookmarked),
 
-                            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-                            total_relevance: row.total_relevance,
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null,
 
                         };
@@ -1614,8 +1681,6 @@ GROUP BY l.local_job_id;
         u.is_phone_verified,
 
         ul.geo, ul.location_type, ul.updated_at,
-
-            CURRENT_TIMESTAMP AS initial_check_at
         
     FROM local_job_applicants a
     LEFT JOIN user_locations ul ON a.candidate_id = ul.user_id
@@ -1629,10 +1694,10 @@ GROUP BY l.local_job_id;
         if (payload) {
             query += ' AND (a.is_reviewed > ? OR (a.is_reviewed = ? AND a.reviewed_at < ?) OR (a.is_reviewed = ? AND a.reviewed_at = ? AND a.id > ?))';
             params.push(
-                payload.is_reviewed, 
-                payload.is_reviewed, payload.reviewed_at, 
+                payload.is_reviewed,
+                payload.is_reviewed, payload.reviewed_at,
                 payload.is_reviewed, payload.reviewed_at, payload.id
-              );
+            );
         }
 
         query += ` GROUP BY applicant_id 
@@ -1648,7 +1713,7 @@ GROUP BY l.local_job_id;
 
         const items = {};
         let lastItem = null
-        
+
         results.forEach((row, index) => {
             const applicantId = row.applicant_id;
             if (!items[applicantId]) {
@@ -1656,7 +1721,6 @@ GROUP BY l.local_job_id;
                     applicant_id: applicantId,
                     applied_at: row.applied_at,
                     is_reviewed: !!row.is_reviewed,
-                    initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
                     user: {
                         user_id: applicantId,
                         first_name: row.first_name,
