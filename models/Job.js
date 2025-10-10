@@ -2023,7 +2023,7 @@ LIMIT ?`;
           };
         }
         if (i == results.length - 1) lastItem = {
-          created_at: row.posted_at,
+          posted_at: row.posted_at,
           id: row.id
         }
       }
@@ -2033,7 +2033,7 @@ LIMIT ?`;
     const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
     const hasPreviousPage = payload != null;
     const payloadToEncode = hasNextPage && lastItem ? {
-      created_at: lastItem.posted_at,
+      posted_at: lastItem.posted_at,
       id: lastItem.id
     } : null;
 
