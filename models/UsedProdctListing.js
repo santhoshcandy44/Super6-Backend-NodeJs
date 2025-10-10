@@ -1691,11 +1691,11 @@ distance LIMIT ?`;
                         : null,
                     is_bookmarked: Boolean(row.is_bookmarked),
                 };
+            }
 
-                if (index == results.length - 1) lastItem = {
-                    created_at: row.created_at,
-                    id: row.id
-                }
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
             }
         });
 
