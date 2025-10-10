@@ -522,11 +522,11 @@ class App {
                         }
                     }
                 }
-            }
-            if (index == results.length - 1) lastItem = {
-                bookmarked_at: row.bookmarked_at,
-                p_type: row.p_type,
-                id: row.id
+                if (index == results.length - 1) lastItem = {
+                    bookmarked_at: row.bookmarked_at,
+                    p_type: row.p_type,
+                    id: row.id
+                }
             }
         })();
 
@@ -540,9 +540,8 @@ class App {
         } : null;
 
         console.log(lastItem);
-        
         return {
-            data: allItems,
+            data: alItems,
             next_token: payloadToEncode ? encodeCursor(
                 payloadToEncode
             ) : null,
