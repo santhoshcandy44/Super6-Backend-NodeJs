@@ -21,8 +21,7 @@ class LocalJob {
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-            if (false) {
+        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
 
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
