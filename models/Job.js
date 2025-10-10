@@ -354,21 +354,21 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         console.log(payload);
 
         if (payload) {
-          query += ` AND (
-                  distance > ? 
-                  OR (distance = ? AND j.posted_at < ?) 
-                  OR (distance = ? AND j.posted_at = ? AND j.id > ?)
-              )
-          `;
+          // query += ` AND (
+          //         distance > ? 
+          //         OR (distance = ? AND j.posted_at < ?) 
+          //         OR (distance = ? AND j.posted_at = ? AND j.id > ?)
+          //     )
+          // `;
 
-          params.push(
-            payload.distance,
-            payload.distance,
-            payload.posted_at,
-            payload.distance,
-            payload.posted_at,
-            payload.id
-          );
+          // params.push(
+          //   payload.distance,
+          //   payload.distance,
+          //   payload.posted_at,
+          //   payload.distance,
+          //   payload.posted_at,
+          //   payload.id
+          // );
         }
 
         query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
