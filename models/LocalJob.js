@@ -577,7 +577,7 @@ WHERE
                     ll.latitude BETWEEN -90 AND 90
                     AND ll.longitude BETWEEN -180 AND 180`;
 
-                params = [userId];
+                params = [userId, userId];
 
                 if (payload) {
                     query += ` AND (
