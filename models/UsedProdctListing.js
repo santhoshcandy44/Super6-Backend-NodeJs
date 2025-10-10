@@ -376,24 +376,6 @@ WHERE
                 params = [queryParam, queryParam, queryParam, queryParam, userId];
 
 
-                if (payload) {
-                    query += `
-                        AND (
-                            total_relevance < ? 
-                            OR (total_relevance = ? AND s.created_at < ?) 
-                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
-                        )
-                    `;
-
-                    params.push(
-                        payload.total_relevance,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.id
-                    );
-                }
 
                 if (payload?.total_relevance) {
                     query += ` GROUP BY product_id HAVING
@@ -411,6 +393,26 @@ WHERE
                                     name_relevance > 0 OR
                                     description_relevance > 0
                                 )`;
+                }
+
+                
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
                 query += ` ORDER BY total_relevance DESC,    s.created_at DESC,
