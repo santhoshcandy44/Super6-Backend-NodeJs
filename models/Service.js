@@ -379,9 +379,7 @@ WHERE
                     );
                 }
 
-                query += ` GROUP BY service_id HAVING
-        distance < ?
-        ORDER BY
+                query += ` bug fixeORDER BY
         distance ASC,
         s.created_at DESC,
         s.id ASC
