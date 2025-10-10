@@ -549,7 +549,7 @@ WHERE
     ci.online AS user_online_status, 
 
                             CASE WHEN ub.local_job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-                            CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
+                            CASE WHEN lja.candidate_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied
 
 
                 FROM
@@ -580,8 +580,7 @@ WHERE
                 params = [userId];
 
                 if (payload) {
-                    query += `
-                        AND (
+                    query += ` AND (
                             l.created_at < ?
                             OR (l.created_at = ? AND l.id > ?)
                         )
