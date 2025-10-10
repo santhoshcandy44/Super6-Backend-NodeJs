@@ -797,14 +797,36 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             throw new Error("Error processing job posting data");
           }
         }
+
+        if (index == results.length - 1) lastItem = {
+          distance: row.distance ? row.distance : null,
+          total_relevance: row.total_relevance ? row.total_relevance : null,
+          created_at: row.created_at,
+          id: row.id
+        }
       }
     })();
 
     await rootDbconnection.release();
-    await connection.release();
-    return Object.values(jobs);
-  }
+    
+    const allItems = Object.values(jobs)
+    const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+    const hasPreviousPage = payload != null;
+    const payloadToEncode = hasNextPage && lastItem ? {
+        distance: lastItem.distance ? lastItem.distance : null,
+        total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
+        created_at: lastItem.created_at,
+        id: lastItem.id
+    } : null;
 
+    return {
+        data: allItems,
+        next_token: payloadToEncode ? encodeCursor(
+            payloadToEncode
+        ) : null,
+        previous_token: hasPreviousPage ? nextToken : null
+    };
+  }
 
   static async getGuestJobPostings(userId,
     queryParam,
