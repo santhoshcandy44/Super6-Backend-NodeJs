@@ -533,7 +533,7 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, radius)
+                    return await this.getUsedProductListings(userId, queryParam, pageSize, nextToken, radius)
                 }
             }
         }
@@ -612,8 +612,6 @@ WHERE
         })();
 
         await connection.release();
-
-        console.log(lastItem);
 
         const allItems = Object.values(items)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
