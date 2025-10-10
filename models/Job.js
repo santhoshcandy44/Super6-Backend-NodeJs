@@ -354,16 +354,20 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
         if (payload) {
           query += ` AND (
-                 (j.posted_at = ?)
+                  distance > ? 
+                  OR (distance = ? AND j.posted_at < ?) 
+                  OR (distance = ? AND j.posted_at = ? AND j.id > ?)
               )
           `;
 
           params.push(
-          
+            payload.distance,
+            payload.distance,
             payload.posted_at,
+            payload.distance,
+            payload.posted_at,
+            payload.id
           );
-
-          console.log(params);
         }
 
         query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
@@ -682,8 +686,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
     const [results] = await connection.execute(query, params);
 
-    console.log(results);
-
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
@@ -705,7 +707,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     await (async () => {
       for (let index = 0; index < results.length; index++) {
         const row = results[index];
-        const job_id = row.id;
+        const job_id = row.job_id;
         if (!jobs[job_id]) {
           try {
             jobs[job_id] = {
