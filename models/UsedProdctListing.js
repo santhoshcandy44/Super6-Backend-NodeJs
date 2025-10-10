@@ -250,7 +250,7 @@ WHERE
     ? BETWEEN -90 AND 90
     AND ? BETWEEN -180 AND 180 
 `
-                params = [userLon, userLat, userId, userLat, userLon, userId];
+                params = [userLon, userLat, userId, userLat, userLon];
 
                 query += ` GROUP BY product_id HAVING distance < ?`;
 
