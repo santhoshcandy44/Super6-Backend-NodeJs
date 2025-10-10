@@ -23,6 +23,7 @@ class Job {
     const userCoordsData = userCoords[0];
     let query, params = [];
     var radius = initialRadius;
+    const payload = nextToken ? decodeCursor(nextToken) : null;
 
     const { latitude: userLat, longitude: userLon } =
       latitudeParam && longitudeParam
