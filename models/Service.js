@@ -20,7 +20,9 @@ class Service {
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
+        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
+            if (false) {
+
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
             if (queryParam) {
@@ -705,7 +707,6 @@ END AS thumbnail,
       OR s.industry IN (SELECT ui.industry_id FROM user_industries ui WHERE ui.user_id = ?))`;
 
                 params = [userId, userId, userId, userId];
-
 
                 if (payload) {
                     query += `
