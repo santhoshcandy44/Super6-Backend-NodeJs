@@ -170,30 +170,6 @@ class Service {
                     userId, userLat, userLon
                 ];
 
-                if (payload) {
-                    query += `
-                        AND (
-                            distance > ? 
-                            OR (distance = ? AND total_relevance < ?) 
-                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
-                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
-                        )
-                    `;
-
-                    params.push(
-                        payload.distance,
-                        payload.distance,
-                        payload.total_relevance,
-                        payload.distance,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.distance,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.id
-                    );
-                }
-
                 if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
                                 distance < ? AND (
@@ -213,6 +189,29 @@ class Service {
                                     long_description_relevance > 0
                                 )`;
                     params.push(radius);
+                }
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
                 query += ` ORDER BY
