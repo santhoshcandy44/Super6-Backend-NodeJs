@@ -1739,7 +1739,7 @@ GROUP BY l.local_job_id;
                     }
                 };
             }
-            
+
             if (index == results.length - 1) lastItem = {
                 is_reviewed: row.is_reviewed,
                 is_reviewed_at: row.is_reviewed_at,
@@ -1755,6 +1755,8 @@ GROUP BY l.local_job_id;
             is_reviewed_at: lastItem.is_reviewed_at,
             id: lastItem.id
         } : null;
+
+        console.log(lastItembug if);
 
         return {
             data: allItems,
