@@ -292,9 +292,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
-            c.currency_type AS salary_currency,
-                CURRENT_TIMESTAMP AS initial_check_at,
-
+            c.currency_type AS salary_currency
+            
             -- Distance Calculation
             ST_Distance_Sphere(
                 POINT(?, ?),
@@ -505,7 +504,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-  
+
 
         if (payload?.total_relevance) {
           query += ` GROUP BY j.job_id HAVING (
@@ -533,14 +532,14 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           `;
 
           params.push(
-              payload.total_relevance,
-              payload.total_relevance,
-              payload.posted_at,
-              payload.total_relevance,
-              payload.posted_at,
-              payload.id
+            payload.total_relevance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.id
           );
-      }
+        }
 
 
         query += `
@@ -618,8 +617,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
-            c.currency_type AS salary_currency,
-                CURRENT_TIMESTAMP AS initial_check_at
+            c.currency_type AS salary_currency
 
         FROM jobs AS j
 
@@ -666,13 +664,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           `;
 
           params.push(
-              payload.posted_at,
-              payload.posted_at,
-              payload.id
+            payload.posted_at,
+            payload.posted_at,
+            payload.id
           );
-      }
+        }
 
-      
+
         query += `
     GROUP BY j.job_id
     ORDER BY j.posted_at DESC,
@@ -792,9 +790,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                 is_verified: !!row.is_verified,
               },
               is_applied: !!row.is_applied,
-              is_bookmarked: !!row.is_bookmarked,
-              initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-              total_relevance: row.total_relevance ? row._total_relevance : null
+              is_bookmarked: !!row.is_bookmarked
             };
           } catch (error) {
             throw new Error("Error processing job posting data");
@@ -1075,7 +1071,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
             c.currency_type AS salary_currency,
-                CURRENT_TIMESTAMP AS initial_check_at,
 
             -- Distance Calculation
             ST_Distance_Sphere(
@@ -1368,7 +1363,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
             c.currency_type AS salary_currency,
-                CURRENT_TIMESTAMP AS initial_check_at
 
         FROM jobs AS j
 
@@ -1531,9 +1525,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                 is_verified: !!row.is_verified,
               },
               is_applied: !!row.is_applied,
-              is_bookmarked: !!row.is_bookmarked,
-              initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-              total_relevance: row.total_relevance ? row._total_relevance : null
+              is_bookmarked: !!row.is_bookmarked
             };
           } catch (error) {
             throw new Error("Error processing job posting data");
@@ -1906,8 +1898,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
      -- Currency Info
-     c.currency_type AS salary_currency,
-         CURRENT_TIMESTAMP AS initial_check_at
+     c.currency_type AS salary_currency
 
  FROM jobs AS j
 
@@ -2028,9 +2019,7 @@ LIMIT ?`;
               is_verified: !!row.is_verified,
             },
             is_applied: !!row.is_applied,
-            is_bookmarked: !!row.is_bookmarked,
-            initial_check_at: formatMySQLDateToInitialCheckAt(row.initial_check_at),
-            total_relevance: row.total_relevance ? row._total_relevance : null
+            is_bookmarked: !!row.is_bookmarked
           };
           if (i == results.length - 1) lastItem = {
             created_at: row.posted_at,

@@ -57,7 +57,7 @@ exports.getJobListings = async (req, res) => {
     }
 };
 
-exports.guestGetJobListings = async (req, res) => {
+exports.getGuestJobListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
