@@ -293,7 +293,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
-            c.currency_type AS salary_currency
+            c.currency_type AS salary_currency,
             
             -- Distance Calculation
             ST_Distance_Sphere(
