@@ -496,7 +496,7 @@ WHERE
                     sl.latitude BETWEEN -90 AND 90
                     AND sl.longitude BETWEEN -180 AND 180`;
 
-                let params = [userId];
+                params = [userId];
 
                 if (payload) {
                     query += `
