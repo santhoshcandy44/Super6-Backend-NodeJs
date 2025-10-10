@@ -367,6 +367,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             payload.posted_at,
             payload.id
           );
+
         }
 
         query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
@@ -684,6 +685,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await connection.execute(query, params);
+    console.log(results);
+
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
@@ -691,7 +694,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
-          console.log("trip");
           return await this.getJobPostings(userId,
             queryParam,
             latitudeParam,
