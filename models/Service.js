@@ -678,7 +678,7 @@ END AS thumbnail,
     -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status, 
 
-                            CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
+                            CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked
 
 
                 FROM
