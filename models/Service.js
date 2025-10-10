@@ -414,7 +414,7 @@ WHERE
                         s.short_code,
                            s.country,
                         s.state, 
-                        s.created-at,
+                        s.created_at,
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
