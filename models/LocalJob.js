@@ -700,7 +700,6 @@ WHERE
     }
 
     static async getGuestLocalJobs(userId, queryParam, userCoordsData, pageSize, nextToken, initialRadius = 50) {
-
         const connection = await db.getConnection();
         let query, params;
         var radius = initialRadius;
