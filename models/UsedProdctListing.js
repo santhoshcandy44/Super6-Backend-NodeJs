@@ -1479,7 +1479,7 @@ WHERE
             );
         }
 
-        query += ` product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
+        query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
