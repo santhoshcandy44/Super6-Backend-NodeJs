@@ -1538,7 +1538,7 @@ END AS thumbnail,
                     );
                 }
 
-                query += ` GROUP BY service_id ORDER BY s,created_at DESC, s.id ASC LIMIT ?`;
+                query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(pageSize);
             }
         }
