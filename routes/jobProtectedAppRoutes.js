@@ -209,7 +209,33 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchLocationSuggestions
 );
 
+router.get('/guest-job-search-location-suggestions/:user_id(\\d+)',
+  authenticateToken,
+  [
+    param('user_id')
+      .isInt().withMessage('Invalid user id format'),
+
+    query('query')
+      .isString().withMessage('Invalid user query format')
+      .notEmpty().withMessage('Query cannot be empty'),
+  ],
+  jobsProtectedController.searchLocationSuggestions
+);
+
 router.get('/job-search-role-suggestions/:user_id(\\d+)',
+  authenticateToken,
+  [
+    param('user_id')
+      .isInt().withMessage('Invalid user id format'),
+
+    query('query')
+      .isString().withMessage('Invalid user query format')
+      .notEmpty().withMessage('Query cannot be empty'),
+  ],
+  jobsProtectedController.searchRoleSuggestions
+);
+
+router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
   authenticateToken,
   [
     param('user_id')
