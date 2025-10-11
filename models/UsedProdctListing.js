@@ -1146,7 +1146,7 @@ WHERE
                     try {
                         const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
                         if (!result) {
-                            throw new Error("Failed to retrieve published services of the user");
+                            throw new Error("Failed to retrieve published used product listings of the user");
                         }
                         products[productId] = {
                             user: {
@@ -1211,7 +1211,7 @@ WHERE
         })();
 
         await connection.release();
-        const allItems = Object.values(services)
+        const allItems = Object.values(products)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
