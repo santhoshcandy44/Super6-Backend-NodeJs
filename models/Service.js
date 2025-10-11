@@ -869,8 +869,7 @@ END AS thumbnail,
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-            if (false) {
+        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
             if (queryParam) {
@@ -1541,7 +1540,6 @@ END AS thumbnail,
                 params.push(pageSize);
             }
         }
-        console.log(params);
         const [results] = await connection.execute(query, params);
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;

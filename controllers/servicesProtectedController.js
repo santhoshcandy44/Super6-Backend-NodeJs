@@ -62,7 +62,7 @@ exports.getGuestServices = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
-        const result = await Service.getGuestServices(user_id, decodedQuery, coordinates, queryIndustries, 1, queryNextToken);
+        const result = await Service.getGuestServices(user_id, decodedQuery, coordinates, queryIndustries, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
