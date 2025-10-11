@@ -69,7 +69,6 @@ router.get('/job-listings',
 );
 
 router.get('/guest-job-listings',
-  authenticateToken,
   [
     query('user_id')
       .optional()
