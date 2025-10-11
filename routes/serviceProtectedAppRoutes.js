@@ -49,6 +49,7 @@ router.get('/guest-services',
             if (originalValue && !Array.isArray(originalValue)) {
                 return res.status(400).json({ error: 'Industries must be an array' });
             }
+            console.log(originalValue);
             const validIndustries = originalValue.map(item => {
                 const numItem = parseInt(item, 10);
                 if (!Number.isInteger(numItem) || numItem <= 0) {
