@@ -37,6 +37,7 @@ class JobIndustries {
             description: row.description,
             is_selected: false
         }));
+        console.log(industries);
         return industries;
     }
 
