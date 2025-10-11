@@ -657,7 +657,7 @@ router.get('/job-industries',
   jobsProtectedController.getIndustries
 );
 
-router.get('/guest-industries',
+router.get('/guest--job-industries',
   [
     query('user_id')
       .isInt().withMessage('User id must be a valid integer')
