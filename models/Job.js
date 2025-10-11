@@ -30,8 +30,7 @@ class Job {
         ? { latitude: latitudeParam, longitude: longitudeParam }
         : userCoordsData || {};
 
-    // if (userLat && userLon) {
-      if (false) {
+    if (userLat && userLon) {
 
       if (queryParam) {
         // if (initialRadius == 50) {
@@ -834,29 +833,30 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     };
   }
 
+
   static async getGuestJobPostings(userId,
     queryParam,
     latitudeParam,
     longitudeParam,
-    afterId,
-    pageSize, lastTimeStamp, lastTotalRelevance = null,
+    coordinates,
+    pageSize, nextToken,
     filterWorkModes, salaryMin, salaryMax,
-    userCoordsData = null,
-    industryIds = [],
     initialRadius = 50) {
 
     const rootDbconnection = await rootDb.getConnection();
     const connection = await db.getConnection();
-    const userLocation = userCoordsData;
+    const userCoordsData = coordinates;
     let query, params = [];
     var radius = initialRadius;
+    const payload = nextToken ? decodeCursor(nextToken) : null;
 
     const { latitude: userLat, longitude: userLon } =
       latitudeParam && longitudeParam
         ? { latitude: latitudeParam, longitude: longitudeParam }
-        : userLocation || {};
+        : userCoordsData || {};
 
     if (userLat && userLon) {
+
       if (queryParam) {
         // if (initialRadius == 50) {
         //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
@@ -896,13 +896,13 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.employment_type,
                     j.vacancies,
                     j.highlights,
+                    j.posted_at,
                     j.organization_id,
                     j.expiry_date,
                     j.status,
                     j.approval_status,
                     j.slug,
                     j.posted_by_id,
-                    j.posted_at,
         
                   
             -- Organization Info
@@ -933,8 +933,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude,
             ci.longitude,
 
-              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         
                     c.currency_type AS salary_currency,
         
@@ -995,17 +993,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (lastTimeStamp != null) {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
-        } else {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        }
-
-        query += ' AND j.id > ?';
-        params.push(afterId);
-
-        if (lastTotalRelevance !== null) {
+        if (payload?.total_relevance) {
           query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
                         title_relevance > 0 OR
@@ -1014,7 +1002,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                         (total_relevance = ? AND distance <= ?) OR
                         (total_relevance < ? AND distance <= ?)
                     )`;
-          params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+          params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
         } else {
           query += ` GROUP BY j.job_id HAVING
                     distance < ? AND (
@@ -1024,12 +1012,37 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(radius);
         }
 
-        query += `
-          ORDER BY
+
+        if (payload) {
+          query += ` AND (
+                  distance > ? 
+                  OR (distance = ? AND total_relevance < ?) 
+                  OR (distance = ? AND total_relevance = ? AND j.posted_at < ?) 
+                  OR (distance = ? AND total_relevance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.distance,
+            payload.distance,
+            payload.total_relevance,
+            payload.distance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.distance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.id
+          );
+        }
+
+
+        query += ` ORDER BY
               distance ASC,
-              total_relevance DESC
-          LIMIT ?
-      `;
+              total_relevance DESC,
+              j.posted_at DESC,
+              j.id
+          LIMIT ?`;
         params.push(pageSize);
 
       }
@@ -1095,12 +1108,10 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude,
             ci.longitude,
 
-              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
 
             -- Currency
             c.currency_type AS salary_currency,
-
+            
             -- Distance Calculation
             ST_Distance_Sphere(
                 POINT(?, ?),
@@ -1120,17 +1131,17 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             AND ? BETWEEN -180 AND 180
             `;
 
-        if (industryIds && industryIds.length > 0) {
-          const industryList = industryIds.join(', ');
-          query += ` AND j.industry_id IN (${industryList})`;
-        }
-
         params = [
           userLon,
           userLat,
           userLat,
           userLon
         ];
+
+        if (industryIds && industryIds.length > 0) {
+          const industryList = industryIds.join(', ');
+          query += ` AND j.industry_id IN (${industryList})`;
+      }
 
         if (filterWorkModes.length > 0) {
           const placeholders = filterWorkModes.map(() => `?`).join(', ');
@@ -1149,20 +1160,31 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (!lastTimeStamp) {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        } else {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
+        query += ` GROUP BY j.job_id HAVING distance < ?`;
+        params.push(radius);
+
+
+        if (payload) {
+          query += ` AND (
+                  distance > ? 
+                  OR (distance = ? AND j.posted_at < ?) 
+                  OR (distance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.distance,
+            payload.distance,
+            payload.posted_at,
+            payload.distance,
+            payload.posted_at,
+            payload.id
+          );
         }
 
-        query += `
-              GROUP BY j.job_id
-              HAVING distance < ?
-              ORDER BY distance ASC, j.posted_at DESC
-              LIMIT ?`;
+        query += ` ORDER BY distance ASC, j.posted_at DESC, j.id ASC LIMIT ?`;
 
-        params.push(radius, pageSize);
+        params.push(pageSize);
       }
     } else {
       if (queryParam) {
@@ -1199,7 +1221,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.must_have_skills,
                     j.good_to_have_skills,
                     j.industry_id,
-                    ji.indusry_name as industry,
+                    ji.industry_name as industry,
                     j.department,
                     j.role,
                     j.employment_type,
@@ -1211,8 +1233,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                     j.approval_status,
                     j.slug,
                     j.posted_by_id,
-                    j.posted_at,
-        
+                    j.posted_at,        
                   
             -- Organization Info
             o.organization_name,
@@ -1241,9 +1262,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.name as location,
             ci.latitude,
             ci.longitude,
-
-              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         
                     c.currency_type AS salary_currency,
         
@@ -1292,17 +1310,9 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (lastTimeStamp != null) {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
-        } else {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        }
 
-        query += ' AND j.id > ?';
-        params.push(afterId);
 
-        if (lastTotalRelevance !== null) {
+        if (payload?.total_relevance) {
           query += ` GROUP BY j.job_id HAVING (
                           title_relevance > 0 OR
                           description_relevance > 0
@@ -1310,7 +1320,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                           (total_relevance = ?) OR
                           (total_relevance < ? )
                       )`;
-          params.push(lastTotalRelevance, lastTotalRelevance);
+          params.push(payload.total_relevance, payload.total_relevance);
         } else {
           query += ` GROUP BY j.job_id HAVING (
                           title_relevance > 0 OR
@@ -1318,9 +1328,31 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
                       )`;
         }
 
+        if (payload) {
+          query += `
+              AND (
+                  total_relevance < ? 
+                  OR (total_relevance = ? AND j.posted_at < ?) 
+                  OR (total_relevance = ? AND j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.total_relevance,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.total_relevance,
+            payload.posted_at,
+            payload.id
+          );
+        }
+
+
         query += `
           ORDER BY
-              total_relevance DESC
+              total_relevance DESC,
+              j.posted_at DESC,
+              j.id ASC
           LIMIT ?
       `;
         params.push(pageSize);
@@ -1387,11 +1419,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             ci.latitude,
             ci.longitude,
 
-              CASE WHEN ub.job_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked,
-CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
-
             -- Currency
-            c.currency_type AS salary_currency,
+            c.currency_type AS salary_currency
 
         FROM jobs AS j
 
@@ -1403,14 +1432,15 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         WHERE
             ci.latitude BETWEEN -90 AND 90
             AND ci.longitude BETWEEN -180 AND 180 
+          )
             `;
+
+        params = [];
 
         if (industryIds && industryIds.length > 0) {
           const industryList = industryIds.join(', ');
           query += ` AND j.industry_id IN (${industryList})`;
-        }
-
-        params = [];
+      }
 
         if (filterWorkModes.length > 0) {
           const placeholders = filterWorkModes.map(() => `?`).join(', ');
@@ -1429,16 +1459,26 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           params.push(salaryMax);
         }
 
-        if (!lastTimeStamp) {
-          query += ` AND j.posted_at < CURRENT_TIMESTAMP`;
-        } else {
-          query += ` AND j.posted_at < ?`;
-          params.push(lastTimeStamp);
+        if (payload) {
+          query += `
+              AND (
+                  j.posted_at < ?
+                  OR (j.posted_at = ? AND j.id > ?)
+              )
+          `;
+
+          params.push(
+            payload.posted_at,
+            payload.posted_at,
+            payload.id
+          );
         }
+
 
         query += `
     GROUP BY j.job_id
-    ORDER BY j.posted_at DESC
+    ORDER BY j.posted_at DESC,
+    j.id ASC
     LIMIT ?
 `;
         params.push(pageSize);
@@ -1447,6 +1487,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     }
 
     const [results] = await connection.execute(query, params);
+
     if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
       const availableResults = results.length;
       if (availableResults < pageSize) {
@@ -1454,19 +1495,21 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
-          return await this.getGuestJobPostings(userId,
+          return await this.getJobPostings(userId,
             queryParam,
             latitudeParam,
             longitudeParam,
-            afterId, pageSize, lastTimeStamp, lastTotalRelevance, filterWorkModes, salaryMin, salaryMax, userCoordsData, industryIds, radius)
+            pageSize, nextToken, filterWorkModes, salaryMin, salaryMax, radius)
         }
       }
     }
 
     const jobs = {};
+    let lastItem = null;
     await (async () => {
-      for (const row of results) {
-        const job_id = row.id;
+      for (let index = 0; index < results.length; index++) {
+        const row = results[index];
+        const job_id = row.job_id;
         if (!jobs[job_id]) {
           try {
             jobs[job_id] = {
@@ -1560,14 +1603,37 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
             throw new Error("Error processing job posting data");
           }
         }
+
+        if (index == results.length - 1) lastItem = {
+          distance: row.distance ? row.distance : null,
+          total_relevance: row.total_relevance ? row.total_relevance : null,
+          posted_at: row.posted_at,
+          id: row.id
+        }
       }
     })();
 
-    await rootDbconnection.release();
     await connection.release();
-    return Object.values(jobs);
-  }
+    await rootDbconnection.release();
+    
+    const allItems = Object.values(jobs)
+    const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+    const hasPreviousPage = payload != null;
+    const payloadToEncode = hasNextPage && lastItem ? {
+        distance: lastItem.distance ? lastItem.distance : null,
+        total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
+        posted_at: lastItem.posted_at,
+        id: lastItem.id
+    } : null;
 
+    return {
+        data: allItems,
+        next_token: payloadToEncode ? encodeCursor(
+            payloadToEncode
+        ) : null,
+        previous_token: hasPreviousPage ? nextToken : null
+    };
+  }
 
   static async bookmarkJob(userId, jobId) {
     let connection;
