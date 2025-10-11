@@ -1480,7 +1480,7 @@ WHERE
             );
         }
 
-        query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC limit ?`;
+        query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
@@ -1490,6 +1490,7 @@ WHERE
         let lastItem = null;
 
         for (let index = 0; index < results.length; index++) {
+            const row = products[productId];
             const productId = row.product_id;
             if (!products[productId]) {
                 products[productId] = {
