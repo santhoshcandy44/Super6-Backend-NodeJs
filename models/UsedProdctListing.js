@@ -1466,7 +1466,6 @@ WHERE
         const params = [serviceOwnerId];     
 
         if (payload) {
-            console.log("consuing...");
             query += ` AND (
                             s.created_at < ?
                             OR (s.created_at = ? AND s.id > ?)
@@ -1480,7 +1479,7 @@ WHERE
             );
         }
 
-        query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
+        query += ` product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
