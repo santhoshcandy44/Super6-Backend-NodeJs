@@ -1234,6 +1234,7 @@ WHERE
         }
 
         const items = {};
+        let lastItem = null;
 
         await (async () => {
             for (let index = 0; index < results.length; index++) {
