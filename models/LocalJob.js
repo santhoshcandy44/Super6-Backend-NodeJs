@@ -1087,7 +1087,7 @@ WHERE
                                 )`;
                     params.push(payload.total_relevance, payload.total_relevance);
                 } else {
-                    query += ` GROUP BY product_id HAVING
+                    query += ` GROUP BY local_job_id HAVING
                                 (
                                     title_relevance > 0 OR
                                     description_relevance > 0
