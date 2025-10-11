@@ -85,7 +85,7 @@ router.get('/guest-services',
                 }
                 return true;
             }),
-            
+
         query('page_size')
             .optional()
             .isInt().withMessage('Invalid page size format')
