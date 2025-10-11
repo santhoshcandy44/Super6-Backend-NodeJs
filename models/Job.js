@@ -825,8 +825,6 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         id: lastItem.id
     } : null;
 
-    console.log(allItems);
-
     return {
         data: allItems,
         next_token: payloadToEncode ? encodeCursor(
@@ -2068,8 +2066,6 @@ LIMIT ?`;
       bookmarked_at: lastItem.bookmarked_at,
       id: lastItem.id
     } : null;
-
-    console.log(lastItem);
 
     return {
       data: allItems,

@@ -4,7 +4,7 @@ const { body, query } = require('express-validator');
 const router = express.Router();
 const boardsSettingsProtectedController = require('../controllers/boardsSettingsProtectedController')
 
-router.get('/get-boards',
+router.get('/boards',
     authenticateToken,
     [
         query('user_id')

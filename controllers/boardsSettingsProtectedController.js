@@ -34,6 +34,7 @@ exports.getGuestBoards = async (req, res) => {
         const boards = await BoardsModel.getGuestBoards();
         return sendJsonResponse(res, 200, "Boards retrived successfully", boards);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal server error", error);
     }
 };
