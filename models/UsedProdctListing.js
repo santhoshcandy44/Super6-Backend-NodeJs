@@ -391,7 +391,7 @@ WHERE
                                 )`;
                 }
 
-                
+
                 if (payload) {
                     query += `
                         AND (
@@ -621,7 +621,7 @@ WHERE
         };
     }
 
-    static async guestGetUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp,
+    static async getGuestUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp,
         lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
         const connection = await db.getConnection();
         let query, params;
@@ -655,6 +655,7 @@ WHERE
                          s.short_code,
                             s.country,
                         s.state, 
+                        s.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -726,42 +727,58 @@ WHERE
                         AND ? BETWEEN -90 AND 90
                         AND ? BETWEEN -180 AND 180 `;
 
-                params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon]
+                params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
 
-                if (lastTimeStamp != null) {
-                    query += `AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+                if (payload?.total_relevance) {
+                    query += ` GROUP BY service_id HAVING
+                                distance < ? AND (
+                                    name_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                (total_relevance = ? AND distance <= ?)
+                                OR (total_relevance < ? AND distance <= ?)
+                            )`;
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
-                    query += `AND s.created_at < CURRENT_TIMESTAMP`;
-                }
-
-                query += ' AND s.id > ?';
-
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
-                    query += ` GROUP BY product_id HAVING
-                        distance < ? AND (
-                            name_relevance > 0 OR
-                            description_relevance > 0 
-                                                    ) AND (
-                        (total_relevance = ? AND distance <= ?) 
-                        OR (total_relevance < ? AND distance <= ?)  
-                    ) `;
-                    params.push(radius, lastTotalRelevance, radius, radius, radius);
-                } else {
-                    query += ` GROUP BY product_id HAVING
-                        distance < ? AND (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        )`
+                    query += ` GROUP BY service_id HAVING
+                                distance < ? AND (
+                                    name_relevance > 0 OR
+                                    description_relevance > 0
+                                )`;
                     params.push(radius);
                 }
 
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
                 query += ` ORDER BY
-                        distance ASC,
-                        total_relevance DESC
-                    LIMIT ?`;
+                            distance ASC,
+                            total_relevance DESC,
+                            s.created_at DESC,
+                            s.id ASC
+                        LIMIT ?`;
+
 
                 params.push(pageSize);
             } else {
@@ -777,6 +794,7 @@ WHERE
      s.short_code,
         s.country,
                         s.state, 
+                        s.created_at,
                  COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -841,22 +859,35 @@ WHERE
 
                 params = [userLon, userLat, userLat, userLon];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+                query += ` GROUP BY product_id HAVING distance < ?`;
+                params.push(radius);
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
-                params.push(afterId);
 
-                query += ` GROUP BY product_id HAVING
-    distance < ?
-    ORDER BY
-distance LIMIT ?`;
+                query += ` ORDER BY
+        distance ASC,
+        s.created_at DESC,
+        s.id ASC
+    LIMIT ?`;
 
-                params.push(radius, pageSize);
+                params.push(radius);
             }
         } else {
             if (queryParam) {
@@ -884,6 +915,8 @@ distance LIMIT ?`;
                         s.short_code,
                            s.country,
                         s.state, 
+                        s.created_at,
+
                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -950,38 +983,50 @@ distance LIMIT ?`;
                 params = [queryParam, queryParam, queryParam, queryParam];
 
 
-                if (lastTimeStamp != null) {
-                    query += ` AND s.created_at < ?`;
-                    params.push(lastTimeStamp);
+                if (payload?.total_relevance) {
+                    query += ` GROUP BY service_id HAVING
+                                (
+                                    name_relevance > 0 OR
+                                    description_relevance > 0
+                                ) AND (
+                                    (total_relevance = ?)
+                                    OR (total_relevance < ?)
+                                )`;
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
+                    query += ` GROUP BY service_id HAVING
+                                (
+                                    name_relevance > 0 OR
+                                    short_description_relevance > 0
+                                )`;
                 }
 
-                query += ' AND s.id > ?';
 
-                params.push(afterId);
+                if (payload) {
+                    query += ` AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
 
-                if (lastTotalRelevance !== null) {
-                    query += ` GROUP BY product_id HAVING
-                        (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? )  -- Fetch records with the same relevance
-                        OR (total_relevance < ?)  -- Fetch records with lower relevance
-                    )`;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
-                } else {
-                    query += ` GROUP BY product_id HAVING
-                        (
-                            name_relevance > 0 OR
-                            description_relevance > 0
-                        )`;
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
+
 
                 query += ` ORDER BY
-                        total_relevance DESC
-                    LIMIT ? OFFSET ?`;
+                total_relevance DESC,
+                s.created_at DESC,
+                s.id ASC
+
+            LIMIT ?`;
 
                 params.push(pageSize);
 
@@ -998,6 +1043,7 @@ distance LIMIT ?`;
                   s.short_code,
                      s.country,
                         s.state, 
+                        s.created_at,
                                      COALESCE(
             CONCAT('[', 
                 GROUP_CONCAT(
@@ -1052,18 +1098,23 @@ distance LIMIT ?`;
 
                 params = [];
 
-                if (!lastTimeStamp) {
-                    query += ` AND s.created_at < CURRENT_TIMESTAMP`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND s.created_at < ?`;
+                if (payload) {
+                    query += `
+                        AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.created_at,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ' AND s.id > ?';
 
-                params.push(afterId);
-
-                query += ` GROUP BY product_id LIMIT ? OFFSET ?`;
+                query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
                 params.push(pageSize);
             }
@@ -1077,15 +1128,17 @@ distance LIMIT ?`;
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.guestGetUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
+                    return await this.getGuestUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
                 }
             }
         }
 
         const products = {};
+        let lastItem = null
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; index < results.length; index++) {
+                const row = results[index];
                 const productId = row.product_id;
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
@@ -1146,12 +1199,36 @@ distance LIMIT ?`;
                         throw new Error("Error processing used product listing data");
                     }
                 }
+
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance ? row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
 
         await connection.release();
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            distance: lastItem.distance ? lastItem.distance : null,
+            total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
 
-        return Object.values(products);
+        console.log(lastItem);
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 5) {
