@@ -68,6 +68,7 @@ exports.getGuestServices = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Services retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
