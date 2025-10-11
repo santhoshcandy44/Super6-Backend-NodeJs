@@ -102,7 +102,7 @@ router.get('/feed-user-published-used-product-listings/:user_id(\\d+)',
             .optional()
             .isString().withMessage('Previous token must be a valid string')
     ],
-    usedProductsProtectedController.getGuestFeedUserPublishedUsedProductListings
+    usedProductsProtectedController.getFeedUserPublishedUsedProductListings
 );
 
 router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',
@@ -137,7 +137,7 @@ router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
-    usedProductsProtectedController.getGuestFeedPublishedUsedProductListings
+    usedProductsProtectedController.getGuestFeedUserPublishedUsedProductListings
 );
 
 router.get('/published-used-product-listings/:user_id(\\d+)',
