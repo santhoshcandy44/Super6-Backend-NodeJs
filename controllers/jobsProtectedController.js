@@ -63,6 +63,7 @@ exports.getGuestJobListings = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
+        
         const { user_id, s, s_latitude, s_longitude, latitude, longitude, industries, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
 
         const querySearch = !s ? '' : s;
