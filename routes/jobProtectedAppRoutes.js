@@ -210,7 +210,6 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)',
 );
 
 router.get('/guest-job-search-location-suggestions/:user_id(\\d+)',
-  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('Invalid user id format'),
@@ -236,7 +235,6 @@ router.get('/job-search-role-suggestions/:user_id(\\d+)',
 );
 
 router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
-  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('Invalid user id format'),
