@@ -1551,13 +1551,7 @@ WHERE
         } : null;
 
         console.log(
-            {
-                data: allItems,
-                next_token: payloadToEncode ? encodeCursor(
-                    payloadToEncode
-                ) : null,
-                previous_token: hasPreviousPage ? nextToken : null
-            }
+           payload
         );
 
         return {
