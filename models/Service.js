@@ -1187,6 +1187,9 @@ WHERE
 
                 params = [userLon, userLat, userLat, userLon];
 
+                  query += ` GROUP BY service_id HAVING
+    distance < ?`;
+                params.push(radius);
         
                 if (payload) {
                     query += `
@@ -1207,9 +1210,7 @@ WHERE
                     );
                 }
               
-                query += ` GROUP BY service_id HAVING
-    distance < ?
-    ORDER BY
+                query += ` ORDER BY
 distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(radius, pageSize);
 
@@ -1650,10 +1651,7 @@ END AS thumbnail,
             total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
             created_at: lastItem.created_at,
             id: lastItem.id
-
         } : null;
-
-        console.log(lastItem);
 
         return {
             data: allItems,
