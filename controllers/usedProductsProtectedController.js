@@ -89,8 +89,6 @@ exports.getGuestFeedUserPublishedUsedProductListings = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
-        console.log(result);
-
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);
