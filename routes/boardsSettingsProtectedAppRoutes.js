@@ -14,7 +14,7 @@ router.get('/boards',
     boardsSettingsProtectedController.getBoards
 );
 
-router.get('/get-guest-boards',
+router.get('/guest-boards',
     [
         query('user_id')
             .isInt().withMessage('User id must be a valid integer')
