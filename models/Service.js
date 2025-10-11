@@ -1490,7 +1490,7 @@ END AS thumbnail,
                     u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
                     u.created_at AS publisher_created_at,
                         -- User online status (0 = offline, 1 = online)
-    ci.online AS user_online_status,
+    ci.online AS user_online_status
 
                 FROM
                     services s
