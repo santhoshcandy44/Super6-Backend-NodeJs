@@ -1466,6 +1466,7 @@ WHERE
         const params = [serviceOwnerId];     
 
         if (payload) {
+            console.log("consuing...");
             query += ` AND (
                             s.created_at < ?
                             OR (s.created_at = ? AND s.id > ?)
