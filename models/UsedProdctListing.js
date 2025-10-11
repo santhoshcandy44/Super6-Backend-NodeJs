@@ -1490,7 +1490,7 @@ WHERE
         let lastItem = null;
 
         for (let index = 0; index < results.length; index++) {
-            const row = products[index];
+            const row = results[index];
             const productId = row.product_id;
             if (!products[productId]) {
                 products[productId] = {
