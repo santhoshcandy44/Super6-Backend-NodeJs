@@ -28,7 +28,7 @@ class JobIndustries {
         i.industry_id,
         i.industry_name,
         i.description
-        FROM user_job_industries i`;
+        FROM job_industries i`;
 
         const [rows] = await db.query(query);
         const industries = rows.map(row => ({
