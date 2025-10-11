@@ -1227,7 +1227,7 @@ WHERE
         };
     }
 
-    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 5) {
+    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 1) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
