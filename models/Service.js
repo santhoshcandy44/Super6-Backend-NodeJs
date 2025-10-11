@@ -1506,8 +1506,6 @@ END AS thumbnail,
     
                 INNER JOIN
                     users u ON s.created_by = u.user_id
-                LEFT JOIN
-                    user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
                     
                     LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
