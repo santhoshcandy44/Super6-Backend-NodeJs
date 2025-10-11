@@ -2,7 +2,6 @@ const db = require('../config/lts360JobsDatabase.js')
 const rootDb = require('../config/database.js')
 const { MEDIA_BASE_URL } = require('../config/config.js');
 const ApplicantProfile = require('./ApplicantProfile.js');
-const { formatMySQLDateToInitialCheckAt } = require('./utils/dateUtils.js');
 const { decodeCursor, encodeCursor } = require('./utils/pagination/cursor.js');
 
 class Job {
@@ -833,12 +832,12 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     };
   }
 
-
   static async getGuestJobPostings(userId,
     queryParam,
     latitudeParam,
     longitudeParam,
     coordinates,
+    industryIds,
     pageSize, nextToken,
     filterWorkModes, salaryMin, salaryMax,
     initialRadius = 50) {
@@ -1495,10 +1494,12 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
-          return await this.getJobPostings(userId,
+          return await this.getGuestJobPostings(userId,
             queryParam,
             latitudeParam,
             longitudeParam,
+            coordinates,
+            industryIds,
             pageSize, nextToken, filterWorkModes, salaryMin, salaryMax, radius)
         }
       }
@@ -1625,6 +1626,8 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         posted_at: lastItem.posted_at,
         id: lastItem.id
     } : null;
+
+    console.log(lastItem);
 
     return {
         data: allItems,
