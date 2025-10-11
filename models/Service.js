@@ -1079,7 +1079,7 @@ END AS thumbnail,
      s.short_code,
         s.country,
                         s.state, 
-                        s.creaetd_at,
+                        s.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -1352,26 +1352,7 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
 
                 params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam]
 
-                
-                if (payload) {
-                    query += `
-                        AND (
-                            total_relevance < ?
-                            OR (total_relevance = ? AND s.created_at < ?) 
-                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
-                        )
-                    `;
-
-                    params.push(
-                        payload.total_relevance,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.total_relevance,
-                        payload.created_at,
-                        payload.id
-                    );
-                }
-              
+               
 
                 if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
@@ -1392,6 +1373,27 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                             long_description_relevance > 0
                         )`
                 }
+
+                 
+                if (payload) {
+                    query += `
+                        AND (
+                            total_relevance < ?
+                            OR (total_relevance = ? AND s.created_at < ?) 
+                            OR (total_relevance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+              
 
                 query += ` ORDER BY
                         total_relevance DESC,
@@ -1648,6 +1650,8 @@ END AS thumbnail,
             id: lastItem.id
         } : null;
 
+        console.log(lastItem);
+        
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(

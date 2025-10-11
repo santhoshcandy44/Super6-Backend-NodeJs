@@ -1223,8 +1223,6 @@ WHERE
             id: lastItem.id
         } : null;
 
-        console.log(lastItem);
-
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(
