@@ -695,7 +695,6 @@ exports.getGuestIndustries = async (req, res) => {
         }
         const { user_id } = req.query;
         const industries = await JobIndustries.getGuestIndustries();
-        console.log(industries);
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
         console.log(error);
