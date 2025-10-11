@@ -538,7 +538,7 @@ WHERE
                 if (!items[product_id]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
+                        const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(userId, publisher_id, 5, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published used product listings of the user");
                         }
@@ -1135,7 +1135,7 @@ WHERE
 
         const products = {};
         let lastItem = null
-        
+
         await (async () => {
             for (let index = 0; index < results.length; index++) {
                 const row = results[index];
@@ -1143,7 +1143,7 @@ WHERE
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(userId, publisher_id);
+                        const result = await UsedProductListing.getGuestFeedUserPublishedUsedProductListings(publisher_id, 1, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published used product listings of the user");
                         }
@@ -1227,7 +1227,7 @@ WHERE
         };
     }
 
-    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 1) {
+    static async getFeedUserPublishedUsedProductListings(userId, serviceOwnerId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
@@ -1235,7 +1235,9 @@ WHERE
 
         if (userCheckResult.length === 0) throw new Error('User not exist');
 
-        const [results] = await db.query(`
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
+        let query = `
                 SELECT
                     s.id,
                     s.product_id AS product_id,
@@ -1247,6 +1249,7 @@ WHERE
                     s.short_code,
                        s.country,
                         s.state, 
+                        s.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -1296,12 +1299,33 @@ WHERE
                 LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
     
-                WHERE s.created_by = ? GROUP BY product_id limit ?
-            `, [userId, serviceOwnerId, limit]);
+                WHERE s.created_by = ?`;
+
+        if (payload) {
+            query += ` AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+            params.push(
+                payload.created_at,
+                payload.created_at,
+                payload.id
+            );
+        }
+
+
+        query += ` GROUP BY product_id ORDER BY limit ?`;
+
+        params.push(pageSize);
+
+        const [results] = await db.query(query, [userId, serviceOwnerId]);
 
         const products = {};
+        let lastItem = null;
 
-        results.forEach(row => {
+        for (let index = 0; index < results.length; index++) {
             const productId = row.product_id;
             if (!products[productId]) {
                 products[productId] = {
@@ -1347,9 +1371,195 @@ WHERE
                         : null
                 };
             }
-        });
-        return Object.values(products);
+
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
+            }
+        }
+
+        const allItems = Object.values(products)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        console.log(lastItem);
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
+
+    
+    static async getGuestFeedUserPublishedUsedProductListings(serviceOwnerId, pageSize, nextToken) {
+      
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
+        let query = `
+                SELECT
+                    s.id,
+                    s.product_id AS product_id,
+                    s.name,
+                    s.description,
+                    s.price,
+                    s.price_unit,
+                    s.status,
+                    s.short_code,
+                       s.country,
+                        s.state, 
+                        s.created_at,
+
+                 COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN si.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', si.id,
+                            'image_url', si.image_url,
+                            'width', si.width,
+                            'height', si.height,
+                            'size', si.size,
+                            'format', si.format
+                        )
+                    END
+                    ORDER BY si.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+
+                    sl.longitude,
+                    sl.latitude,
+                    sl.geo,
+                    sl.location_type,
+                    u.user_id AS publisher_id,
+                    u.first_name AS publisher_first_name,
+                    u.last_name AS publisher_last_name,
+                    u.email AS publisher_email,
+                    u.is_email_verified AS publisher_email_verified,
+                    u.profile_pic_url AS publisher_profile_pic_url,
+                    u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
+                    u.created_at AS publisher_created_at,
+
+                        -- User online status (0 = offline, 1 = online)
+    ci.online AS user_online_status
+
+
+                FROM used_product_listings s
+                LEFT JOIN used_product_listing_images si ON s.product_id = si.product_id
+                
+                 INNER JOIN users u ON s.created_by = u.user_id
+
+                LEFT JOIN used_product_listing_location sl ON s.product_id = sl.product_id
+                                
+
+                LEFT JOIN
+    chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
+    
+                WHERE s.created_by = ?`;
+
+        const params = [serviceOwnerId];     
+
+        if (payload) {
+            query += ` AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+            params.push(
+                payload.created_at,
+                payload.created_at,
+                payload.id
+            );
+        }
+
+        query += ` GROUP BY product_id ORDER BY limit ?`;
+
+        params.push(pageSize);
+
+        const [results] = await db.query(query, params);
+
+        const products = {};
+        let lastItem = null;
+
+        for (let index = 0; index < results.length; index++) {
+            const productId = row.product_id;
+            if (!products[productId]) {
+                products[productId] = {
+                    user: {
+                        user_id: row.publisher_id,
+                        first_name: row.publisher_first_name,
+                        last_name: row.publisher_last_name,
+                        email: row.publisher_email,
+                        is_email_verified: !!row.publisher_email_verified,
+                        profile_pic_url: row.publisher_profile_pic_url
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                            : null,
+
+                        profile_pic_url_96x96: row.publisher_profile_pic_url
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                            : null,
+                        online: Boolean(row.user_online_status),
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
+                    },
+                    id: row.id,
+                    product_id: productId,
+                    name: row.name,
+                    description: row.description,
+                    price: row.price,
+                    price_unit: row.price_unit,
+                    country: row.country,
+                    state: row.state,
+                    status: row.status,
+                    short_code: BASE_URL + "/used-product/" + row.short_code,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+
+                    images: row.images ? JSON.parse(row.images).map(image => ({
+                        ...image,
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
+                    })) : [],
+                    location: row.longitude && row.latitude && row.geo && row.location_type
+                        ? {
+                            longitude: row.longitude,
+                            latitude: row.latitude,
+                            geo: row.geo,
+                            location_type: row.location_type
+                        }
+                        : null
+                };
+            }
+
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
+            }
+        }
+
+        const allItems = Object.values(products)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        console.log(lastItem);
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
+    }
+
 
     static async bookmarkUsedProductListing(userId, productId) {
         let connection;
