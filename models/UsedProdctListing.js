@@ -1397,7 +1397,6 @@ WHERE
             previous_token: hasPreviousPage ? nextToken : null
         };
     }
-
     
     static async getGuestFeedUserPublishedUsedProductListings(serviceOwnerId, pageSize, nextToken) {
       
