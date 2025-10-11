@@ -731,7 +731,7 @@ WHERE
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
 
                 if (payload?.total_relevance) {
-                    query += ` GROUP BY service_id HAVING
+                    query += ` GROUP BY product_id HAVING
                                 distance < ? AND (
                                     name_relevance > 0 OR
                                     description_relevance > 0
@@ -741,7 +741,7 @@ WHERE
                             )`;
                     params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
-                    query += ` GROUP BY service_id HAVING
+                    query += ` GROUP BY product_id HAVING
                                 distance < ? AND (
                                     name_relevance > 0 OR
                                     description_relevance > 0
@@ -985,7 +985,7 @@ WHERE
 
 
                 if (payload?.total_relevance) {
-                    query += ` GROUP BY service_id HAVING
+                    query += ` GROUP BY product_id HAVING
                                 (
                                     name_relevance > 0 OR
                                     description_relevance > 0
@@ -995,7 +995,7 @@ WHERE
                                 )`;
                     params.push(payload.total_relevance, payload.total_relevance);
                 } else {
-                    query += ` GROUP BY service_id HAVING
+                    query += ` GROUP BY product_id HAVING
                                 (
                                     name_relevance > 0 OR
                                     short_description_relevance > 0
