@@ -665,7 +665,7 @@ WHERE
                             distance: (row.distance !== null && row.distance !== undefined) ? row.distance : null
                         };
                     } catch (error) {
-                        throw new Error("Error processing used product listing data");
+                        throw new Error("Error processing local job data");
                     }
                 }
 
@@ -2026,7 +2026,7 @@ GROUP BY l.local_job_id;
             if (connection) {
                 await connection.rollback();
             }
-            throw new Error(`Used product deletion failed: ${error.message}`);
+            throw new Error(`Local job deletion failed: ${error.message}`);
         } finally {
             if (connection) {
                 connection.release();
