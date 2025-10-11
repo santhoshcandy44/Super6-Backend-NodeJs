@@ -1194,6 +1194,7 @@ WHERE
                         };
 
                     } catch (error) {
+                        console.log(error);
                         throw new Error("Error processing used product listing data");
                     }
                 }
