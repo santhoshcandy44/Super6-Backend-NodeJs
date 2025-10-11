@@ -1550,10 +1550,6 @@ WHERE
             id: lastItem.id
         } : null;
 
-        console.log(
-           payload
-        );
-
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(
