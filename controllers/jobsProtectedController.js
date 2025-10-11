@@ -67,6 +67,16 @@ exports.getGuestJobListings = async (req, res) => {
         const { user_id, s, s_latitude, s_longitude, latitude, longitude, industries, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
 
         const querySearch = !s ? '' : s;
+
+        if (!querySearch && (!industries || industries.length === 0)) {
+            return sendErrorResponse(
+                res,
+                400,
+                'Industries cannot be empty',
+                null,
+                'EMPTY_JOB_INDUSTRIES');
+        }
+
         const queryNextToken = !next_token ? null : next_token;
         const queryIndustries = !industries ? [] : industries;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
