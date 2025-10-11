@@ -1321,7 +1321,7 @@ WHERE
 
         params.push(pageSize);
 
-        const [results] = await db.query(query, [userId, serviceOwnerId]);
+        const [results] = await db.query(query, params);
 
         const products = {};
         let lastItem = null;
