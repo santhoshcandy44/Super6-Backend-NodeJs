@@ -1542,7 +1542,6 @@ WHERE
             }
         }
         
-        console.log(lastItem);
         const allItems = Object.values(products)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
@@ -1550,6 +1549,16 @@ WHERE
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
+
+        console.log(
+            {
+                data: allItems,
+                next_token: payloadToEncode ? encodeCursor(
+                    payloadToEncode
+                ) : null,
+                previous_token: hasPreviousPage ? nextToken : null
+            }
+        );
 
         return {
             data: allItems,
