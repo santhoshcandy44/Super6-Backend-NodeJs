@@ -114,7 +114,7 @@ router.get('/feed-user-published-used-product-listings/:user_id(\\d+)',
             })
             .isLength({ min: 19, max: 19 }).withMessage('Last Timestamp must be exactly 19 characters long in the format YYYY-MM-DD HH:MM:SS')
     ],
-    usedProductsProtectedController.getUserFeedPublishedUsedProductListings
+    usedProductsProtectedController.getFeedUserPublishedUsedProductListings
 );
 
 router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',

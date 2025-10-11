@@ -1154,7 +1154,7 @@ distance LIMIT ?`;
         return Object.values(products);
     }
 
-    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 5) {
+    static async getUserPublishedUsedProductListingsFeedUser(userId, serviceOwnerId, limit = 0) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]

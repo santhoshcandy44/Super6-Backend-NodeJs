@@ -49,7 +49,7 @@ exports.getGuestUsedProductListings = async (req, res) => {
     }
 };
 
-exports.getUserFeedPublishedUsedProductListings = async (req, res) => {
+exports.getFeedUserPublishedUsedProductListings = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -58,11 +58,10 @@ exports.getUserFeedPublishedUsedProductListings = async (req, res) => {
         }
         const userId = req.user.user_id;
         const { user_id } = req.params;
-        const { after_id, page_size, last_timestamp } = req.query;
-        const queryAfterId = after_id ? after_id : -1;
+        const { page_size, next_token } = req.query;
+        const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
+        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
