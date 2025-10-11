@@ -95,7 +95,7 @@ exports.getGuestJobListings = async (req, res) => {
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
-        const result = await Job.getGuestJobPostings(user_id, decodedQuery, s_latitude, s_longitude, coordinates, queryIndustries, 1, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
+        const result = await Job.getGuestJobPostings(user_id, decodedQuery, s_latitude, s_longitude, coordinates, queryIndustries, PAGE_SIZE, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
