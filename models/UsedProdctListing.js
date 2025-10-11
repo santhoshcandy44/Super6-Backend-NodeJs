@@ -621,12 +621,13 @@ WHERE
         };
     }
 
-    static async getGuestUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp,
-        lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
+    static async getGuestUsedProductListings(userId, queryParam, userCoordsData, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         let query, params;
         var radius = initialRadius;
 
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+        
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
@@ -1128,7 +1129,7 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getGuestUsedProductListings(userId, queryParam, afterId, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
+                    return await this.getGuestUsedProductListings(userId, queryParam, userCoordsData, pageSize, nextToken, radius)
                 }
             }
         }

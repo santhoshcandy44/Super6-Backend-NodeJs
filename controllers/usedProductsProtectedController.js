@@ -39,7 +39,7 @@ exports.getGuestUsedProductListings = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
-        const result = await UsedProductListing.getGuestUsedProductListings(user_id, decodedQuery, coordinates, queryNextToken, PAGE_SIZE);
+        const result = await UsedProductListing.getGuestUsedProductListings(user_id, decodedQuery, coordinates, 1, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
