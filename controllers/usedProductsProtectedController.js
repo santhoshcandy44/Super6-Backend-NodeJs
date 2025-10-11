@@ -80,7 +80,6 @@ exports.getGuestFeedUserPublishedUsedProductListings = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.user.user_id;
         const { user_id } = req.params;
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
@@ -91,7 +90,6 @@ exports.getGuestFeedUserPublishedUsedProductListings = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
