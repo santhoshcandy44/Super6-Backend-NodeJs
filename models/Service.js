@@ -862,7 +862,6 @@ END AS thumbnail,
         userCoordsData, industryIds,
         pageSize, nextToken, initialRadius = 50) {
 
-        console.log(nextToken);    
         const connection = await db.getConnection();
 
         let query, params;
@@ -1548,7 +1547,7 @@ END AS thumbnail,
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getGuestServices(userId, queryParam, userCoordsData, industryIds, nextToken, pageSize, radius)
+                    return await this.getGuestServices(userId, queryParam, userCoordsData, industryIds, pageSize, nextToken, radius)
                 }
             }
         }
