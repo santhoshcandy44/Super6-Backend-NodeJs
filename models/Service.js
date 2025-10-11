@@ -1212,7 +1212,7 @@ WHERE
               
                 query += ` ORDER BY
 distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
-                params.push(radius, pageSize);
+                params.push(pageSize);
 
             }
         } else {
