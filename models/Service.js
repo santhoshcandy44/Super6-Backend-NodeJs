@@ -1067,7 +1067,7 @@ END AS thumbnail,
 
                 params.push(pageSize);
             } else {
-                console.log(executed);
+                console.log("run");
                 query = `
                     SELECT
     s.id,                   
