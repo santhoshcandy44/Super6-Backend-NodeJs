@@ -40,28 +40,6 @@ router.get('/services',
 );
 
 router.get('/guest-services',
-    (req, res, next) => {
-        console.log(req.query);
-
-        let originalValue = req.query.industries;
-        if (originalValue) {
-            if (originalValue && !Array.isArray(originalValue)) {
-                originalValue = [originalValue];
-            }
-            if (originalValue && !Array.isArray(originalValue)) {
-                return res.status(400).json({ error: 'Industries must be an array' });
-            }
-            const validIndustries = originalValue.map(item => {
-                const numItem = parseInt(item, 10);
-                if (!Number.isInteger(numItem) || numItem <= 0) {
-                    throw new Error(`Industry ID ${item} is not a valid positive integer`);
-                }
-                return numItem;
-            });
-            req.query.industries = validIndustries;
-        }
-        next();
-    },
     [
         query('user_id')
             .optional()
@@ -91,6 +69,14 @@ router.get('/guest-services',
 
         query('industries')
             .optional()
+            .customSanitizer(value => {
+                try {
+                    const parsed = JSON.parse(value);
+                    return Array.isArray(parsed) ? parsed : null;
+                } catch (e) {
+                    return null;
+                }
+            })
             .isArray()
             .withMessage('Industries must be an array of integers')
             .custom(value => {
