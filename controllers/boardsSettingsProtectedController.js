@@ -32,6 +32,7 @@ exports.getGuestBoards = async (req, res) => {
         }
         const { user_id } = req.query; 
         const boards = await BoardsModel.getGuestBoards();
+        console.log(boards);
         return sendJsonResponse(res, 200, "Boards retrived successfully", boards);
     } catch (error) {
         console.log(error);
