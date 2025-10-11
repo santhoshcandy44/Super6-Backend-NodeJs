@@ -628,9 +628,7 @@ WHERE
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-            if (false) {
-
+        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
             if (queryParam) {
@@ -1116,7 +1114,6 @@ WHERE
                     );
                 }
 
-
                 query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
                 params.push(pageSize);
@@ -1167,9 +1164,7 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString(),
                             },
-
                             created_used_product_listings: result,
-                            id: row.id,
                             product_id: productId,
                             name: row.name,
                             description: row.description,

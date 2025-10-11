@@ -700,8 +700,7 @@ WHERE
         };
     }
 
-    static async guestGetLocalJobs(userId, queryParam, page, pageSize, lastTimeStamp,
-        lastTotalRelevance = null, userCoordsData = null, initialRadius = 50) {
+    static async getGuestLocalJobs(userId, queryParam, userCoordsData, pageSize, nextToken, initialRadius = 50) {
 
         const connection = await db.getConnection();
         let query, params;
@@ -742,6 +741,7 @@ WHERE
                             l.country,
                         l.state, 
                         l.status,
+                        l.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -812,26 +812,16 @@ WHERE
                         AND ? BETWEEN -180 AND 180 `;
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                }
-
-                query += ` AND l.id > ?`;
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY local_job_id HAVING
                                 distance < ? AND (
                                     title_relevance > 0 OR
-                                    description_relevance > 0 
+                                    description_relevance > 0
                                 ) AND (
-                                    (total_relevance = ? AND distance <= ?)
-                                    OR (total_relevance < ? AND distance <= ?)
-                                )`;
-                    params.push(radius, lastTotalRelevance, radius, lastTotalRelevance, radius);
+                                (total_relevance = ? AND distance <= ?)
+                                OR (total_relevance < ? AND distance <= ?)
+                            )`;
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
                 } else {
                     query += ` GROUP BY local_job_id HAVING
                                 distance < ? AND (
@@ -841,10 +831,36 @@ WHERE
                     params.push(radius);
                 }
 
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND total_relevance < ?) 
+                            OR (distance = ? AND total_relevance = ? AND l.created_at < ?) 
+                            OR (distance = ? AND total_relevance = ? AND l.created_at = ? AND l.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
                 query += ` ORDER BY
-                                distance ASC,
-                                total_relevance DESC
-                            LIMIT ? OFFSET ?`;
+                            distance ASC,
+                            total_relevance DESC,
+                            l.created_at DESC,
+                            l.id ASC
+                        LIMIT ?`;
+
                 params.push(pageSize);
             } else {
                 query = `SELECT
@@ -864,6 +880,7 @@ WHERE
                             l.country,
                         l.state, 
                          l.status,
+                         l.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -931,18 +948,35 @@ WHERE
 
                 params = [userLon, userLat, userLat, userLon];
 
-                if (!lastTimeStamp) {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
+                query += ` GROUP BY local_job_id HAVING distance < ?`;
+                params.push(radius);
+
+                if (payload) {
+                    query += ` AND (
+                            distance > ? 
+                            OR (distance = ? AND s.created_at < ?) 
+                            OR (distance = ? AND s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.distance,
+                        payload.distance,
+                        payload.created_at,
+                        payload.distance,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` GROUP BY local_job_id HAVING
-        distance < ?
-        ORDER BY distance
-        LIMIT ?`;
-                params.push(radius, pageSize);
+
+                query += ` ORDER BY
+        distance ASC,
+        l.created_at DESC,
+        l.id ASC
+    LIMIT ?`;
+
+                params.push(radius);
             }
         } else {
             if (queryParam) {
@@ -975,6 +1009,7 @@ WHERE
                             l.country,
                         l.state, 
                         l.status,
+                        l.created_at,
 
                      COALESCE(
             CONCAT('[', 
@@ -1038,17 +1073,7 @@ WHERE
 
                 params = [queryParam, queryParam, queryParam, queryParam];
 
-                if (lastTimeStamp != null) {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
-                } else {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                }
-
-                query += ` AND l.id > ?`;
-                params.push(afterId);
-
-                if (lastTotalRelevance !== null) {
+                if (payload?.total_relevance) {
                     query += ` GROUP BY local_job_id HAVING
                                 (
                                     title_relevance > 0 OR
@@ -1057,18 +1082,42 @@ WHERE
                                     (total_relevance = ?)
                                     OR (total_relevance < ?)
                                 )`;
-                    params.push(lastTotalRelevance, lastTotalRelevance);
+                    params.push(payload.total_relevance, payload.total_relevance);
                 } else {
-                    query += ` GROUP BY local_job_id HAVING
+                    query += ` GROUP BY product_id HAVING
                                 (
                                     title_relevance > 0 OR
                                     description_relevance > 0
                                 )`;
                 }
 
+
+                if (payload) {
+                    query += ` AND (
+                            total_relevance < ? 
+                            OR (total_relevance = ? AND l.created_at < ?) 
+                            OR (total_relevance = ? AND l.created_at = ? AND l.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.total_relevance,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.total_relevance,
+                        payload.created_at,
+                        payload.id
+                    );
+                }
+
+
                 query += ` ORDER BY
-                                total_relevance DESC
-                            LIMIT ?`;
+                total_relevance DESC,
+                l.created_at DESC,
+                l.id ASC
+
+            LIMIT ?`;
+
                 params.push(pageSize);
             } else {
                 query = `
@@ -1085,6 +1134,7 @@ WHERE
                         l.salary_min,
                         l.salary_max,
                         l.status,
+                        l.created_at,
                          l.short_code,
                             l.country,
                         l.state,  
@@ -1148,14 +1198,23 @@ WHERE
 
                 params = [];
 
-                if (!lastTimeStamp) {
-                    query += ` AND l.created_at < CURRENT_TIMESTAMP`;
-                } else {
-                    query += ` AND l.created_at < ?`;
-                    params.push(lastTimeStamp);
+                if (payload) {
+                    query += `
+                        AND (
+                            l.created_at < ?
+                            OR (l.created_at = ? AND l.id > ?)
+                        )
+                    `;
+
+                    params.push(
+                        payload.created_at,
+                        payload.created_at,
+                        payload.id
+                    );
                 }
 
-                query += ` GROUP BY local_job_id LIMIT ?`;
+                query += ` GROUP BY local_job_id ORDER BY l.created_at DESC, l.id ASC LIMIT ?`;
+
                 params.push(pageSize);
             }
         }
@@ -1168,7 +1227,7 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.guestGetLocalJobs(userId, queryParam, page, pageSize, lastTimeStamp, lastTotalRelevance, userCoordsData, radius)
+                    return await this.getGuestLocalJobs(userId, queryParam, userCoordsData, pageSize, nextToken, radius)
                 }
             }
         }
@@ -1176,7 +1235,8 @@ WHERE
         const items = {};
 
         await (async () => {
-            for (const row of results) {
+            for (let index = 0; index < results.length; index++) {
+                const row = results[index];
                 const local_job_id = row.local_job_id;
                 if (!items[local_job_id]) {
                     try {
@@ -1197,7 +1257,6 @@ WHERE
                                 online: Boolean(row.user_online_status),
                                 created_at: new Date(row.publisher_created_at).getFullYear().toString()
                             },
-                            id: row.id,
                             local_job_id: row.local_job_id,
                             title: row.title,
                             description: row.description,
@@ -1231,10 +1290,34 @@ WHERE
                         throw new Error("Error processing service data");
                     }
                 }
+
+                if (index == results.length - 1) lastItem = {
+                    distance: row.distance ? row.distance : null,
+                    total_relevance: row.total_relevance ? row.total_relevance : null,
+                    created_at: row.created_at,
+                    id: row.id
+                }
             }
         })();
         await connection.release();
-        return Object.values(items);
+
+        const allItems = Object.values(items)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            distance: lastItem.distance ? lastItem.distance : null,
+            total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
     }
 
     static async createOrUpdateLocalJob(user_id, title, description, company, age_min, age_max, marital_statuses,
