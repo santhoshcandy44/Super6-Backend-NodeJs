@@ -40,7 +40,7 @@ exports.getGuestLocalJobs = async (req, res) => {
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
         const result = await LocalJob.guestGetLocalJobs(user_id, decodedQuery, coordinates, PAGE_SIZE, queryNextToken);
-        if (!result) {
+        if (result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
         return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);

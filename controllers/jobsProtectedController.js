@@ -86,7 +86,7 @@ exports.getGuestJobListings = async (req, res) => {
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
         const result = await Job.getGuestJobPostings(user_id, decodedQuery, s_latitude, s_longitude, coordinates, queryIndustries, PAGE_SIZE, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
-        if (!result) {
+        if (result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
         return sendJsonResponse(res, 200, "Jobs retrieved successfully", result);
