@@ -1,7 +1,6 @@
 const db = require('../config/database.js')
 const sharp = require('sharp');
 const he = require('he');
-const { formatMySQLDateToInitialCheckAt } = require(`./utils/dateUtils.js`)
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
@@ -707,8 +706,7 @@ WHERE
         var radius = initialRadius;
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
-        // if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
-            if (false) {
+        if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
 
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
