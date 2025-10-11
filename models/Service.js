@@ -862,6 +862,7 @@ END AS thumbnail,
         userCoordsData, industryIds,
         pageSize, nextToken, initialRadius = 50) {
 
+        console.log(nextToken);    
         const connection = await db.getConnection();
 
         let query, params;
@@ -1651,7 +1652,7 @@ END AS thumbnail,
         } : null;
 
         console.log(lastItem);
-        
+
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(
