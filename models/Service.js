@@ -1539,7 +1539,7 @@ END AS thumbnail,
                 params.push(pageSize);
             }
         }
-
+        console.log(params);
         const [results] = await connection.execute(query, params);
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const availableResults = results.length;
@@ -1646,8 +1646,11 @@ END AS thumbnail,
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
         const payloadToEncode = hasNextPage && lastItem ? {
+            distance: lastItem.distance ? lastItem.distance : null,
+            total_relevance: lastItem.total_relevance ? lastItem.total_relevance : null,
             created_at: lastItem.created_at,
             id: lastItem.id
+
         } : null;
 
         console.log(lastItem);
