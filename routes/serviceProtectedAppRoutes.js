@@ -41,7 +41,7 @@ router.get('/services',
 
 router.get('/guest-services',
     (req, res, next) => {
-        console.log(req.industries);
+        console.log(req.query);
 
         let originalValue = req.query.industries;
         if (originalValue) {
