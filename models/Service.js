@@ -1012,7 +1012,29 @@ END AS thumbnail,
                 }
 
                 params = [userLon, userLat, queryParam, queryParam, queryParam, queryParam, queryParam, queryParam, userLat, userLon];
-                
+
+                if (payload?.total_relevance) {
+                    query += ` GROUP BY service_id HAVING
+                        distance < ? AND (
+                            title_relevance > 0 OR
+                            short_description_relevance > 0 OR
+                            long_description_relevance > 0
+                        ) AND (
+                        (total_relevance = ? AND distance <= ?) 
+                        OR (total_relevance < ? AND distance <= ?)  
+                    ) `;
+                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
+                } else {
+                    query += ` GROUP BY service_id HAVING
+                        distance < ? AND (
+                            title_relevance > 0 OR
+                            short_description_relevance > 0 OR
+                            long_description_relevance > 0
+                        )`;
+                    params.push(radius);
+                }
+
+                   
                 if (payload) {
                     query += `
                         AND (
@@ -1035,27 +1057,6 @@ END AS thumbnail,
                         payload.created_at,
                         payload.id
                     );
-                }
-
-                if (payload?.total_relevance) {
-                    query += ` GROUP BY service_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        ) AND (
-                        (total_relevance = ? AND distance <= ?) 
-                        OR (total_relevance < ? AND distance <= ?)  
-                    ) `;
-                    params.push(radius, payload.total_relevance, radius, payload.total_relevance, radius);
-                } else {
-                    query += ` GROUP BY service_id HAVING
-                        distance < ? AND (
-                            title_relevance > 0 OR
-                            short_description_relevance > 0 OR
-                            long_description_relevance > 0
-                        )`;
-                    params.push(radius);
                 }
 
                 query += ` ORDER BY
