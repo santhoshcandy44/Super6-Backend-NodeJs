@@ -1000,7 +1000,7 @@ WHERE
                     query += ` GROUP BY product_id HAVING
                                 (
                                     name_relevance > 0 OR
-                                    short_description_relevance > 0
+                                    description_relevance > 0
                                 )`;
                 }
 
