@@ -1534,6 +1534,7 @@ END AS thumbnail,
 
                     params.push(
                         payload.created_at,
+                        payload.created_at,
                         payload.id
                     );
                 }
