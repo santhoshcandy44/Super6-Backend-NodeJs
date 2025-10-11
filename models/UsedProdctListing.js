@@ -1541,7 +1541,8 @@ WHERE
                 id: row.id
             }
         }
-
+        
+        console.log(lastItem);
         const allItems = Object.values(products)
         const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
         const hasPreviousPage = payload != null;
