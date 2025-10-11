@@ -854,9 +854,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
         ? { latitude: latitudeParam, longitude: longitudeParam }
         : userCoordsData || {};
 
-    // if (userLat && userLon) {
-      if (false) {
-
+    if (userLat && userLon) {
       if (queryParam) {
         // if (initialRadius == 50) {
         //   const searchTermConcatenated = queryParam.replace(/\s+/g, '');
