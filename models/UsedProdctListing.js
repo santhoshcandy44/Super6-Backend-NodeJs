@@ -627,7 +627,7 @@ WHERE
         var radius = initialRadius;
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
-        
+
         if (userCoordsData && userCoordsData.latitude && userCoordsData.longitude) {
             const userLat = userCoordsData.latitude;
             const userLon = userCoordsData.longitude;
@@ -1136,7 +1136,7 @@ WHERE
 
         const products = {};
         let lastItem = null
-
+        
         await (async () => {
             for (let index = 0; index < results.length; index++) {
                 const row = results[index];
