@@ -416,7 +416,7 @@ class App {
                     } else if (row.type == 'used_product_listing') {
                         try {
                             const publisher_id = row.publisher_id;
-                            const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(publisher_id, publisher_id, null, 5);
+                            const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(publisher_id, publisher_id, 5, null);
                             if (!result) {
                                 throw new Error("Failed to retrieve published services of the user");
                             }
@@ -471,7 +471,7 @@ class App {
                             };
                         } catch (error) {
                             console.error(error);
-                            throw new Error("Error processing service data");
+                            throw new Error("Error processing used product listing data");
                         }
                     } else if (row.type == 'local_job') {
                         try {
