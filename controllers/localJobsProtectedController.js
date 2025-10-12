@@ -165,20 +165,16 @@ exports.applyLocalJob= async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError, errors.array());
         }
-
         const user_id = req.user.user_id;
         const { local_job_id } = req.body;
         const result = await LocalJob.applyLocalJob(user_id, local_job_id);
-
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to apply local job");
         }
-        
         return sendJsonResponse(res, 200, "Local job applied successfully");
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
-
 };
 
 exports.bookmarkLocalJob= async (req, res) => {
@@ -227,14 +223,14 @@ exports.localJobsSearchQueries = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.message, errors.array());
         }
         const query = req.query.query;
-        const result = await LocalJob.LocalJobsSearchQueries(query);
+        const result = await LocalJob.localJobsSearchQueries(query);
+        console.log(result);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
         console.log(result);
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
