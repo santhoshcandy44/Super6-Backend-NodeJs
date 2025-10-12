@@ -1143,7 +1143,7 @@ WHERE
                 if (!products[productId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await UsedProductListing.getGuestFeedUserPublishedUsedProductListings(publisher_id, 1, null);
+                        const result = await UsedProductListing.getGuestFeedUserPublishedUsedProductListings(publisher_id, 5, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published used product listings of the user");
                         }
@@ -1559,7 +1559,6 @@ WHERE
             previous_token: hasPreviousPage ? nextToken : null
         };
     }
-
 
     static async bookmarkUsedProductListing(userId, productId) {
         let connection;

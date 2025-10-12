@@ -84,7 +84,6 @@ exports.getGuestFeedUserPublishedUsedProductListings = async (req, res) => {
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        console.log(queryNextToken);
         const result = await UsedProductListing.getGuestFeedUserPublishedUsedProductListings(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
@@ -114,7 +113,6 @@ exports.getPublishedUsedProductListings = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }
-        console.log(next_token);
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);

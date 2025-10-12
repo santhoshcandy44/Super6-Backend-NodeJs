@@ -107,7 +107,7 @@ exports.getGuestFeedUserPublishedServices = async (req, res) => {
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await Service.getGuestFeedUserPublishedServices(user_id, PAGE_SIZE, queryNextToken)
+        const result = await Service.getGuestFeedUserPublishedServices(user_id, 1, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
