@@ -744,7 +744,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id);
+                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id, 1, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
@@ -1562,7 +1562,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getGuestFeedUserPublishedServices(publisher_id, 1, null);
+                        const result = await Service.getGuestFeedUserPublishedServices(publisher_id, 5, null);
 
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
@@ -1629,7 +1629,6 @@ END AS thumbnail,
                         };
 
                     } catch (error) {
-                        console.log(error);
                         throw new Error("Error processing service data");
                     }
                 }
@@ -1992,7 +1991,6 @@ END AS thumbnail,
 
 
         if (payload) {
-            console.log(payload);
             query += ` AND (
                             s.created_at < ? OR (s.created_at = ? AND s.id > ?)
                         )
@@ -2010,7 +2008,6 @@ END AS thumbnail,
         params.push(pageSize);
 
         const [results] = await db.query(query, params);
-        console.log(results);
 
         const services = {};
         let lastItem = null;
@@ -3208,7 +3205,6 @@ END AS thumbnail,
 
             return results;
         } catch (error) {
-            console.error(error);
             throw error;
         } finally {
             if (connection) (await connection).release();
