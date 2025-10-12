@@ -2007,8 +2007,8 @@ END AS thumbnail,
 
         params.push(pageSize);
 
-        console.log(params);
         const [results] = await db.query(query, params);
+        console.log(results);
 
         const services = {};
         let lastItem = null;
