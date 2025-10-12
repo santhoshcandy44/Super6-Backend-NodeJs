@@ -1320,7 +1320,7 @@ WHERE
         }
 
 
-        query += ` GROUP BY product_id ORDER BY LIMIT ?`;
+        query += ` GROUP BY product_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
@@ -1402,6 +1402,13 @@ WHERE
     
     static async getGuestFeedUserPublishedUsedProductListings(serviceOwnerId, pageSize, nextToken) {
       
+        const [userCheckResult] = await db.query(
+            'SELECT user_id FROM users WHERE user_id = ?',
+            [serviceOwnerId]
+        );
+
+        if (userCheckResult.length === 0) throw new Error('User not exist');
+
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
         let query = `
