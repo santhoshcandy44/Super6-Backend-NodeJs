@@ -220,7 +220,6 @@ exports.searchSkillsSuggestions = async (req, res) => {
             { skill: "Kotlin", skill_code: "KT" },
             { skill: "Python", skill_code: "PY" }
           ];
-          
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", skills);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
