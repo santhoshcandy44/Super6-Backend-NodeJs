@@ -483,6 +483,10 @@ router.post(
   '/update-applicant-language',
   authenticateToken,
   [
+    (req, res, next) => {
+      console.log("Incoming languages:", req.body.languages);
+      next();
+    },
     body()
       .isArray({ min: 1 })
       .withMessage('Languages list cannot be empty.'),
