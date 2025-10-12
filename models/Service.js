@@ -1992,17 +1992,17 @@ END AS thumbnail,
 
 
         if (payload) {
-            query += ` AND (
-                            s.created_at < ?
-                            OR (s.created_at = ? AND s.id > ?)
-                        )
-                    `;
+            // query += ` AND (
+            //                 s.created_at < ?
+            //                 OR (s.created_at = ? AND s.id > ?)
+            //             )
+            //         `;
 
-            params.push(
-                payload.created_at,
-                payload.created_at,
-                payload.id
-            );
+            // params.push(
+            //     payload.created_at,
+            //     payload.created_at,
+            //     payload.id
+            // );
         }
 
         params.push(pageSize);
