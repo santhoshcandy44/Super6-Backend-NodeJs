@@ -41,8 +41,14 @@ class Boards {
             board_label: row.board_label,
             display_order:
                 row.board_label === "services" ? 0 :
-                    row.board_label === "second_hands" ? 1 : -1,
-            is_selected:(row.board_label === "services" || row.board_label === "second_hands")
+                    row.board_label === "second_hands" ? 1 :
+                     row.board_label === "local_jobs" ? 2 :
+                    row.board_label === "jobs" ? 3 : -1,
+
+            is_selected:(row.board_label === "services" || row.board_label === "second_hands"
+                || row.board_label === "local_jobs"
+                || row.board_label === "jobs"
+            )
         }));
         return boards;
     }
