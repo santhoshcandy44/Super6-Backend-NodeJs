@@ -390,7 +390,6 @@ exports.searchSuggestions = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        // const user_id = req.user.user_id;
         const query = req.query.query;
         const result = await Service.searchQueries(query)
         if (!result) {
@@ -398,6 +397,7 @@ exports.searchSuggestions = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
