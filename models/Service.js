@@ -1885,7 +1885,6 @@ END AS thumbnail,
 
     }
 
-
     static async getGuestFeedUserPublishedServices(serviceOwnerId, pageSize, nextToken) {
 
         const payload = nextToken ? decodeCursor(nextToken) : null;

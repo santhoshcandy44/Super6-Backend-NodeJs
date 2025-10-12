@@ -586,7 +586,8 @@ WHERE
                                 : null,
                         };
                     } catch (error) {
-                        throw new Error("Error processing service data");
+                        console.log(error);
+                        throw new Error("Error processing used product listing data");
                     }
                 }
 
@@ -1319,7 +1320,7 @@ WHERE
         }
 
 
-        query += ` GROUP BY product_id ORDER BY limit ?`;
+        query += ` GROUP BY product_id ORDER BY LIMIT ?`;
 
         params.push(pageSize);
 

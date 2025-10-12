@@ -1312,8 +1312,6 @@ WHERE
             id: lastItem.id
         } : null;
 
-        console.log(lastItem);
-
         return {
             data: allItems,
             next_token: payloadToEncode ? encodeCursor(
@@ -1841,8 +1839,6 @@ GROUP BY l.local_job_id;
             reviewed_at: lastItem.reviewed_at,
             id: lastItem.id
         } : null;
-
-        console.log(lastItem);
 
         return {
             data: allItems,
