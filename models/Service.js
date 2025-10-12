@@ -1972,17 +1972,12 @@ END AS thumbnail,
                         -- User online status (0 = offline, 1 = online)
     ci.online AS user_online_status,
 
-                    CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked
-
                 FROM services s
                 LEFT JOIN service_images si ON s.service_id = si.service_id
                 LEFT JOIN service_plans sp ON s.service_id = sp.service_id
                 LEFT JOIN service_locations sl ON s.service_id = sl.service_id
                                 
                 LEFT JOIN service_thumbnail st ON s.service_id = st.service_id
-
-                LEFT JOIN user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
-
 
                 INNER JOIN users u ON s.created_by = u.user_id
 
@@ -2036,9 +2031,7 @@ END AS thumbnail,
                             : null,
                         online: Boolean(row.user_online_status),
                         created_at: new Date(row.publisher_created_at).getFullYear().toString()
-
                     },
-                    id: row.id,
                     service_id: serviceId,
                     title: row.title,
                     short_description: row.short_description,
