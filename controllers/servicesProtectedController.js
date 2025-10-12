@@ -80,11 +80,12 @@ exports.getFeedUserPublishedServices = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
+        const userId = req.user.user_id;
         const { user_id } = req.params;
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const result = await Service.getFeedUserPublishedServices(user_id, PAGE_SIZE, queryNextToken)
+        const result = await Service.getFeedUserPublishedServices(userId, user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
