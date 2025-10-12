@@ -744,7 +744,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id, 5, null);
+                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id, 1, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
@@ -1886,6 +1886,12 @@ END AS thumbnail,
     }
 
     static async getGuestFeedUserPublishedServices(serviceOwnerId, pageSize, nextToken) {
+        const [userCheckResult] = await db.query(
+            'SELECT user_id FROM users WHERE user_id = ?',
+            [serviceOwnerId]
+        );
+
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
         const payload = nextToken ? decodeCursor(nextToken) : null;
 
