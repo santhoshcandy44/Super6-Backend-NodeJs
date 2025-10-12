@@ -555,7 +555,7 @@ WHERE
                     local_job_images li ON l.local_job_id = li.local_job_id
              
                 LEFT JOIN
-                    local_job_location ll ON l.local_job_id = li.local_job_id
+                    local_job_location ll ON l.local_job_id = ll.local_job_id
            
     
                  LEFT JOIN
@@ -930,7 +930,7 @@ LEFT JOIN
     local_job_images li ON l.local_job_id = li.local_job_id
 
 LEFT JOIN
-    local_job_location ll ON l.local_job_id = li.local_job_id
+    local_job_location ll ON l.local_job_id = ll.local_job_id
 
 
 INNER JOIN
