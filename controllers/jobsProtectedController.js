@@ -17,7 +17,7 @@ exports.getJobListings = async (req, res) => {
         const querySearch = !s ? '' : s;
 
         let industries = await JobIndustries.getIndustries(user_id);
-        industries = industries.filter((value) => 
+        industries = industries.filter((value) =>
             value.is_selected
         )
         if (!querySearch && (!industries || industries.length === 0)) {
@@ -114,7 +114,7 @@ exports.getSavedJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const {page_size, next_token} = req.query;
+        const { page_size, next_token } = req.query;
         const nextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 30;
         const result = await Job.getSavedJobs(user_id, PAGE_SIZE, nextToken);
@@ -219,7 +219,7 @@ exports.searchSkillsSuggestions = async (req, res) => {
             { skill: "JavaScript", skill_code: "JS" },
             { skill: "Kotlin", skill_code: "KT" },
             { skill: "Python", skill_code: "PY" }
-          ];
+        ];
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", skills);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
