@@ -744,7 +744,7 @@ END AS thumbnail,
                 if (!services[serviceId]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id, 1, null);
+                        const result = await Service.getFeedUserPublishedServices(userId, publisher_id, 5, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published services of the user");
                         }
