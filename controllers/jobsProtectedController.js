@@ -192,13 +192,36 @@ exports.searchRoleSuggestions = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        // const user_id = req.user.user_id;
         const query = req.query.query;
         const result = await Job.searchRoleSuggestions(query)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+    }
+};
+
+exports.searchSkillsSuggestions = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const query = req.query.query;
+        const result = await Job.searchRoleSuggestions(query)
+        if (!result) {
+            return sendErrorResponse(res, 400, "Failed to get suggestions");
+        }
+        const skills = [
+            { skill: "JavaScript", skill_code: "JS" },
+            { skill: "Kotlin", skill_code: "KT" },
+            { skill: "Python", skill_code: "PY" }
+          ];
+          
+        return sendJsonResponse(res, 200, "Suggestions retrieved successfully", skills);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }

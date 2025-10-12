@@ -246,6 +246,18 @@ router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchRoleSuggestions
 );
 
+router.get('/applicant-profile-skills-search-suggestions/:user_id(\\d+)',
+  [
+    param('user_id')
+      .isInt().withMessage('Invalid user id format'),
+
+    query('query')
+      .isString().withMessage('Invalid user query format')
+      .notEmpty().withMessage('Query cannot be empty'),
+  ],
+  jobsProtectedController.searchSkillsSuggestions
+);
+
 router.post(
   '/apply-job',
   authenticateToken,
