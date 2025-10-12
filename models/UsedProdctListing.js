@@ -538,7 +538,7 @@ WHERE
                 if (!items[product_id]) {
                     const publisher_id = row.publisher_id;
                     try {
-                        const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(userId, publisher_id, 5, null);
+                        const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(userId, publisher_id, 1, null);
                         if (!result) {
                             throw new Error("Failed to retrieve published used product listings of the user");
                         }
