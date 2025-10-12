@@ -2076,7 +2076,7 @@ GROUP BY l.local_job_id;
                         SELECT search_term, popularity, '' AS search_term_concatenated, 0 AS match_count, 0 AS relevance_score
                         FROM local_job_search_queries 
                         WHERE search_term LIKE CONCAT(?, '%')
-                        AND popularity > 1
+                        AND popularity > 10
                         ORDER BY popularity DESC
                     )
                     UNION ALL
@@ -2085,7 +2085,7 @@ GROUP BY l.local_job_id;
                         FROM local_job_search_queries 
                         WHERE ${likeConditions}
                         AND search_term NOT LIKE CONCAT(?, '%')
-                        AND popularity > 1
+                        AND popularity > 10
                         ORDER BY popularity DESC
                     )
                     UNION ALL
@@ -2095,7 +2095,7 @@ GROUP BY l.local_job_id;
                         WHERE search_term_concatenated LIKE CONCAT(?, '%')
                         AND search_term NOT LIKE CONCAT(?, '%')
                         AND NOT (${likeConditions})
-                        AND popularity > 1
+                        AND popularity > 10
                         ORDER BY popularity DESC
                     )
                     UNION ALL
@@ -2106,7 +2106,7 @@ GROUP BY l.local_job_id;
                         AND search_term NOT LIKE CONCAT(?, '%')
                         AND NOT (${likeConditions})
                         AND search_term_concatenated NOT LIKE CONCAT(?, '%') 
-                        AND popularity > 1
+                        AND popularity > 10
                         ORDER BY popularity DESC
                     )
                     UNION ALL
@@ -2117,7 +2117,7 @@ GROUP BY l.local_job_id;
                         AND search_term NOT LIKE CONCAT(?, '%')
                         AND NOT (${likeConditions})
                         AND search_term_concatenated NOT LIKE CONCAT(?, '%') 
-                        AND popularity > 1
+                        AND popularity > 10
                         ORDER BY popularity DESC
                     )
                     ORDER BY relevance_score ASC, match_count DESC, popularity DESC
@@ -2147,7 +2147,6 @@ GROUP BY l.local_job_id;
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
 
-
             // Parameters for concatenatedLikeConditions
             for (const word of words) params.push(word);
             params.push(lowercaseQuery);
@@ -2155,7 +2154,7 @@ GROUP BY l.local_job_id;
             params.push(lowercaseQuery);
 
             const [results] = await connection.execute(sql, params);
-
+            
             return results;
         } catch (error) {
             throw error;
