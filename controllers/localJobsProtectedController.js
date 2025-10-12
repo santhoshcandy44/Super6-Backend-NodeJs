@@ -222,10 +222,8 @@ exports.localJobsSearchQueries = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.message, errors.array());
         }
-        console.log("Ass...");
         const query = req.query.query;
         const result = await LocalJob.localJobsSearchQueries(query);
-        console.log(result);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
