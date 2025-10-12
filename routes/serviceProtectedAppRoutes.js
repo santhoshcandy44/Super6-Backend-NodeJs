@@ -105,7 +105,8 @@ router.get('/guest-services',
 router.get('/guest-feed-user-published-services/:user_id(\\d+)',
     [
         param('user_id')
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
@@ -153,8 +154,7 @@ router.get('/published-services/:user_id(\\d+)',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
+            .isInt().withMessage('Invalid user id format'),
 
         query('page_size')
             .optional()
