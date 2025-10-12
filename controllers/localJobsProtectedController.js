@@ -43,6 +43,7 @@ exports.getGuestLocalJobs = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
+        console.log(result);
         return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
     } catch (error) {
         console.log(error);
