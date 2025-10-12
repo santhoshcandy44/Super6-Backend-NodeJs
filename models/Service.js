@@ -357,8 +357,8 @@ WHERE
                     userId, userId
                 ];
 
-              query += ` GROUP BY service_id HAVING distance < ?`;
-              params.push(radius);
+                query += ` GROUP BY service_id HAVING distance < ?`;
+                params.push(radius);
 
                 if (payload) {
                     query += ` AND (
@@ -1034,7 +1034,7 @@ END AS thumbnail,
                     params.push(radius);
                 }
 
-                   
+
                 if (payload) {
                     query += `
                         AND (
@@ -1188,10 +1188,10 @@ WHERE
 
                 params = [userLon, userLat, userLat, userLon];
 
-                  query += ` GROUP BY service_id HAVING
+                query += ` GROUP BY service_id HAVING
     distance < ?`;
                 params.push(radius);
-        
+
                 if (payload) {
                     query += `
                         AND (
@@ -1210,7 +1210,7 @@ WHERE
                         payload.id
                     );
                 }
-              
+
                 query += ` ORDER BY
 distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                 params.push(pageSize);
@@ -1354,7 +1354,7 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
 
                 params = [queryParam, queryParam, queryParam, queryParam, queryParam, queryParam]
 
-               
+
 
                 if (payload?.total_relevance) {
                     query += ` GROUP BY service_id HAVING
@@ -1376,7 +1376,7 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                         )`
                 }
 
-                 
+
                 if (payload) {
                     query += `
                         AND (
@@ -1395,7 +1395,7 @@ distance ASC, s.created_at DESC, s.id ASC LIMIT ?`;
                         payload.id
                     );
                 }
-              
+
 
                 query += ` ORDER BY
                         total_relevance DESC,
@@ -1520,7 +1520,7 @@ END AS thumbnail,
                     query += ` AND s.industry IN (${industryList})`;
                 }
 
-                
+
                 if (payload) {
                     query += `
                         AND (
@@ -1661,17 +1661,17 @@ END AS thumbnail,
         };
     }
 
-    static async getFeedUserPublishedServices(userId, serviceOwnerId, limit = 5) {
+    static async getFeedUserPublishedServices(userId, serviceOwnerId, pageSize, nextToken) {
         const [userCheckResult] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [serviceOwnerId]
         );
 
-        if (userCheckResult.length === 0) {
-            throw new Error('User not exist');
-        }
+        if (userCheckResult.length === 0) throw new Error('User not exist');
 
-        const [results] = await db.query(`
+                const payload = nextToken ? decodeCursor(nextToken) : null;
+        
+        let query = `
                 SELECT
                     s.id,
                     s.service_id AS service_id,
@@ -1683,6 +1683,7 @@ END AS thumbnail,
                     s.short_code,
                        s.country,
                         s.state, 
+                        s.created_at,
 
                  COALESCE(
             CONCAT('[', 
@@ -1769,12 +1770,35 @@ END AS thumbnail,
                 LEFT JOIN
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
     
-                WHERE s.created_by = ? GROUP BY service_id limit ?
-            `, [userId, serviceOwnerId, limit]);
+                WHERE s.created_by = ?
+            `;
+
+
+        let params =  [userId, serviceOwnerId] ;   
+
+        if (payload) {
+            query += ` AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+            params.push(
+                payload.created_at,
+                payload.created_at,
+                payload.id
+            );
+        }
+
+        params.push(pageSize);
+
+        const [results] = await db.query(query, params);
 
         const services = {};
+        let lastItem = null;
 
-        results.forEach(row => {
+        for (let index = 0; index < results.length; index++) {
+            const row = results[index];
             const serviceId = row.service_id;
             if (!services[serviceId]) {
                 services[serviceId] = {
@@ -1836,9 +1860,248 @@ END AS thumbnail,
                     is_bookmarked: Boolean(row.is_bookmarked),
                 };
             }
-        });
 
-        return Object.values(services);
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
+            }
+        }
+
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
+
+    }
+
+
+    static async getGuestFeedUserPublishedServices(serviceOwnerId, pageSize, nextToken) {
+
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
+        let query = `
+                SELECT
+                    s.id,
+                    s.service_id AS service_id,
+                    s.title,
+                    s.short_description,
+                    s.long_description,
+                    s.industry AS industry,
+                    s.status,
+                    s.short_code,
+                       s.country,
+                        s.state, 
+                        s.created_at,
+
+                 COALESCE(
+            CONCAT('[', 
+                GROUP_CONCAT(
+                    DISTINCT CASE 
+                        WHEN si.id IS NOT NULL THEN JSON_OBJECT(
+                            'image_id', si.id,
+                            'image_url', si.image_url,
+                            'width', si.width,
+                            'height', si.height,
+                            'size', si.size,
+                            'format', si.format
+                        )
+                    END
+                    ORDER BY si.created_at DESC
+                ), 
+            ']'), '[]') AS images,
+        
+            COALESCE(
+    CONCAT('[', 
+        GROUP_CONCAT(
+            DISTINCT CASE 
+                WHEN sp.id IS NOT NULL THEN JSON_OBJECT(
+                    'plan_id', sp.id,
+                    'plan_name', sp.name,
+                    'plan_description', sp.description,
+                    'plan_price', sp.price,
+                    'price_unit', sp.price_unit,
+                    'plan_features', sp.features,
+                    'plan_delivery_time', sp.delivery_time,
+                    'duration_unit', sp.duration_unit
+                )
+            END
+            ORDER BY sp.created_at ASC  -- Order by plan_id in ascending order
+        ), 
+    ']'), '[]') AS plans,  -- Ensure it returns an empty array if no plans
+
+
+    
+      CASE
+        WHEN st.thumbnail_id IS NOT NULL THEN 
+            JSON_OBJECT(
+                'id', st.thumbnail_id,
+                'url', st.image_url,
+                'width', st.width,
+                'height', st.height,
+                'size', st.size,
+                'format', st.format
+            )
+        ELSE
+            NULL  -- Return null if no result is found
+    END AS thumbnail,
+
+                    sl.longitude,
+                    sl.latitude,
+                    sl.geo,
+                    sl.location_type,
+                    u.user_id AS publisher_id,
+                    u.first_name AS publisher_first_name,
+                    u.last_name AS publisher_last_name,
+                    u.email AS publisher_email,
+                    u.is_email_verified AS publisher_email_verified,
+                    u.profile_pic_url AS publisher_profile_pic_url,
+                    u.profile_pic_url_96x96 As publisher_profile_pic_url_96x96,
+                    u.created_at AS publisher_created_at,
+
+                        -- User online status (0 = offline, 1 = online)
+    ci.online AS user_online_status,
+
+                    CASE WHEN ub.service_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_bookmarked
+
+                FROM services s
+                LEFT JOIN service_images si ON s.service_id = si.service_id
+                LEFT JOIN service_plans sp ON s.service_id = sp.service_id
+                LEFT JOIN service_locations sl ON s.service_id = sl.service_id
+                                
+                LEFT JOIN service_thumbnail st ON s.service_id = st.service_id
+
+                LEFT JOIN user_bookmark_services ub ON s.service_id = ub.service_id AND ub.user_id = ?
+
+
+                INNER JOIN users u ON s.created_by = u.user_id
+
+                LEFT JOIN
+    chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
+    
+                WHERE s.created_by = ?
+            `;
+
+        let params = [serviceOwnerId];
+
+
+        if (payload) {
+            query += ` AND (
+                            s.created_at < ?
+                            OR (s.created_at = ? AND s.id > ?)
+                        )
+                    `;
+
+            params.push(
+                payload.created_at,
+                payload.created_at,
+                payload.id
+            );
+        }
+
+        params.push(pageSize);
+
+        const [results] = await db.query(query, params);
+
+        const services = {};
+        let lastItem = null;
+
+        for (let index = 0; index < results.length; index++) {
+            const row = results[index];
+            const serviceId = row.service_id;
+            if (!services[serviceId]) {
+                services[serviceId] = {
+                    user: {
+                        user_id: row.publisher_id,
+                        first_name: row.publisher_first_name,
+                        last_name: row.publisher_last_name,
+                        email: row.publisher_email,
+                        is_email_verified: !!row.publisher_email_verified,
+                        profile_pic_url: row.publisher_profile_pic_url
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url
+                            : null,
+
+                        profile_pic_url_96x96: row.publisher_profile_pic_url
+                            ? PROFILE_BASE_URL + "/" + row.publisher_profile_pic_url_96x96
+                            : null,
+                        online: Boolean(row.user_online_status),
+                        created_at: new Date(row.publisher_created_at).getFullYear().toString()
+
+                    },
+                    id: row.id,
+                    service_id: serviceId,
+                    title: row.title,
+                    short_description: row.short_description,
+                    long_description: row.long_description,
+                    industry: row.industry,
+                    country: row.country,
+                    state: row.state,
+                    status: row.status,
+                    short_code: BASE_URL + "/service/" + row.short_code,
+                    thumbnail: row.thumbnail ? {
+                        ...JSON.parse(row.thumbnail),
+                        url: MEDIA_BASE_URL + "/" + JSON.parse(row.thumbnail).url
+                    } : null,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+
+                    images: row.images ? JSON.parse(row.images).map(image => ({
+                        ...image,
+                        image_url: MEDIA_BASE_URL + "/" + image.image_url
+                    })) : [],
+
+                    plans: row.plans
+                        ? JSON.parse(row.plans).map(plan => ({
+                            ...plan,
+                            plan_features: plan.plan_features
+                                ? (typeof plan.plan_features === "string" ? JSON.parse(plan.plan_features) : plan.plan_features)
+                                : []
+                        }))
+                        : [],
+
+                    location: row.longitude && row.latitude && row.geo && row.location_type
+                        ? {
+                            longitude: row.longitude,
+                            latitude: row.latitude,
+                            geo: row.geo,
+                            location_type: row.location_type
+                        }
+                        : null,
+                    is_bookmarked: Boolean(row.is_bookmarked),
+                };
+            }
+
+            if (index == results.length - 1) lastItem = {
+                created_at: row.created_at,
+                id: row.id
+            }
+        }
+
+        const allItems = Object.values(services)
+        const hasNextPage = allItems.length > 0 && allItems.length == pageSize && lastItem;
+        const hasPreviousPage = payload != null;
+        const payloadToEncode = hasNextPage && lastItem ? {
+            created_at: lastItem.created_at,
+            id: lastItem.id
+        } : null;
+
+        return {
+            data: allItems,
+            next_token: payloadToEncode ? encodeCursor(
+                payloadToEncode
+            ) : null,
+            previous_token: hasPreviousPage ? nextToken : null
+        };
+
     }
 
     static async getUserPublishedServices(userId, pageSize, nextToken) {

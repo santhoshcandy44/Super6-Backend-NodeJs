@@ -80,13 +80,11 @@ exports.getFeedUserPublishedServices = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.user.user_id;
         const { user_id } = req.params;
-        const { after_id, page_size, last_timestamp } = req.query;
-        const queryAfterId = after_id ? after_id : -1;
+        const { page_size, next_token } = req.query;
+        const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await Service.getUserPublishedServices(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
+        const result = await Service.getFeedUserPublishedServices(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -97,20 +95,19 @@ exports.getFeedUserPublishedServices = async (req, res) => {
     }
 };
 
-exports.getGuestFeedUserServices = async (req, res) => {
+exports.getGuestFeedUserPublishedServices = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.user.user_id;
         const { user_id } = req.params;
-        const { after_id, page_size, last_timestamp } = req.query;
-        const queryAfterId = after_id ? after_id : -1;
+        const { page_size, next_token } = req.query;
+        const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
         const queryLastTimestamp = last_timestamp ? last_timestamp : null;
-        const result = await Service.getUserPublishedServices(user_id, queryAfterId, PAGE_SIZE, queryLastTimestamp)
+        const result = await Service.getGuestFeedUserPublishedServices(user_id, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }

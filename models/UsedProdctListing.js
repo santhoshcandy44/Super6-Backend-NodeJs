@@ -1301,6 +1301,8 @@ WHERE
     chat_info ci ON u.user_id = ci.user_id  -- Join chat_info to get user online status
     
                 WHERE s.created_by = ?`;
+        
+        let params = [userId, serviceOwnerId];    
 
         if (payload) {
             query += ` AND (
@@ -1327,6 +1329,7 @@ WHERE
         let lastItem = null;
 
         for (let index = 0; index < results.length; index++) {
+            const row = results[index];
             const productId = row.product_id;
             if (!products[productId]) {
                 products[productId] = {
@@ -1386,8 +1389,6 @@ WHERE
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
-
-        console.log(lastItem);
 
         return {
             data: allItems,

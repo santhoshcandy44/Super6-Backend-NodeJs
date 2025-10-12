@@ -106,8 +106,21 @@ router.get('/guest-feed-user-published-services/:user_id(\\d+)',
     [
         param('user_id')
             .isInt().withMessage('Invalid user id format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
+
+        query('next_token')
+            .optional()
+            .isString().withMessage('Next token must be a valid string'),
+
+        query('previous_token')
+            .optional()
+            .isString().withMessage('Previous token must be a valid string')
     ],
-    servicesProtectedController.getGuestFeedUserServices
+    servicesProtectedController.getGuestFeedUserPublishedServices
 );
 
 router.get('/feed-user-published-services/:user_id(\\d+)',
@@ -116,6 +129,19 @@ router.get('/feed-user-published-services/:user_id(\\d+)',
         param('user_id')
             .optional()
             .isInt().withMessage('Invalid user id format'),
+
+        query('page_size')
+            .optional()
+            .isInt().withMessage('Invalid page size format')
+            .toInt(),
+
+        query('next_token')
+            .optional()
+            .isString().withMessage('Next token must be a valid string'),
+
+        query('previous_token')
+            .optional()
+            .isString().withMessage('Previous token must be a valid string')
 
     ],
     servicesProtectedController.getFeedUserPublishedServices
