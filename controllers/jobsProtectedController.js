@@ -223,6 +223,7 @@ exports.searchSkillsSuggestions = async (req, res) => {
         console.log(skills);
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", skills);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
     }
 };
