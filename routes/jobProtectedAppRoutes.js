@@ -247,6 +247,7 @@ router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
 );
 
 router.get('/applicant-profile-skills-search-suggestions/:user_id(\\d+)',
+  authenticateToken,
   [
     param('user_id')
       .isInt().withMessage('Invalid user id format'),
