@@ -231,6 +231,7 @@ exports.localJobsSearchQueries = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to get suggestions");
         }
+        console.log(result);
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
         console.log(error);
