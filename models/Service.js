@@ -1669,8 +1669,8 @@ END AS thumbnail,
 
         if (userCheckResult.length === 0) throw new Error('User not exist');
 
-                const payload = nextToken ? decodeCursor(nextToken) : null;
-        
+        const payload = nextToken ? decodeCursor(nextToken) : null;
+
         let query = `
                 SELECT
                     s.id,
@@ -1774,7 +1774,7 @@ END AS thumbnail,
             `;
 
 
-        let params =  [userId, serviceOwnerId] ;   
+        let params = [userId, serviceOwnerId];
 
         if (payload) {
             query += ` AND (
@@ -1874,6 +1874,8 @@ END AS thumbnail,
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
+
+        console.log(lastItem);
 
         return {
             data: allItems,
@@ -2008,7 +2010,7 @@ END AS thumbnail,
             );
         }
 
-        query+=` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
+        query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
