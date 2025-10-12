@@ -484,7 +484,7 @@ router.post(
   authenticateToken,
   [
     (req, res, next) => {
-      console.log("Incoming languages:", req.body.languages);
+      console.log("Incoming languages:", req.body);
       next();
     },
     body()
