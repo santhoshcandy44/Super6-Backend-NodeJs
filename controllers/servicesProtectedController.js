@@ -106,13 +106,13 @@ exports.getGuestFeedUserPublishedServices = async (req, res) => {
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
-        const queryLastTimestamp = last_timestamp ? last_timestamp : null;
         const result = await Service.getGuestFeedUserPublishedServices(user_id, 1, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
         return sendJsonResponse(res, 200, "Published services retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
