@@ -211,10 +211,10 @@ exports.searchSkillsSuggestions = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const query = req.query.query;
-        const result = await Job.searchRoleSuggestions(query)
-        if (!result) {
-            return sendErrorResponse(res, 400, "Failed to get suggestions");
-        }
+        // const result = await Job.searchRoleSuggestions(query)
+        // if (!result) {
+        //     return sendErrorResponse(res, 400, "Failed to get suggestions");
+        // }
         const skills = [
             { skill: "JavaScript", skill_code: "JS" },
             { skill: "Kotlin", skill_code: "KT" },
