@@ -2007,6 +2007,7 @@ END AS thumbnail,
 
         params.push(pageSize);
 
+        console.log(params);
         const [results] = await db.query(query, params);
 
         const services = {};
@@ -2087,8 +2088,6 @@ END AS thumbnail,
             created_at: lastItem.created_at,
             id: lastItem.id
         } : null;
-
-        console.log(lastItem);
 
         return {
             data: allItems,
