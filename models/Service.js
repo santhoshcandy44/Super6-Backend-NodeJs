@@ -1971,7 +1971,7 @@ END AS thumbnail,
                     u.created_at AS publisher_created_at,
 
                         -- User online status (0 = offline, 1 = online)
-    ci.online AS user_online_status,
+    ci.online AS user_online_status
 
                 FROM services s
                 LEFT JOIN service_images si ON s.service_id = si.service_id
