@@ -346,7 +346,7 @@ class App {
                     if (row.type == 'service') {
                         try {
                             const publisher_id = row.publisher_id;
-                            const result = await Service.getFeedUserPublishedServices(publisher_id, publisher_id);
+                            const result = await Service.getFeedUserPublishedServices(publisher_id, publisher_id, 5, null);
                             if (!result) {
                                 throw new Error("Failed to retrieve published services of the user");
                             }
@@ -416,7 +416,7 @@ class App {
                     } else if (row.type == 'used_product_listing') {
                         try {
                             const publisher_id = row.publisher_id;
-                            const result = await UsedProductListing.getUserPublishedUsedProductListingsFeedUser(publisher_id, publisher_id);
+                            const result = await UsedProductListing.getFeedUserPublishedUsedProductListings(publisher_id, publisher_id, null, 5);
                             if (!result) {
                                 throw new Error("Failed to retrieve published services of the user");
                             }
