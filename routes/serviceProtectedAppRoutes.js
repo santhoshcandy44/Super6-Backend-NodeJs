@@ -128,7 +128,8 @@ router.get('/feed-user-published-services/:user_id(\\d+)',
     [
         param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
