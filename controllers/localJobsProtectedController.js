@@ -173,6 +173,7 @@ exports.applyLocalJob= async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Local job applied successfully");
     } catch (error) {
+        console.log(error);
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
