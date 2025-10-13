@@ -16,7 +16,6 @@ exports.getLocalJobs = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const result = await LocalJob.getLocalJobs(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
-        console.log("Data fetches");
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve local jobs");
         }
