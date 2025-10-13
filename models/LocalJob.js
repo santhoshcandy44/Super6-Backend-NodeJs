@@ -1932,7 +1932,7 @@ GROUP BY l.local_job_id;
 
             const uniqueApplicationId = await this.generateUniqueApplicationId();
             const [rows] = await connection.execute(
-                "INSERT INTO local_job_applicants (applicant_id, candidate_id, local_job_id) VALUES (?, ?)",
+                "INSERT INTO local_job_applicants (applicant_id, candidate_id, local_job_id) VALUES (?, ?, ?)",
                 [uniqueApplicationId, userId, localJobId]
             );
 
