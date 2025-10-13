@@ -1349,8 +1349,7 @@ WHERE
                      WHERE local_job_id = ?`,
                     [title, description, company, age_min, age_max, JSON.stringify(
                         marital_statuses
-                    ),
-                        salary_unit, salary_min, salary_max, country, state, local_job_id]
+                    ), salary_unit, salary_min, salary_max, country, state, local_job_id]
                 );
             } else {
                 const [insertResult] = await connection.execute(
@@ -1781,7 +1780,7 @@ GROUP BY l.local_job_id;
         }
 
         query += ` GROUP BY applicant_id 
-               ORDER BY a.is_reviewed ASC, a.reviewed_at DESC,  a.id ASC
+               ORDER BY a.is_reviewed ASC, a.reviewed_at DESC, a.id ASC
                LIMIT ?`;
 
         params.push(pageSize);
@@ -1886,6 +1885,35 @@ GROUP BY l.local_job_id;
         return result;
     }
 
+
+     static async generateUniqueApplicationId() {
+        let id, exists = true;
+        let digitLength = 8;
+    
+        while (exists) {
+          const min = Math.pow(10, digitLength - 1);
+          const max = Math.pow(10, digitLength) - 1;
+    
+          id = Math.floor(min + Math.random() * (max - min + 1));
+    
+          const [rows] = await db.query(
+            "SELECT application_id FROM local_job_applicants WHERE application_id = ? LIMIT 1",
+            [id]
+          );
+    
+          exists = rows.length > 0;
+    
+          if (exists && digitLength < 12) {
+            const [countRows] = await db.query("SELECT COUNT(*) as total FROM local_job_applicants");
+            if (countRows[0].total >= (max - min + 1)) {
+              digitLength++;
+            }
+          }
+        }
+        return id;
+      }
+    
+
     static async applyLocalJob(userId, localJobId) {
         let connection;
         try {
@@ -1903,9 +1931,10 @@ GROUP BY l.local_job_id;
 
             await connection.beginTransaction();
 
+            const uniqueApplicationId = await generateUniqueApplicationId();
             const [rows] = await connection.execute(
-                "INSERT INTO local_job_applicants (candidate_id, local_job_id) VALUES (?, ?)",
-                [userId, localJobId]
+                "INSERT INTO local_job_applicants (applicant_id, candidate_id, local_job_id) VALUES (?, ?)",
+                [uniqueApplicationId, userId, localJobId]
             );
 
             if (rows.affectedRows === 0) throw new Error('Error on inserting local job');
