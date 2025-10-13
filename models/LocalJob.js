@@ -1894,9 +1894,7 @@ GROUP BY l.local_job_id;
                 [localJobId, userId]
             );
 
-            if (jobCheckResult.length === 0) {
-                throw new Error('Local job not found');
-            }
+            if (jobCheckResult.length === 0) throw new Error('Local job not found');
 
             const createdBy = jobCheckResult[0].created_by;
             const localJobTitle = jobCheckResult[0].title;
@@ -1906,13 +1904,11 @@ GROUP BY l.local_job_id;
             await connection.beginTransaction();
 
             const [rows] = await connection.execute(
-                "INSERT INTO local_job_applicants (candidate_id, local_job_id) VALUES (?, ?)",
+                "INSERT INTO local_job_applicants (applicant_id, local_job_id) VALUES (?, ?)",
                 [userId, localJobId]
             );
 
-            if (rows.affectedRows === 0) {
-                throw new Error('Error on inserting local job');
-            }
+            if (rows.affectedRows === 0) throw new Error('Error on inserting local job');
             await connection.commit();
 
             const kafkaKey = `${localJobId}:${createdBy}:${userId}`
