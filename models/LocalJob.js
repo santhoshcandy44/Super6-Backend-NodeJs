@@ -1886,33 +1886,33 @@ GROUP BY l.local_job_id;
     }
 
 
-     static async generateUniqueApplicationId() {
+    static async generateUniqueApplicationId() {
         let id, exists = true;
         let digitLength = 8;
-    
+
         while (exists) {
-          const min = Math.pow(10, digitLength - 1);
-          const max = Math.pow(10, digitLength) - 1;
-    
-          id = Math.floor(min + Math.random() * (max - min + 1));
-    
-          const [rows] = await db.query(
-            "SELECT application_id FROM local_job_applicants WHERE application_id = ? LIMIT 1",
-            [id]
-          );
-    
-          exists = rows.length > 0;
-    
-          if (exists && digitLength < 12) {
-            const [countRows] = await db.query("SELECT COUNT(*) as total FROM local_job_applicants");
-            if (countRows[0].total >= (max - min + 1)) {
-              digitLength++;
+            const min = Math.pow(10, digitLength - 1);
+            const max = Math.pow(10, digitLength) - 1;
+
+            id = Math.floor(min + Math.random() * (max - min + 1));
+
+            const [rows] = await db.query(
+                "SELECT application_id FROM local_job_applicants WHERE application_id = ? LIMIT 1",
+                [id]
+            );
+
+            exists = rows.length > 0;
+
+            if (exists && digitLength < 12) {
+                const [countRows] = await db.query("SELECT COUNT(*) as total FROM local_job_applicants");
+                if (countRows[0].total >= (max - min + 1)) {
+                    digitLength++;
+                }
             }
-          }
         }
         return id;
-      }
-    
+    }
+
 
     static async applyLocalJob(userId, localJobId) {
         let connection;
@@ -1931,7 +1931,7 @@ GROUP BY l.local_job_id;
 
             await connection.beginTransaction();
 
-            const uniqueApplicationId = await generateUniqueApplicationId();
+            const uniqueApplicationId = await this.generateUniqueApplicationId();
             const [rows] = await connection.execute(
                 "INSERT INTO local_job_applicants (applicant_id, candidate_id, local_job_id) VALUES (?, ?)",
                 [uniqueApplicationId, userId, localJobId]
@@ -2179,7 +2179,7 @@ GROUP BY l.local_job_id;
             params.push(lowercaseQuery);
 
             const [results] = await connection.execute(sql, params);
-            
+
             return results;
         } catch (error) {
             throw error;
