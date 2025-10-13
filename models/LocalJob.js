@@ -1904,7 +1904,7 @@ GROUP BY l.local_job_id;
             await connection.beginTransaction();
 
             const [rows] = await connection.execute(
-                "INSERT INTO local_job_applicants (applicant_id, local_job_id) VALUES (?, ?)",
+                "INSERT INTO local_job_applicants (candidate_id, local_job_id) VALUES (?, ?)",
                 [userId, localJobId]
             );
 
@@ -1921,7 +1921,7 @@ GROUP BY l.local_job_id;
             return rows.insertId;
         } catch (error) {
             (await connection).rollback();
-            throw new Error('Failed to create local job: ' + error.message);
+            throw new Error('Failed to apply local job: ' + error.message);
         } finally {
             (await connection).release;
         }
