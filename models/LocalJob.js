@@ -1897,7 +1897,7 @@ GROUP BY l.local_job_id;
             id = Math.floor(min + Math.random() * (max - min + 1));
 
             const [rows] = await db.query(
-                "SELECT applicant_id FROM local_job_applicants WHERE application_id = ? LIMIT 1",
+                "SELECT applicant_id FROM local_job_applicants WHERE applicant_id = ? LIMIT 1",
                 [id]
             );
 
