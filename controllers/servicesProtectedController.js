@@ -173,7 +173,7 @@ exports.updateServiceInfo = async (req, res) => {
         const user_id = req.user.user_id;
         const { title, short_description, long_description, industry } = req.body;
         const { service_id } = req.params;
-        const result = await Service.updateServiceInfo(service_id, user_id, title, short_description, long_description, industry);
+        const result = await Service.updateServiceInfo(user_id, service_id, title, short_description, long_description, industry);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to update service info");
         }

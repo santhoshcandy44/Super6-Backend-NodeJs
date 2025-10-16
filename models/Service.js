@@ -2441,11 +2441,19 @@ END AS thumbnail,
         }
     }
 
-    static async updateServiceInfo(service_id, user_id, title, short_description, long_description, industry) {
+    static async updateServiceInfo(userId, serviceId, title, shortDescription, longDescription, industry) {
         let connection;
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
+
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+
+            if (isValidService.length === 0) return null
+
             const updateQuery = `
                 UPDATE services
                 SET 
@@ -2457,16 +2465,14 @@ END AS thumbnail,
 
             const [updateResult] = await connection.execute(updateQuery, [
                 title,
-                short_description,
-                long_description,
+                shortDescription,
+                longDescription,
                 industry,
-                service_id,
-                user_id
+                serviceId,
+                userId
             ]);
 
-            if (updateResult.affectedRows === 0) {
-                throw new Error('No rows were updated, service or user not found');
-            }
+            if (updateResult.affectedRows === 0)  throw new Error('No rows were updated, service or user not found');
 
             const selectQuery = `
                 SELECT
@@ -2483,12 +2489,8 @@ END AS thumbnail,
                 WHERE
                     s.service_id = ? AND s.created_by = ?`;
 
-            const [rows] = await connection.execute(selectQuery, [service_id, user_id]);
-
-            if (rows.length === 0) {
-                throw new Error('Service not exist');
-            }
-
+            const [rows] = await connection.execute(selectQuery, [serviceId, userId]);
+            
             await connection.commit();
             return rows.length > 0 ? rows[0] : null;
         } catch (error) {
