@@ -2,7 +2,6 @@ const express = require('express');
 const { body, param, query } = require('express-validator');
 const authenticateToken = require('../middlewares/authMiddleware');
 const servicesProtectedController = require('../controllers/servicesProtectedController');
-const he = require('he');
 const { uploadSingle, uploadFields } = require('./utils/multerUpload');
 
 const router = express.Router();
@@ -209,14 +208,6 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .withMessage('Long Description must be between 1 and 5000 characters'),
         body('industry').isInt().withMessage('Industry must be a valid integer'),
     ],
-    (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
-        req.body.title = he.decode(req.body.title);
-        req.body.short_description = he.decode(req.body.short_description);
-        req.body.long_description = he.decode(req.body.long_description);
-        req.body.industry = he.decode(req.body.industry);
-        next();
-    },
     servicesProtectedController.updateServiceInfo
 );
 
@@ -369,19 +360,6 @@ router.post('/create-service',
         { name: 'thumbnail', maxCount: 1 },
         { name: 'images[]', maxCount: 10 }
     ]),
-    (req, res, next) => {
-        if (req.body.plans) {
-            try {
-                const decodedPlans = decodeURIComponent(req.body.plans);
-                req.body.plans = JSON.parse(decodedPlans);
-                next();
-            } catch (error) {
-                return res.status(400).json({ message: 'Invalid plans format' });
-            }
-        } else {
-            next();
-        }
-    },
     [
         body('title')
             .isString()
@@ -462,68 +440,52 @@ router.post('/create-service',
                 return true;
             }),
 
-        body('plans')
-            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')
-            .bail()
-            .custom((plans) => {
-                if (plans.length > 3) {
-                    throw new Error(`Maximum 3 plans can be created`);
+            body('plans')
+            .customSanitizer((value) => {
+                try {
+                    return JSON.parse(value);
+                } catch (error) {
+                    return null
                 }
-                plans.forEach((plan, index) => {
-                    if (typeof plan.plan_id !== 'number') {
-                        throw new Error(`Plan ID must be a number in plan ${index + 1}`);
-                    }
+            })
+            .isArray({ min: 1, max: 3 }).withMessage('Plans must be 1-3 array'),
 
-                    if (typeof plan.plan_name !== 'string') {
-                        throw new Error(`Plan name must be a string ${index + 1}`);
-                    }
+        body('plans.*')
+            .isObject().withMessage('Al Plan must be an object'),
 
-                    if (plan.plan_name.length > 20) {
-                        throw new Error(`Plan name cannot exceed 20 characters in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_id')
+            .isInt().withMessage('Plan ID must be a number'),
 
-                    if (typeof plan.plan_description !== 'string') {
-                        throw new Error(`Plan description must be a string and cannot exceed 500 characters in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_name')
+            .isString().withMessage('Plan name must be a string')
+            .isLength({ max: 20 }).withMessage('Plan name cannot exceed 20 characters'),
 
-                    if (plan.plan_description.length > 200) {
-                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_description')
+            .isString().withMessage('Plan description must be a string')
+            .isLength({ max: 500 }).withMessage('Plan description cannot exceed 500 characters'),
 
-                    if (typeof plan.plan_price !== 'number') {
-                        throw new Error(`Plan price must be a number in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_price')
+            .isFloat().withMessage('Plan price must be a number'),
 
-                    const validCurrencies = ['INR', 'USD'];
-                    if (!validCurrencies.includes(plan.price_unit)) {
-                        throw new Error(`Plan currency must be either INR or USD in plan ${index + 1}`);
-                    }
+        body('plans.*.price_unit')
+            .isIn(['INR', 'USD']).withMessage('Plan currency must be either INR or USD'),
 
-                    if (typeof plan.plan_delivery_time !== 'number') {
-                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_delivery_time')
+            .isInt().withMessage('Plan delivery time must be a number'),
 
-                    const validDurationUnits = ['HR', 'D', 'W', 'M'];
-                    if (!validDurationUnits.includes(plan.duration_unit)) {
-                        throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
-                    }
+        body('plans.*.duration_unit')
+            .isIn(['HR', 'D', 'W', 'M']).withMessage("Plan duration unit must be 'HR', 'D', 'W', or 'M'"),
 
-                    if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`);
-                    }
+        body('plans.*.plan_features')
+            .isArray({ min: 1, max: 10 }).withMessage('Plan features must be a non-empty array with max 10 features'),
 
-                    plan.plan_features.forEach((feature, featureIndex) => {
-                        if (!feature.feature_name || feature.feature_name.length > 40) {
-                            throw new Error(`Feature name must have a maximum length of 40 in feature ${featureIndex + 1} of plan ${index + 1}`);
-                        }
+        body('plans.*.plan_features.*.feature_name')
+            .isString().withMessage('Feature name must be a string')
+            .isLength({ max: 40 }).withMessage('Feature name must have a maximum length of 40'),
 
-                        if (!feature.feature_value || feature.feature_value.length > 10) {
-                            throw new Error(`Feature value must have a maximum length of 10 in feature ${featureIndex + 1} of plan ${index + 1}`);
-                        }
-                    });
-                });
-                return true;
-            }),
+        body('plans.*.plan_features.*.feature_value')
+            .isString().withMessage('Feature value must be a string')
+            .isLength({ max: 10 }).withMessage('Feature value must have a maximum length of 10'),
 
         body('location')
             .customSanitizer((value) => {

@@ -1,6 +1,5 @@
 const db = require('../config/database')
 const sharp = require('sharp');
-const he = require('he');
 const { BASE_URL, PROFILE_BASE_URL, MEDIA_BASE_URL } = require('../config/config');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
