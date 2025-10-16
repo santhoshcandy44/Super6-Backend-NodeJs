@@ -1789,7 +1789,7 @@ END AS thumbnail,
             );
         }
 
-        query+=` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
+        query += ` GROUP BY service_id ORDER BY s.created_at DESC, s.id ASC LIMIT ?`;
 
         params.push(pageSize);
 
@@ -2408,7 +2408,7 @@ END AS thumbnail,
                         plan.duration_unit]
                 );
             }
-            
+
             const location = locationJson;
             const insertLocationText = `
                 INSERT INTO service_locations (service_id, longitude, latitude, geo, location_type)
@@ -2552,19 +2552,8 @@ END AS thumbnail,
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
-            const updateSql = `
-                UPDATE service_plans 
-                SET name = ?, description = ?, price = ?, price_unit = ?, features = ?, delivery_time = ?, duration_unit = ?
-                WHERE id = ?`;
 
-            const insertSql = `
-                INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-
-            const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
-
-            const currentPlansSql = `SELECT id, service_id FROM service_plans`;
-            const [currentPlansResult] = await connection.execute(currentPlansSql, [serviceId]);
+            const [currentPlansResult] = await connection.execute(`SELECT id, service_id FROM service_plans WHERE service_id ?`, [serviceId]);
 
             const existingPlanIds = currentPlansResult.map(row => row.id);
             const planIdsInInput = [];
@@ -2581,12 +2570,17 @@ END AS thumbnail,
                 const durationUnit = plan.duration_unit || '';
 
                 if (planId === -1) {
-                    const [insertResult] = await connection.execute(insertSql, [
+                    const [insertResult] = await connection.execute(
+                        `INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
                         serviceId, name, description, price, priceUnit, features, deliveryTime, durationUnit
                     ]);
                     newlyInsertedPlanIds.push(insertResult.insertId);
                 } else {
-                    await connection.execute(updateSql, [
+                    await connection.execute(
+                        `UPDATE service_plans 
+                SET name = ?, description = ?, price = ?, price_unit = ?, features = ?, delivery_time = ?, duration_unit = ?
+                WHERE id = ?`, [
                         name, description, price, priceUnit, features, deliveryTime, durationUnit, planId
                     ]);
                     planIdsInInput.push(planId);
@@ -2597,16 +2591,15 @@ END AS thumbnail,
 
             for (const existingPlanId of existingPlanIds) {
                 if (!allValidPlanIds.includes(existingPlanId)) {
-                    console.log(existingPlanId);
+                    const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
                     await connection.execute(deleteSql, [existingPlanId]);
                 }
             }
 
-            const allPlans = `SELECT id As plan_id, name as plan_name, description as plan_description,
-            price as plan_price, price_unit as price_unit, delivery_time as plan_delivery_time, duration_unit as duration_unit, features as plan_features
-            FROM service_plans WHERE service_id = ?`;
 
-            const [rows] = await connection.execute(allPlans, [serviceId]);
+            const [rows] = await connection.execute(`SELECT id As plan_id, name as plan_name, description as plan_description,
+            price as plan_price, price_unit as price_unit, delivery_time as plan_delivery_time, duration_unit as duration_unit, features as plan_features
+            FROM service_plans WHERE service_id = ?`, [serviceId]);
             await connection.commit();
             const result = rows.map(row => {
                 return {
