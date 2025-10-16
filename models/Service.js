@@ -2564,7 +2564,7 @@ END AS thumbnail,
 
             const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
 
-            const currentPlansSql = `SELECT id, service_id FROM service_plans WHERE service_id = ?`;
+            const currentPlansSql = `SELECT id, service_id FROM service_plans`;
             const [currentPlansResult] = await connection.execute(currentPlansSql, [serviceId]);
 
             console.log(currentPlansResult);
