@@ -235,7 +235,7 @@ router.patch('/:service_id(\\d+)/update-service-plans',
                     return null
                 }
             })
-            .isArray({ min: 1, max: 4 }).withMessage('Plans must be 1-3 array'),
+            .isArray({ min: 1 }).withMessage('Plans must be 1-3 array'),
 
         body('plans.*')
             .isObject().withMessage('Al Plan must be an object'),
