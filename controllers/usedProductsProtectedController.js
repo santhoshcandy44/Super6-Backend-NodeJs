@@ -128,7 +128,7 @@ exports.createOrUpdateUsedProductListing = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const { product_id, name, description, price, price_unit, location, country, state, keep_image_ids } = req.body;  // keepImageIds comes from req.body
-        const images = req.files['images[]'];
+        const images = req.files;
         const user_id = req.user.user_id;
         const keepImageIdsArray = keep_image_ids ? keep_image_ids.map(id => Number(id)) : [];
         const result = await UsedProductListing.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);

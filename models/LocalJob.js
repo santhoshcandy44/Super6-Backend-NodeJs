@@ -1364,13 +1364,6 @@ WHERE
                     ), salary_unit, salary_min, salary_max, country, state, local_job_id]
                 );
             } else {
-
-                const [row] = await connection.execute(
-                    `ALTER TABLE local_jobs MODIFY local_job_id BIGINT UNSIGNED;`,
-                    []);
-
-                    console.log(row);
-
                 const [insertResult] = await connection.execute(
                     `INSERT INTO local_jobs (local_job_id, title, description, company,
                      age_min, age_max, marital_statuses,
