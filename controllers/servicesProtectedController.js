@@ -30,6 +30,7 @@ exports.getServices = async (req, res) => {
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const result = await Service.getServices(user_id, decodedQuery, PAGE_SIZE, queryNextToken);
+        console.log(result);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
