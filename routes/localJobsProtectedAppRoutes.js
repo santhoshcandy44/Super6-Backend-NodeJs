@@ -107,7 +107,7 @@ router.get('/published-local-jobs/:user_id(\\d+)',
 
 router.post('/create-or-update-local-job',
     authenticateToken,
-    uploadMultiple("images[]",10),
+    uploadMultiple("images[]", 10),
     [
         body('local_job_id').isInt().withMessage('Local Job ID must be a valid integer'),
 
@@ -246,37 +246,21 @@ router.post('/create-or-update-local-job',
             }),
 
         body('location')
-            .isString()
-            .withMessage('Location must be a valid string')
-            .notEmpty()
-            .withMessage('Location cannot be empty')
-            .trim()
-            .escape()
-            .custom((value) => {
-                const decodedLocation = he.decode(value);
-                const location = JSON.parse(decodedLocation);
-                if (
-                    typeof location.latitude !== 'number' ||
-                    typeof location.longitude !== 'number'
-                ) {
-                    throw new Error('Location must contain valid latitude and longitude');
+            .customSanitizer((value) => {
+                try {
+                    return JSON.parse(value)
+                } catch (err) {
+                    return null
                 }
+            }).isObject().withMessage('Location must be an object'),
 
-                if (location.latitude < -90 || location.latitude > 90) {
-                    throw new Error('Latitude must be a number between -90 and 90');
-                }
+        body('location.latitude')
+            .exists().withMessage('Latitude is required')
+            .isFloat({ min: -90, max: 90 }).withMessage('Latitude must be a number between -90 and 90'),
 
-                if (location.longitude < -180 || location.longitude > 180) {
-                    throw new Error('Longitude must be a number between -180 and 180');
-                }
-
-                const validTypes = ['approximate', 'precise'];
-
-                if (!validTypes.includes(location.location_type)) {
-                    throw new Error('Location type must be either "approximate" or "precise"');
-                }
-                return true;
-            }),
+        body('location.longitude')
+            .exists().withMessage('Longitude is required')
+            .isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a number between -180 and 180')
     ],
     localJobsProtectedController.createOrUpdateLocalJob
 );
@@ -300,7 +284,7 @@ router.get(
         param('local_job_id')
             .isInt().withMessage('Invalid local job id format')
             .toInt(),
-            
+
         query('page_size')
             .optional()
             .isInt().withMessage('Invalid page size format')

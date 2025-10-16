@@ -1417,8 +1417,7 @@ WHERE
             }
 
             if (locationJson) {
-                const decoded = he.decode(locationJson);
-                const location = JSON.parse(decoded);
+                const location = locationJson;
 
                 const [locResult] = await connection.execute(
                     `SELECT COUNT(*) as count FROM local_job_location WHERE local_job_id = ?`,
