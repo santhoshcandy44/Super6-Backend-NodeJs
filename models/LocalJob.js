@@ -1367,7 +1367,7 @@ WHERE
                 const [insertResult] = await connection.execute(
                     `INSERT INTO local_jobs (local_job_id, title, description, company, age_min, age_max, marital_statuses,
                      salary_unit, salary_min, salary_max, country, state, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [ await this.generateUnique11DigitLocalJobId(), title, description, company, age_min, age_max,
                         JSON.stringify(marital_statuses), salary_unit, salary_min, salary_max, country, state, user_id]
                 );
