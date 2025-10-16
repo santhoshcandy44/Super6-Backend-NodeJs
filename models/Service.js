@@ -2609,7 +2609,6 @@ END AS thumbnail,
 
             const [rows] = await connection.execute(allPlans, [serviceId]);
             await connection.commit();
-
             console.log(rows);
 
             const result = rows.map(row => {
