@@ -2564,8 +2564,10 @@ END AS thumbnail,
 
             const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
 
-            const currentPlansSql = `SELECT id FROM service_plans WHERE service_id = ?`;
+            const currentPlansSql = `SELECT id, service_id FROM service_plans WHERE service_id = ?`;
             const [currentPlansResult] = await connection.execute(currentPlansSql, [serviceId]);
+
+            console.log(currentPlansResult);
 
             const existingPlanIds = currentPlansResult.map(row => row.id);
             const planIdsInInput = [];
@@ -2609,8 +2611,6 @@ END AS thumbnail,
 
             const [rows] = await connection.execute(allPlans, [serviceId]);
             await connection.commit();
-            console.log(rows);
-
             const result = rows.map(row => {
                 return {
                     ...row,
