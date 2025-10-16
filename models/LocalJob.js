@@ -1369,9 +1369,7 @@ WHERE
                      salary_unit, salary_min, salary_max, country, state)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [ await this.generateUnique11DigitLocalJobId(), user_id, title, description, company, age_min, age_max,
-                        JSON.stringify(
-                            marital_statuses
-                        ), salary_unit, salary_min, salary_max, country, state]
+                        JSON.stringify(marital_statuses), salary_unit, salary_min, salary_max, country, state]
                 );
                 local_job_id = insertResult.insertId;
             }
