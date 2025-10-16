@@ -1366,7 +1366,7 @@ WHERE
             } else {
 
                 const [row] = await connection.execute(
-                    `DESCRIBE services`,
+                    `ALTER TABLE local_jobs MODIFY local_job_id BIGINT UNSIGNED;`,
                     []);
 
                     console.log(row);
