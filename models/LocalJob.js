@@ -1369,7 +1369,7 @@ WHERE
                     `DESCRIBE services`,
                     []);
 
-                    console.lg(row);
+                    console.log(row);
 
                 const [insertResult] = await connection.execute(
                     `INSERT INTO local_jobs (local_job_id, title, description, company,
