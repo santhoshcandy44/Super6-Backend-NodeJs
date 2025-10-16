@@ -214,6 +214,8 @@ router.post('/create-or-update-local-job',
 
         body('images[]')
             .custom((value, { req }) => {
+                console.log(req.files);
+                console.log(req.body);
                 if ((!req.files['images[]'] || req.files['images[]'].length === 0) && (!req.body.keep_image_ids || req.body.keep_image_ids.length === 0)) {
                     throw new Error('Atleast 1 image is required');
                 }
