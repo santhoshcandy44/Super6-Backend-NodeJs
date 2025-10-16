@@ -9,11 +9,6 @@ const router = express.Router();
 router.get('/services',
     authenticateToken,
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -39,11 +34,6 @@ router.get('/services',
 
 router.get('/guest-services',
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -143,7 +133,7 @@ router.get('/feed-user-published-services/:user_id(\\d+)',
 router.get('/published-services/:user_id(\\d+)',
     authenticateToken,
     [
-        query('user_id')
+        param('user_id')
             .optional()
             .isInt().withMessage('Invalid user id format')
             .toInt(),
@@ -167,11 +157,6 @@ router.get('/published-services/:user_id(\\d+)',
 router.patch('/:service_id(\\d+)/update-service-info',
     authenticateToken,
     [
-        body('user_id')
-        .isInt()
-        .withMessage('User ID must be a valid integer')
-        .toInt(),
-
         param('service_id')
         .isInt()
         .withMessage('Service ID must be a valid integer')
@@ -211,11 +196,6 @@ router.patch('/:service_id(\\d+)/update-service-info',
 router.patch('/:service_id(\\d+)/update-service-plans',
     authenticateToken,
     [
-        body('user_id')
-        .isInt()
-        .withMessage('User ID must be a valid integer')
-        .toInt(),
-
         param('service_id')
         .isInt()
         .withMessage('Service ID must be a valid integer')
@@ -274,11 +254,6 @@ router.patch('/:service_id(\\d+)/update-service-plans',
 router.patch('/:service_id(\\d+)/update-service-location',
     authenticateToken,
     [
-        body('user_id')
-        .isInt()
-        .withMessage('User ID must be a valid integer')
-        .toInt(),
-
         param('service_id')
         .isInt()
         .withMessage('Service ID must be a valid integer')
@@ -310,7 +285,6 @@ router.patch('/:service_id(\\d+)/update-service-location',
 router.delete('/:service_id(\\d+)/delete-service-image',
     authenticateToken,
     [
-        query('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
         param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
         query('image_id').isInt().withMessage('Image ID must be a valid integer').toInt()
     ],
@@ -321,7 +295,6 @@ router.post('/:service_id(\\d+)/upload-service-image',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
         param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
         body('image_id').isInt().withMessage('Image ID must be a valid integer'),
         body('image')
@@ -339,7 +312,6 @@ router.post('/:service_id(\\d+)/update-service-image',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
         param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
         body('image_id').isInt().withMessage('Image ID must be a valid integer').toInt(),
         body('image')
@@ -507,7 +479,6 @@ router.post('/:service_id(\\d+)/update-service-thumbnail',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
         param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
         body('image_id').isInt().withMessage('Image ID must be a valid integer').toInt(),
         body('thumbnail')
@@ -525,8 +496,7 @@ router.post(
     '/bookmark-service',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('Invalid user id format').toInt(),
-        body('service_id').isInt().withMessage('Invalid service id format').toInt(),
+        body('service_id').isInt().withMessage('Invalid service id format').toInt()
     ],
     servicesProtectedController.bookmarkService
 );
@@ -535,10 +505,6 @@ router.post(
     '/remove-bookmark-service',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         body('service_id')
             .isInt().withMessage('Invalid service id format')
             .toInt()
@@ -546,14 +512,9 @@ router.post(
     servicesProtectedController.removeBookmarkService
 );
 
-router.get('/search-services-suggestions/:user_id(\\d+)',
+router.get('/search-services-suggestions',
     authenticateToken,
     [
-        param('user_id')
-            .isInt()
-            .withMessage('Invalid user id format')
-            .toInt(),
-
         query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
@@ -561,19 +522,14 @@ router.get('/search-services-suggestions/:user_id(\\d+)',
     servicesProtectedController.searchSuggestions
 );
 
-router.get('/guest-services-search-suggestions/:user_id(\\d+)',
+router.get('/guest-services-search-suggestions',
     [
-        param('user_id')
-            .isInt()
-            .withMessage('Invalid user id format')
-            .toInt(),
-
         query('query')
             .isString()
             .withMessage('Invalid user query format')
             .notEmpty()
             .withMessage('Query cannot be empty')
-            .toInt(),
+            .toInt()
     ],
     servicesProtectedController.searchSuggestions
 );
@@ -584,11 +540,7 @@ router.delete('/:service_id(\\d+)/delete-service',
         param('service_id')
         .isInt()
         .withMessage('Invalid service id format')
-        .toInt(),
-        query('user_id')
-        .isInt()
-        .withMessage('Invalid user id format')
-        .toInt(),
+        .toInt()
     ],
     servicesProtectedController.deleteService
 );
