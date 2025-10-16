@@ -402,7 +402,6 @@ router.post('/create-service',
     (req, res, next) => {
         if (req.body.plans) {
             try {
-                console.log(req.body.plans);
                 const decodedPlans = decodeURIComponent(req.body.plans);
                 req.body.plans = JSON.parse(decodedPlans);
                 next();

@@ -2616,6 +2616,8 @@ END AS thumbnail,
                 };
             });
 
+            console.log(result);
+
             return result.length > 0 ? result : null;
         } catch (error) {
             if (connection) await connection.rollback();
