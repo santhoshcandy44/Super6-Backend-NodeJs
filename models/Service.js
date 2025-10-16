@@ -2553,9 +2553,12 @@ END AS thumbnail,
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            const [currentPlansResult] = await connection.execute(`SELECT id, service_id FROM service_plans WHERE service_id ?`, [serviceId]);
+            const [isServiceExist] = await connection.execute(`SELECT service_id FROM services WHERE service_id ? LIMIT 1`, [serviceId]);
+            if(isServiceExist.length==0) return null
 
+            const [currentPlansResult] = await connection.execute(`SELECT id FROM service_plans WHERE service_id ?`, [serviceId]);
             const existingPlanIds = currentPlansResult.map(row => row.id);
+
             const planIdsInInput = [];
             const newlyInsertedPlanIds = [];
 
@@ -2569,7 +2572,9 @@ END AS thumbnail,
                 const deliveryTime = plan.plan_delivery_time || '';
                 const durationUnit = plan.duration_unit || '';
 
-                if (planId === -1) {
+                const [existingPlan] = await connection.execute(`SELECT id FROM service_plans WHERE id ? LIMIT 1`, [planId]);
+
+                if (existingPlan.length == 0) {
                     const [insertResult] = await connection.execute(
                         `INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
@@ -2589,15 +2594,17 @@ END AS thumbnail,
 
             const allValidPlanIds = [...planIdsInInput, ...newlyInsertedPlanIds];
 
-            for (const existingPlanId of existingPlanIds) {
-                if (!allValidPlanIds.includes(existingPlanId)) {
-                    const deleteSql = `DELETE FROM service_plans WHERE id = ?`;
-                    await connection.execute(deleteSql, [existingPlanId]);
-                }
-            }
+            if (existingPlanIds.length > 0) {
+                const deleteSql = `
+                    DELETE FROM service_plans 
+                    WHERE id IN (?) AND id NOT IN (?)
+                `;
+            
+                await connection.execute(deleteSql, [existingPlanIds, allValidPlanIds]);
+            }            
 
-
-            const [rows] = await connection.execute(`SELECT id As plan_id, name as plan_name, description as plan_description,
+            const [rows] = await connection.execute(`SELECT id As plan_id,
+                name as plan_name, description as plan_description,
             price as plan_price, price_unit as price_unit, delivery_time as plan_delivery_time, duration_unit as duration_unit, features as plan_features
             FROM service_plans WHERE service_id = ?`, [serviceId]);
             await connection.commit();
