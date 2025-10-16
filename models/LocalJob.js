@@ -1325,7 +1325,7 @@ WHERE
         let id, exists = true;
         while (exists) {
             id = Math.floor(10000000000 + Math.random() * 90000000000);
-            const [rows] = await db.query("SELECT local_jobs FROM applicant_profiles WHERE local_job_id = ? LIMIT 1", [id]);
+            const [rows] = await db.query("SELECT local_job_id FROM local_jobs WHERE local_job_id = ? LIMIT 1", [id]);
             exists = rows.length > 0;
         }
         return id;
@@ -1365,11 +1365,11 @@ WHERE
                 );
             } else {
                 const [insertResult] = await connection.execute(
-                    `INSERT INTO local_jobs (local_job_id, created_by, title, description, company, age_min, age_max, marital_statuses,
-                     salary_unit, salary_min, salary_max, country, state)
+                    `INSERT INTO local_jobs (local_job_id, title, description, company, age_min, age_max, marital_statuses,
+                     salary_unit, salary_min, salary_max, country, state, created_by)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [ await this.generateUnique11DigitLocalJobId(), user_id, title, description, company, age_min, age_max,
-                        JSON.stringify(marital_statuses), salary_unit, salary_min, salary_max, country, state]
+                    [ await this.generateUnique11DigitLocalJobId(), title, description, company, age_min, age_max,
+                        JSON.stringify(marital_statuses), salary_unit, salary_min, salary_max, country, state, user_id]
                 );
                 local_job_id = insertResult.insertId;
             }
