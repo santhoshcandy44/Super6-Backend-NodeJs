@@ -2499,61 +2499,17 @@ END AS thumbnail,
         }
     }
 
-    static async updateOrInsertLocation(service_id, longitude, latitude, geo, location_type) {
+    static async updateServicePlans(userId, serviceId, data) {
         let connection;
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            const query = `
-                INSERT INTO service_locations (service_id, longitude, latitude, geo, location_type)
-                VALUES (?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    longitude = VALUES(longitude),
-                    latitude = VALUES(latitude),
-                    geo = VALUES(geo),
-                    location_type = VALUES(location_type);
-            `;
-
-            const [result] = await connection.execute(query, [service_id, longitude, latitude, geo, location_type]);
-
-            const isUpdated = result.affectedRows > 0;
-            const isNewInsert = result.insertId > 0;
-
-            let updatedRow = null;
-            if (isUpdated || isNewInsert) {
-                const selectQuery = `
-                    SELECT service_id, longitude, latitude, geo, location_type
-                    FROM service_locations
-                    WHERE service_id = ?;
-                `;
-                const [rows] = await connection.execute(selectQuery, [service_id]);
-                updatedRow = rows[0];
-            }
-
-            await connection.commit();
-            return {
-                success: true,
-                isUpdated,
-                isNewInsert,
-                updatedRow
-            };
-        } catch (err) {
-            if (connection) await connection.rollback();
-            throw err;
-        } finally {
-            if (connection) await connection.release();
-        }
-    }
-
-    static async updateServicePlans(serviceId, data) {
-        let connection;
-        try {
-            connection = await db.getConnection();
-            await connection.beginTransaction();
-
-            const [isServiceExist] = await connection.execute(`SELECT service_id FROM services WHERE service_id ? LIMIT 1`, [serviceId]);
-            if(isServiceExist.length==0) return null
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+            if (isValidService.length == 0) return null
 
             const [currentPlansResult] = await connection.execute(`SELECT id FROM service_plans WHERE service_id ?`, [serviceId]);
             const existingPlanIds = currentPlansResult.map(row => row.id);
@@ -2596,7 +2552,7 @@ END AS thumbnail,
             if (existingPlanIds.length > 0) {
                 const deleteSql = `DELETE FROM service_plans WHERE id IN (?) AND id NOT IN (?)`;
                 await connection.execute(deleteSql, [existingPlanIds, allValidPlanIds]);
-            }            
+            }
 
             const [rows] = await connection.execute(
                 `SELECT 
@@ -2611,7 +2567,7 @@ END AS thumbnail,
                  FROM service_plans
                  WHERE service_id = ?`,
                 [serviceId]
-            );            
+            );
 
             await connection.commit();
             const result = rows.map(row => {
@@ -2630,13 +2586,66 @@ END AS thumbnail,
         }
     }
 
-    static async uploadServiceImage(user_id, service_id, file) {
+    static async updateOrInsertLocation(userId, serviceId, longitude, latitude, geo, location_type) {
         let connection;
-        let s3Key;
-        
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
+
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+            if (isValidService.length == 0) return null
+
+            const query = `
+                INSERT INTO service_locations (service_id, longitude, latitude, geo, location_type)
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    longitude = VALUES(longitude),
+                    latitude = VALUES(latitude),
+                    geo = VALUES(geo),
+                    location_type = VALUES(location_type);
+            `;
+
+            const [result] = await connection.execute(query, [serviceId, longitude, latitude, geo, location_type]);
+
+            const isUpdated = result.affectedRows > 0;
+            const isNewInsert = result.insertId > 0;
+
+            let updatedRow = null;
+            if (isUpdated || isNewInsert) {
+                const selectQuery = `
+                    SELECT service_id, longitude, latitude, geo, location_type
+                    FROM service_locations
+                    WHERE service_id = ?;
+                `;
+                const [rows] = await connection.execute(selectQuery, [serviceId]);
+                updatedRow = rows[0];
+            }
+
+            await connection.commit();
+            return updatedRow ? updatedRow : null;
+        } catch (err) {
+            if (connection) await connection.rollback();
+            throw err;
+        } finally {
+            if (connection) await connection.release();
+        }
+    }
+
+    static async uploadServiceImage(userId, serviceId, file) {
+        let connection;
+        let s3Key;
+        try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+            if (isValidService.length == 0) return null
 
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
@@ -2644,15 +2653,12 @@ END AS thumbnail,
             );
 
             const media_id = userResult[0]?.media_id;
-            if (!media_id) {
-                throw new Error("Unable to retrieve media_id.");
-            }
+            if (!media_id) throw new Error("Unable to retrieve media_id.");
 
             const fileName = `${uuidv4()}-${file.originalname}`;
-            s3Key = `media/${media_id}/services/${service_id}/${fileName}`;
+            s3Key = `media/${media_id}/services/${serviceId}/${fileName}`;
 
             const metadata = await sharp(file.buffer).metadata();
-
             let contentType;
             switch (metadata.format) {
                 case 'jpeg':
@@ -2682,7 +2688,7 @@ END AS thumbnail,
             const [result] = await connection.execute(
                 `INSERT INTO service_images (service_id, image_url, width, height, size, format)
                 VALUES (?, ?, ?, ?, ?, ?)`,
-                [service_id, image.url, image.width, image.height, image.size, image.format]
+                [serviceId, image.url, image.width, image.height, image.size, image.format]
             );
 
             const insertedImageId = result.insertId;
@@ -2690,7 +2696,7 @@ END AS thumbnail,
 
             const [rows] = await connection.execute(
                 `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
-                [service_id, insertedImageId]
+                [serviceId, insertedImageId]
             );
 
             return rows.length > 0 ? rows[0] : null;
@@ -2711,15 +2717,21 @@ END AS thumbnail,
         }
     }
 
-    static async updateServiceImage(user_id, service_id, imageId, file) {
+    static async updateServiceImage(userId, serviceId, imageId, file) {
         let connection;
         let s3Key;
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+            if (isValidService.length == 0) return null
+
             const [userResult] = await connection.execute(
                 `SELECT media_id FROM users WHERE user_id = ?`,
-                [user_id]
+                [userId]
             );
             const media_id = userResult[0]?.media_id;
             if (!media_id) {
@@ -2727,7 +2739,7 @@ END AS thumbnail,
             }
 
             const fileName = `${uuidv4()}-${file.originalname}`;
-            s3Key = `media/${media_id}/services/${service_id}/${fileName}`;
+            s3Key = `media/${media_id}/services/${serviceId}/${fileName}`;
 
             const metadata = await sharp(file.buffer).metadata();
             let contentType;
@@ -2777,14 +2789,14 @@ END AS thumbnail,
 
                 const [output] = await connection.execute(
                     `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
-                    [service_id, insertedId]
+                    [serviceId, insertedId]
                 );
 
                 return output.length > 0 ? output[0] : null;
             } else {
                 const [rows] = await connection.execute(
                     'SELECT image_url FROM service_images WHERE service_id = ? AND id = ?',
-                    [service_id, imageId]
+                    [serviceId, imageId]
                 );
 
                 if (rows.length === 0) {
@@ -2807,7 +2819,7 @@ END AS thumbnail,
 
                 const [output] = await connection.execute(
                     `SELECT * FROM service_images WHERE service_id = ? AND id = ?`,
-                    [service_id, imageId]
+                    [serviceId, imageId]
                 );
                 return output.length > 0 ? output[0] : null;
             }
@@ -2828,20 +2840,27 @@ END AS thumbnail,
         }
     }
 
-    static async deleteServiceImage(serviceId, imageId) {
+    static async deleteServiceImage(userId, serviceId, imageId) {
         let connection;
         let s3Key;
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
+
+            const [isValidService] = await connection.execute(
+                'SELECT service_id FROM services WHERE service_id = ? AND created_by = ? LIMIT 1',
+                [serviceId, userId]
+            );
+
+            if (isValidService.length === 0) return null
+
             const [rows] = await connection.execute(
                 'SELECT image_url FROM service_images WHERE service_id = ? AND id = ?',
                 [serviceId, imageId]
             );
 
-            if (rows.length === 0) {
-                throw new Error('Image not found.');
-            }
+            if (rows.length === 0) throw new Error('Image not found.');
+            if (rows.length === 1) return null
 
             const imageUrl = rows[0].image_url;
             s3Key = imageUrl.replace(BASE_URL, '');
@@ -2850,9 +2869,7 @@ END AS thumbnail,
                 [serviceId, imageId]
             );
 
-            if (deleteResult.affectedRows === 0) {
-                throw new Error('Failed to delete image record.');
-            }
+            if (deleteResult.affectedRows === 0)  throw new Error('Failed to delete image record.');
 
             await connection.commit();
 

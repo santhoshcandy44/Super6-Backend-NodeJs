@@ -193,7 +193,7 @@ exports.updateServicePlans = async (req, res) => {
         const user_id = req.user.user_id;
         const { plans } = req.body;
         const { service_id } = req.params;
-        const result = await Service.updateServicePlans(service_id, plans);
+        const result = await Service.updateServicePlans(user_id, service_id, plans);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update plans");
         }
@@ -213,16 +213,16 @@ exports.updateServiceLocation = async (req, res) => {
         const user_id = req.user.user_id;
         const { service_id } = req.params;
         const { longitude, latitude, geo, location_type } = req.body;
-        const result = await Service.updateOrInsertLocation(service_id, longitude, latitude, geo, location_type);
-        if (!result && !result.isUpdated && !result.isNewInsert) {
+        const result = await Service.updateOrInsertLocation(user_id, service_id, longitude, latitude, geo, location_type);
+        if (!result) {
             return sendErrorResponse(res, 400, "Failed to update location");
         }
         return sendJsonResponse(res, 200, "Location updated successfully", {
             service_id: service_id,
-            latitude: result.updatedRow.latitude,
-            longitude: result.updatedRow.longitude,
-            geo: result.updatedRow.geo,
-            location_type: result.updatedRow.location_type
+            latitude: result.latitude,
+            longitude: result.longitude,
+            geo: result.geo,
+            location_type: result.location_type
         });
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
@@ -303,7 +303,7 @@ exports.deleteServiceImage = async (req, res) => {
         const user_id = req.user.user_id;
         const { service_id } = req.params;
         const { image_id } = req.query;
-        const result = await Service.deleteServiceImage(service_id, image_id);
+        const result = await Service.deleteServiceImage(user_id, service_id, image_id);
         if (!result) {
             return sendErrorResponse(res, 500, "Failed to delete service");
         }
