@@ -2574,14 +2574,7 @@ END AS thumbnail,
 
                 const [existingPlan] = await connection.execute(`SELECT id FROM service_plans WHERE id ? LIMIT 1`, [planId]);
 
-                if (existingPlan.length == 0) {
-                    const [insertResult] = await connection.execute(
-                        `INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
-                        serviceId, name, description, price, priceUnit, features, deliveryTime, durationUnit
-                    ]);
-                    newlyInsertedPlanIds.push(insertResult.insertId);
-                } else {
+                if (existingPlan.length === 1) {
                     await connection.execute(
                         `UPDATE service_plans 
                 SET name = ?, description = ?, price = ?, price_unit = ?, features = ?, delivery_time = ?, duration_unit = ?
@@ -2589,24 +2582,38 @@ END AS thumbnail,
                         name, description, price, priceUnit, features, deliveryTime, durationUnit, planId
                     ]);
                     planIdsInInput.push(planId);
+                } else {
+                    const [insertResult] = await connection.execute(
+                        `INSERT INTO service_plans (service_id, name, description, price, price_unit, features, delivery_time, duration_unit) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
+                        serviceId, name, description, price, priceUnit, features, deliveryTime, durationUnit
+                    ]);
+                    newlyInsertedPlanIds.push(insertResult.insertId);
                 }
             }
 
             const allValidPlanIds = [...planIdsInInput, ...newlyInsertedPlanIds];
 
             if (existingPlanIds.length > 0) {
-                const deleteSql = `
-                    DELETE FROM service_plans 
-                    WHERE id IN (?) AND id NOT IN (?)
-                `;
-            
+                const deleteSql = `DELETE FROM service_plans WHERE id IN (?) AND id NOT IN (?)`;
                 await connection.execute(deleteSql, [existingPlanIds, allValidPlanIds]);
             }            
 
-            const [rows] = await connection.execute(`SELECT id As plan_id,
-                name as plan_name, description as plan_description,
-            price as plan_price, price_unit as price_unit, delivery_time as plan_delivery_time, duration_unit as duration_unit, features as plan_features
-            FROM service_plans WHERE service_id = ?`, [serviceId]);
+            const [rows] = await connection.execute(
+                `SELECT 
+                    id AS plan_id,
+                    name AS plan_name,
+                    description AS plan_description,
+                    price AS plan_price,
+                    price_unit AS price_unit,
+                    delivery_time AS plan_delivery_time,
+                    duration_unit AS duration_unit,
+                    features AS plan_features
+                 FROM service_plans
+                 WHERE service_id = ?`,
+                [serviceId]
+            );            
+
             await connection.commit();
             const result = rows.map(row => {
                 return {
@@ -2624,10 +2631,10 @@ END AS thumbnail,
         }
     }
 
-    static async createImage(user_id, service_id, file) {
+    static async uploadImage(user_id, service_id, file) {
         let connection;
         let s3Key;
-
+        
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
@@ -2822,7 +2829,7 @@ END AS thumbnail,
         }
     }
 
-    static async deleteServiceImage(serviceId, imageId) {
+    static async deleteImage(serviceId, imageId) {
         let connection;
         let s3Key;
         try {
@@ -2869,7 +2876,6 @@ END AS thumbnail,
     static async updateThumbnail(user_id, service_id, imageId, file) {
         let connection;
         let s3Key;
-
         try {
             connection = await db.getConnection();
             await connection.beginTransaction();
@@ -3019,7 +3025,7 @@ END AS thumbnail,
         }
     }
 
-    static async createBookmarkService(userId, serviceId) {
+    static async bookmarkService(userId, serviceId) {
         let connection;
         try {
             connection = await db.getConnection();

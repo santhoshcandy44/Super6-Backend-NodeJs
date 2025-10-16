@@ -172,6 +172,7 @@ exports.updateServicePlans = async (req, res) => {
         const user_id = req.user.user_id;
         const { plans } = req.body;
         const { service_id } = req.params;
+        if(plans.)
         const result = await Service.updateServicePlans(service_id, plans);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update plans");
@@ -208,26 +209,6 @@ exports.updateServiceLocation = async (req, res) => {
     }
 };
 
-exports.deleteServiceImage = async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const firstError = errors.array()[0];
-            return sendErrorResponse(res, 400, firstError.msg, errors.array());
-        }
-        const user_id = req.user.user_id;
-        const { service_id } = req.params;
-        const { image_id } = req.query;
-        const result = await Service.deleteServiceImage(service_id, image_id);
-        if (!result) {
-            return sendErrorResponse(res, 500, "Failed to delete service");
-        }
-        return sendJsonResponse(res, 200, "Service image deleted successfully");
-    } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
-    }
-};
-
 exports.uploadServiceImage = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -242,7 +223,7 @@ exports.uploadServiceImage = async (req, res) => {
         if (!file) {
             return sendErrorResponse(res, 404, "No file found");
         }
-        const result = await Service.createImage(user_id, service_id, file);
+        const result = await Service.uploadImage(user_id, service_id, file);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update service image");
         }
@@ -291,6 +272,27 @@ exports.updateServiceImage = async (req, res) => {
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
+
+exports.deleteServiceImage = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const firstError = errors.array()[0];
+            return sendErrorResponse(res, 400, firstError.msg, errors.array());
+        }
+        const user_id = req.user.user_id;
+        const { service_id } = req.params;
+        const { image_id } = req.query;
+        const result = await Service.deleteImage(service_id, image_id);
+        if (!result) {
+            return sendErrorResponse(res, 500, "Failed to delete service");
+        }
+        return sendJsonResponse(res, 200, "Service image deleted successfully");
+    } catch (error) {
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
+    }
+};
+
 
 exports.updateServiceTumbnail = async (req, res) => {
     try {
@@ -354,7 +356,7 @@ exports.bookmarkService = async (req, res) => {
         }
         const user_id = req.user.user_id;
         const { service_id } = req.body;
-        const result = await Service.createBookmarkService(user_id, service_id);
+        const result = await Service.bookmarkService(user_id, service_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to bookmark service");
         }
