@@ -1,11 +1,9 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authMiddleware');
 const usedProductsProtectedController = require('../controllers/usedProductsProtectedController');
-const he = require('he');
 const { body, param, query } = require('express-validator');
-const multer = require('multer');
+const { uploadMultiple } = require('./utils/multerUpload');
 const router = express.Router();
-const upload = multer();
 
 router.get('/used-product-listings',
     authenticateToken,
@@ -152,9 +150,7 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
 
 router.post('/create-or-update-used-product-listing',
     authenticateToken,
-    upload.fields([
-        { name: 'images[]', maxCount: 10 }
-    ]),
+    uploadMultiple("images",10)),
     [
         body('product_id').isInt().withMessage('Product ID must be a valid integer'),
 
@@ -260,36 +256,21 @@ router.post('/create-or-update-used-product-listing',
             .withMessage('Price unit must be either INR or USD'),
 
         body('location')
-            .isString()
-            .withMessage('Location must be a valid string')
-            .notEmpty()
-            .withMessage('Location cannot be empty')
-            .trim()
-            .escape()
-            .custom((value) => {
-                const decodedLocation = he.decode(value);
-                const location = JSON.parse(decodedLocation);
-                if (
-                    typeof location.latitude !== 'number' ||
-                    typeof location.longitude !== 'number'
-                ) {
-                    throw new Error('Location must contain valid latitude and longitude');
+            .customSanitizer((value) => {
+                try {
+                    return JSON.parse(value)
+                } catch (err) {
+                    return null
                 }
+            }).isObject().withMessage('Location must be an object'),
 
-                if (location.latitude < -90 || location.latitude > 90) {
-                    throw new Error('Latitude must be a number between -90 and 90');
-                }
+        body('location.latitude')
+            .exists().withMessage('Latitude is required')
+            .isFloat({ min: -90, max: 90 }).withMessage('Latitude must be a number between -90 and 90'),
 
-                if (location.longitude < -180 || location.longitude > 180) {
-                    throw new Error('Longitude must be a number between -180 and 180');
-                }
-
-                const validTypes = ['approximate', 'precise'];
-                if (!validTypes.includes(location.location_type)) {
-                    throw new Error('Location type must be either "approximate" or "precise"');
-                }
-                return true;
-            }),
+        body('location.longitude')
+            .exists().withMessage('Longitude is required')
+            .isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a number between -180 and 180')
     ],
 
     usedProductsProtectedController.createOrUpdateUsedProductListing
