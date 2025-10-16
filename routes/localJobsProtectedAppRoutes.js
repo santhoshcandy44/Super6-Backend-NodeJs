@@ -107,7 +107,7 @@ router.get('/published-local-jobs/:user_id(\\d+)',
 
 router.post('/create-or-update-local-job',
     authenticateToken,
-    uploadMultiple("images",10),
+    uploadMultiple("images[]",10),
     [
         body('local_job_id').isInt().withMessage('Local Job ID must be a valid integer'),
 
