@@ -14,6 +14,20 @@ function uploadSingle(fieldName, options = {}) {
   };
 }
 
+function uploadMultiple(fieldName, maxCount = 5, options = {}) {
+  const upload = multer({
+    limits: { fileSize: options.maxSize || 2 * 1024 * 1024 },
+    fileFilter: options.fileFilter,
+  }).array(fieldName, maxCount);
+
+  return function (req, res, next) {
+    upload(req, res, (err) => {
+      if (err) return next(err);
+      next();
+    });
+  };
+}
+
 function uploadFields(fields, options = {}) {
   const upload = multer({
     limits: { fileSize: options.maxSize || 2 * 1024 * 1024 },
@@ -26,7 +40,5 @@ function uploadFields(fields, options = {}) {
     });
   };
 }
-
-
 
 module.exports = { uploadSingle, uploadMultiple, uploadFields };
