@@ -856,7 +856,7 @@ END AS thumbnail,
             previous_token: hasPreviousPage ? nextToken : null
         };
     }
-    
+
     static async getGuestServices(userId, queryParam,
         userCoordsData, industryIds,
         pageSize, nextToken, initialRadius = 50) {
@@ -2441,7 +2441,7 @@ END AS thumbnail,
         }
     }
 
-    static async updateServiceDetails(service_id, user_id, title, short_description, long_description, industry) {
+    static async updateServiceInfo(service_id, user_id, title, short_description, long_description, industry) {
         let connection;
         try {
             connection = await db.getConnection();
@@ -2491,7 +2491,6 @@ END AS thumbnail,
 
             await connection.commit();
             return rows.length > 0 ? rows[0] : null;
-
         } catch (error) {
             if (connection) await connection.rollback();
             throw error;
@@ -2631,7 +2630,7 @@ END AS thumbnail,
         }
     }
 
-    static async uploadImage(user_id, service_id, file) {
+    static async uploadServiceImage(user_id, service_id, file) {
         let connection;
         let s3Key;
         
@@ -2712,7 +2711,7 @@ END AS thumbnail,
         }
     }
 
-    static async updateImage(user_id, service_id, imageId, file) {
+    static async updateServiceImage(user_id, service_id, imageId, file) {
         let connection;
         let s3Key;
         try {
@@ -2829,7 +2828,7 @@ END AS thumbnail,
         }
     }
 
-    static async deleteImage(serviceId, imageId) {
+    static async deleteServiceImage(serviceId, imageId) {
         let connection;
         let s3Key;
         try {
@@ -2873,7 +2872,7 @@ END AS thumbnail,
         }
     }
 
-    static async updateThumbnail(user_id, service_id, imageId, file) {
+    static async updateServiceThumbnail(user_id, service_id, imageId, file) {
         let connection;
         let s3Key;
         try {
