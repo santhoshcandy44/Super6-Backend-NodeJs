@@ -8,7 +8,6 @@ function uploadSingle(fieldName, options = {}) {
 
   return function (req, res, next) {
     upload(req, res, (err) => {
-      console.log("error");
       if (err) return next(err); 
       next();
     });
@@ -23,6 +22,7 @@ function uploadMultiple(fieldName, maxCount = 5, options = {}) {
 
   return function (req, res, next) {
     upload(req, res, (err) => {
+      console.log("error");
       if (err) return next(err);
       next();
     });
