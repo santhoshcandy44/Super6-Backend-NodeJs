@@ -58,7 +58,7 @@ exports.createOrUpdateLocalJob = async (req, res) => {
             return sendErrorResponse(res, 400,firstError, errors.array());
         }
         const {local_job_id, title, description, company, age_min, age_max, marital_statuses, salary_unit, salary_min, salary_max, location, country, state, keep_image_ids } = req.body; 
-        const images = req.files['images[]']; 
+        const images = req.files; 
         const user_id = req.user.user_id;
         const keepImageIdsArray =  keep_image_ids?  keep_image_ids.map(id => Number(id))
         : [];
