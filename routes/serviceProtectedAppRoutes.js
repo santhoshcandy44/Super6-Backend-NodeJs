@@ -230,12 +230,12 @@ router.patch('/:service_id(\\d+)/update-service-plans',
         body('plans')
             .customSanitizer((value) => {
                 try {
-                    return Json.parse(value);
+                    return JSON.parse(value);
                 } catch (error) {
                     return null
                 }
             })
-            .isArray({ min: 1 }).withMessage('Plans must be 1-3 array'),
+            .isArray({ min: 1, max: 3 }).withMessage('Plans must be 1-3 array'),
 
         body('plans.*')
             .isObject().withMessage('Al Plan must be an object'),
