@@ -222,88 +222,57 @@ router.patch('/:service_id(\\d+)/update-service-info',
 
 router.patch('/:service_id(\\d+)/update-service-plans',
     authenticateToken,
-    (req, res, next) => {
-        if (req.body.plans) {
-            try {
-                console.log(req.body.plans);
-                const decodedPlans = decodeURIComponent(req.body.plans);
-                req.body.plans = JSON.parse(decodedPlans);
-                next();
-            } catch (error) {
-                return res.status(400).json({ message: 'Invalid plans format' });
-            }
-        } else {
-            next();
-        }
-    },
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
 
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
 
         body('plans')
-            .isArray({ min: 1 }).withMessage('Plans must be a non-empty array')
-            .bail()
-            .custom((plans) => {
-                if (plans.length > 3) {
-                    throw new Error(`Maximum 3 plans can be created`);
+            .customSanitizer((value) => {
+                try {
+                    return Json.parse(value);
+                } catch (error) {
+                    return null
                 }
-
-                plans.forEach((plan, index) => {
-                    if (typeof plan.plan_id !== 'number') {
-                        throw new Error(`Plan ID must be a number in plan ${index + 1}`);
-                    }
-
-                    if (typeof plan.plan_name !== 'string') {
-                        throw new Error(`Plan name must be a string ${index + 1}`);
-                    }
-
-                    if (plan.plan_name.length > 20) {
-                        throw new Error(`Plan name cannot exceed 20 characters in plan ${index + 1}`);
-                    }
-
-                    if (typeof plan.plan_description !== 'string') {
-                        throw new Error(`Plan description must be a string and cannot exceed 500 characters in plan ${index + 1}`);
-                    }
-
-                    if (plan.plan_description.length > 200) {
-                        throw new Error(`Plan description cannot exceed 500 characters in plan ${index + 1}`);
-                    }
-
-                    if (typeof plan.plan_price !== 'number') {
-                        throw new Error(`Plan price must be a number in plan ${index + 1}`);
-                    }
-
-                    const validCurrencies = ['INR', 'USD'];
-                    if (!validCurrencies.includes(plan.price_unit)) {
-                        throw new Error(`Plan currency must be either INR or USD in plan ${index + 1}`);
-                    }
-
-                    if (typeof plan.plan_delivery_time !== 'number') {
-                        throw new Error(`Plan delivery time must be a number in plan ${index + 1}`);
-                    }
-
-                    const validDurationUnits = ['HR', 'D', 'W', 'M'];
-                    if (!validDurationUnits.includes(plan.duration_unit)) {
-                        throw new Error(`Plan duration unit must be 'D', 'W', or 'M' in plan ${index + 1}`);
-                    }
-
-                    if (!Array.isArray(plan.plan_features) || plan.plan_features.length < 1 || plan.plan_features.length > 10) {
-                        throw new Error(`Plan features must be a non-empty array with a maximum of 10 features in plan ${index + 1}`);
-                    }
-
-                    plan.plan_features.forEach((feature, featureIndex) => {
-                        if (!feature.feature_name || feature.feature_name.length > 40) {
-                            throw new Error(`Feature name must have a maximum length of 40 in feature ${featureIndex + 1} of plan ${index + 1}`);
-                        }
-
-                        if (!feature.feature_value || feature.feature_value.length > 10) {
-                            throw new Error(`Feature value must have a maximum length of 10 in feature ${featureIndex + 1} of plan ${index + 1}`);
-                        }
-                    });
-                });
-                return true;
             })
+            .isArray({ min: 1, max: 4 }).withMessage('Plans must be 1-3 array'),
+
+        body('plans.*')
+            .isObject().withMessage('Al Plan must be an object'),
+
+        body('plans.*.plan_id')
+            .isInt().withMessage('Plan ID must be a number'),
+
+        body('plans.*.plan_name')
+            .isString().withMessage('Plan name must be a string')
+            .isLength({ max: 20 }).withMessage('Plan name cannot exceed 20 characters'),
+
+        body('plans.*.plan_description')
+            .isString().withMessage('Plan description must be a string')
+            .isLength({ max: 500 }).withMessage('Plan description cannot exceed 500 characters'),
+
+        body('plans.*.plan_price')
+            .isFloat().withMessage('Plan price must be a number'),
+
+        body('plans.*.price_unit')
+            .isIn(['INR', 'USD']).withMessage('Plan currency must be either INR or USD'),
+
+        body('plans.*.plan_delivery_time')
+            .isInt().withMessage('Plan delivery time must be a number'),
+
+        body('plans.*.duration_unit')
+            .isIn(['HR', 'D', 'W', 'M']).withMessage("Plan duration unit must be 'HR', 'D', 'W', or 'M'"),
+
+        body('plans.*.plan_features')
+            .isArray({ min: 1, max: 10 }).withMessage('Plan features must be a non-empty array with max 10 features'),
+
+        body('plans.*.plan_features.*.feature_name')
+            .isString().withMessage('Feature name must be a string')
+            .isLength({ max: 40 }).withMessage('Feature name must have a maximum length of 40'),
+
+        body('plans.*.plan_features.*.feature_value')
+            .isString().withMessage('Feature value must be a string')
+            .isLength({ max: 10 }).withMessage('Feature value must have a maximum length of 10')
     ],
     servicesProtectedController.updateServicePlans
 );

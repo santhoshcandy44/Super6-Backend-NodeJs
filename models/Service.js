@@ -2567,8 +2567,6 @@ END AS thumbnail,
             const currentPlansSql = `SELECT id, service_id FROM service_plans`;
             const [currentPlansResult] = await connection.execute(currentPlansSql, [serviceId]);
 
-            console.log(currentPlansResult);
-
             const existingPlanIds = currentPlansResult.map(row => row.id);
             const planIdsInInput = [];
             const newlyInsertedPlanIds = [];
