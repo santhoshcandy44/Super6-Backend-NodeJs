@@ -1319,6 +1319,18 @@ WHERE
         };
     }
 
+
+
+    static async generateUnique11DigitLocalJobId() {
+        let id, exists = true;
+        while (exists) {
+            id = Math.floor(10000000000 + Math.random() * 90000000000);
+            const [rows] = await db.query("SELECT local_jobs FROM applicant_profiles WHERE local_job_id = ? LIMIT 1", [id]);
+            exists = rows.length > 0;
+        }
+        return id;
+    }
+
     static async createOrUpdateLocalJob(user_id, title, description, company, age_min, age_max, marital_statuses,
         salary_unit, salary_min, salary_max, country, state, files, locationJson, keepImageIdsArray, local_job_id) {
         let connection;
@@ -1353,13 +1365,13 @@ WHERE
                 );
             } else {
                 const [insertResult] = await connection.execute(
-                    `INSERT INTO local_jobs (created_by, title, description, company, age_min, age_max, marital_statuses,
+                    `INSERT INTO local_jobs (local_job_id, created_by, title, description, company, age_min, age_max, marital_statuses,
                      salary_unit, salary_min, salary_max, country, state)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [user_id, title, description, company, age_min, age_max, JSON.stringify(
-                        marital_statuses
-                    ),
-                        salary_unit, salary_min, salary_max, country, state]
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [ await this.generateUnique11DigitLocalJobId(), user_id, title, description, company, age_min, age_max,
+                        JSON.stringify(
+                            marital_statuses
+                        ), salary_unit, salary_min, salary_max, country, state]
                 );
                 local_job_id = insertResult.insertId;
             }
