@@ -8,15 +8,10 @@ const router = express.Router();
 router.get('/used-product-listings',
     authenticateToken,
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format'),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
             .trim()
-            .escape()
             .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
@@ -38,31 +33,22 @@ router.get('/used-product-listings',
 
 router.get('/guest-used-product-listings',
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format'),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
             .trim()
-            .escape()
             .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
             .optional()
             .isFloat({ min: -90, max: 90 })
-            .withMessage('Latitude must be a valid float between -90 and 90')
-            .trim()
-            .escape(),
+            .withMessage('Latitude must be a valid float between -90 and 90'),
 
         query('longitude')
             .optional()
             .isFloat({ min: -180, max: 180 })
-            .withMessage('Longitude must be a valid float between -180 and 180')
-            .trim()
-            .escape(),
+            .withMessage('Longitude must be a valid float between -180 and 180'),
 
         query('page_size')
             .optional()
@@ -85,7 +71,8 @@ router.get('/feed-user-published-used-product-listings/:user_id(\\d+)',
     [
         param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
@@ -107,7 +94,8 @@ router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',
     [
         param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
@@ -130,7 +118,8 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
     [
         param('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
@@ -150,7 +139,7 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
 
 router.post('/create-or-update-used-product-listing',
     authenticateToken,
-    uploadMultiple("images",10),
+    uploadMultiple("images", 10),
     [
         body('product_id').isInt().withMessage('Product ID must be a valid integer'),
 
@@ -158,7 +147,6 @@ router.post('/create-or-update-used-product-listing',
             .isString()
             .withMessage('Title must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Title cannot be empty')
             .isLength({ min: 1, max: 100 })
@@ -168,22 +156,16 @@ router.post('/create-or-update-used-product-listing',
             .isString()
             .withMessage('Long Description must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Long Description cannot be empty')
-            .isLength({ min: 1, max: 5000 }) // Adjust max length as needed
+            .isLength({ min: 1, max: 5000 })
             .withMessage('Long Description must be between 1 and 5000 characters'),
 
         body('country')
             .isString()
             .withMessage('Country must be a valid string')
-            .custom((value) => {
-                const allowedCountries = ['IN'];
-                if (!allowedCountries.includes(value)) {
-                    throw new Error('Country must be a valid country (IN, USA)');
-                }
-                return true;
-            }),
+            .isIn(['IN', 'USA'])
+            .withMessage('Country must be a valid country (IN, USA)'),
 
         body('state')
             .isString()
@@ -215,41 +197,37 @@ router.post('/create-or-update-used-product-listing',
 
         body('keep_image_ids')
             .optional()
-            .custom((value, { req }) => {
-                if (!Array.isArray(value)) {
-                    throw new Error('Keep Image IDs must be an array');
+            .customSanitizer(value => {
+                try {
+                    return JSON.parse(value);
+                } catch {
+                    return null;
                 }
-
-                const asNumbers = value.map(id => Number(id));
-
-                if (asNumbers.includes(NaN)) {
-                    throw new Error('All values in Keep Image IDs must be integers');
-                }
-
+            })
+            .isArray()
+            .withMessage('Keep Image IDs must be an array')
+            .custom(value => {
+                const asNumbers = value.map(Number);
                 if (!asNumbers.every(Number.isInteger)) {
                     throw new Error('All values in Keep Image IDs must be integers');
                 }
-
-                if (asNumbers.length === 0 && (!req.files['images[]'] || req.files['images[]'].length === 0)) {
+                return asNumbers;
+            })
+            .custom((asNumbers, { req }) => {
+                if (asNumbers.length === 0 && (!req.files || req.files.length === 0)) {
                     throw new Error('Either Keep Image IDs or Images must be provided');
                 }
-
                 req.body.keep_image_ids = asNumbers;
                 return true;
             }),
 
         body('price')
-            .custom((value, { req }) => {
+            .customSanitizer(value => {
                 const numValue = parseFloat(value);
-                if (isNaN(numValue)) {
-                    throw new Error('Price must be a valid number');
-                }
-                return true;
+                return isNaN(numValue) ? null : numValue;
             })
             .isFloat({ min: 0 })
-            .withMessage('Price must be a valid number greater than or equal to 0')
-            .notEmpty()
-            .withMessage('Price cannot be empty'),
+            .withMessage('Price must be a valid number greater than or equal to 0'),
 
         body('price_unit')
             .isIn(['INR', 'USD'])
@@ -272,7 +250,6 @@ router.post('/create-or-update-used-product-listing',
             .exists().withMessage('Longitude is required')
             .isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a number between -180 and 180')
     ],
-
     usedProductsProtectedController.createOrUpdateUsedProductListing
 );
 
@@ -280,11 +257,9 @@ router.post(
     '/bookmark-used-product-listing',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         body('product_id')
             .isInt().withMessage('Invalid product id format')
+            .toInt()
     ],
     usedProductsProtectedController.bookmarkUsedProductListing
 );
@@ -293,21 +268,16 @@ router.post(
     '/remove-bookmark-used-product-listing',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         body('product_id')
             .isInt().withMessage('Invalid product id format')
+            .toInt()
     ],
     usedProductsProtectedController.removeBookmarkUsedProductListing
 );
 
-router.get('/used-product-listing-search-suggestions/:user_id(\\d+)',
+router.get('/used-product-listing-search-suggestions',
     authenticateToken,
     [
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
@@ -315,11 +285,8 @@ router.get('/used-product-listing-search-suggestions/:user_id(\\d+)',
     usedProductsProtectedController.usedProductListingsSearchQueries
 );
 
-router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)',
+router.get('/guest-used-product-listing-search-suggestions',
     [
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
@@ -330,8 +297,8 @@ router.get('/guest-used-product-listing-search-suggestions/:user_id(\\d+)',
 router.delete('/:product_id(\\d+)/delete-used-product-listing',
     authenticateToken,
     [
-        param('product_id').isInt().withMessage('Invalid product id format').trim().escape(),
-        query('user_id').isInt().withMessage('Invalid user id format').trim().escape(),
+        param('product_id').isInt().withMessage('Invalid product id format')
+            .toInt()
     ],
     usedProductsProtectedController.deleteUsedProductListing
 );

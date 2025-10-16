@@ -33,20 +33,20 @@ exports.getGuestUsedProductListings = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError, errors.array());
         }
-        const { user_id, s, latitude, longitude, next_token, page_size } = req.query;
+        const { s, latitude, longitude, next_token, page_size } = req.query;
         const querySearch = !s ? '' : s;
         const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null
-        const result = await UsedProductListing.getGuestUsedProductListings(user_id, decodedQuery, coordinates, PAGE_SIZE, queryNextToken);
+        const result = await UsedProductListing.getGuestUsedProductListings(decodedQuery, coordinates, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
         return sendJsonResponse(res, 200, "Seconds retrieved successfully", result);
     } catch (error) {
         console.log(error)
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -69,7 +69,7 @@ exports.getFeedUserPublishedUsedProductListings = async (req, res) => {
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -91,7 +91,7 @@ exports.getGuestFeedUserPublishedUsedProductListings = async (req, res) => {
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -116,7 +116,7 @@ exports.getPublishedUsedProductListings = async (req, res) => {
         return sendJsonResponse(res, 200, "Published used product listings retrieved successfully", result);
     } catch (error) {
         console.log(error);
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -130,14 +130,14 @@ exports.createOrUpdateUsedProductListing = async (req, res) => {
         const { product_id, name, description, price, price_unit, location, country, state, keep_image_ids } = req.body;  // keepImageIds comes from req.body
         const images = req.files;
         const user_id = req.user.user_id;
-        const keepImageIdsArray = keep_image_ids ? keep_image_ids.map(id => Number(id)) : [];
+        const keepImageIdsArray = keep_image_ids ? keep_image_ids : [];
         const result = await UsedProductListing.createOrUpdateUsedProductListing(user_id, name, description, price, price_unit, country, state, images, location, keepImageIdsArray, product_id);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to publish used product listing");
         }
         return sendJsonResponse(res, 200, "used product listing updated successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -156,7 +156,7 @@ exports.bookmarkUsedProductListing = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Seconds bookmarked successfully");
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 
@@ -193,7 +193,7 @@ exports.usedProductListingsSearchQueries = async (req, res) => {
         }
         return sendJsonResponse(res, 200, "Suggestions retrieved successfully", result);
     } catch (error) {
-        return sendErrorResponse(res, 500, "Internal Server Error", error.toString());
+        return sendErrorResponse(res, 500, "Internal Server Error", error.message);
     }
 };
 

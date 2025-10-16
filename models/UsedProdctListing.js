@@ -622,7 +622,7 @@ WHERE
         };
     }
 
-    static async getGuestUsedProductListings(userId, queryParam, userCoordsData, pageSize, nextToken, initialRadius = 50) {
+    static async getGuestUsedProductListings(queryParam, userCoordsData, pageSize, nextToken, initialRadius = 50) {
         const connection = await db.getConnection();
         let query, params;
         var radius = initialRadius;
@@ -1129,7 +1129,7 @@ WHERE
                 if (radius < 200) {
                     radius += 30;
                     await connection.release();
-                    return await this.getGuestUsedProductListings(userId, queryParam, userCoordsData, pageSize, nextToken, radius)
+                    return await this.getGuestUsedProductListings(queryParam, userCoordsData, pageSize, nextToken, radius)
                 }
             }
         }
