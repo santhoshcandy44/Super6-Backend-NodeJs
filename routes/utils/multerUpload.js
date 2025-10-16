@@ -8,6 +8,7 @@ function uploadSingle(fieldName, options = {}) {
 
   return function (req, res, next) {
     upload(req, res, (err) => {
+      console.log("error");
       if (err) return next(err); 
       next();
     });

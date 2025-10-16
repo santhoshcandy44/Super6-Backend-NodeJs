@@ -224,7 +224,6 @@ router.post('/create-or-update-local-job',
         body('keep_image_ids')
             .optional()
             .custom((value, { req }) => {
-                console.log(value);
                 if (!Array.isArray(value)) {
                     throw new Error('Keep Image IDs must be an array');
                 }
