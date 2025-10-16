@@ -150,7 +150,7 @@ router.get('/published-used-product-listings/:user_id(\\d+)',
 
 router.post('/create-or-update-used-product-listing',
     authenticateToken,
-    uploadMultiple("images",10)),
+    uploadMultiple("images",10),
     [
         body('product_id').isInt().withMessage('Product ID must be a valid integer'),
 
