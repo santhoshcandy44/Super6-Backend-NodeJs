@@ -2,11 +2,10 @@ const express = require('express');
 const { body, param, query } = require('express-validator');
 const authenticateToken = require('../middlewares/authMiddleware');
 const servicesProtectedController = require('../controllers/servicesProtectedController');
-const multer = require('multer');
 const he = require('he');
+const { uploadSingle, uploadFields } = require('./utils/multerUpload');
 
 const router = express.Router();
-const upload = multer();
 
 router.get('/services',
     authenticateToken,
@@ -358,7 +357,7 @@ router.delete('/:service_id(\\d+)/delete-service-image',
 
 router.post('/:service_id(\\d+)/upload-service-image',
     authenticateToken,
-    upload.single('image'),
+    uploadSingle('image'),
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
@@ -377,7 +376,7 @@ router.post('/:service_id(\\d+)/upload-service-image',
 
 router.post('/:service_id(\\d+)/update-service-image',
     authenticateToken,
-    upload.single('image'),
+    uploadSingle('image'),
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),
@@ -396,13 +395,14 @@ router.post('/:service_id(\\d+)/update-service-image',
 
 router.post('/create-service',
     authenticateToken,
-    upload.fields([
+    uploadFields([
         { name: 'thumbnail', maxCount: 1 },
         { name: 'images[]', maxCount: 10 }
     ]),
     (req, res, next) => {
         if (req.body.plans) {
             try {
+                console.log(req.body.plans);
                 const decodedPlans = decodeURIComponent(req.body.plans);
                 req.body.plans = JSON.parse(decodedPlans);
                 next();
@@ -555,20 +555,30 @@ router.post('/create-service',
                 });
                 return true;
             }),
+
         body('location')
-            .isString()
-            .withMessage('Location must be a valid string')
-            .notEmpty()
-            .withMessage('Location cannot be empty')
-            .trim()
-            .escape()
+            .customSanitizer((value) => {
+                try {
+                    return JSON.parse(value)
+                } catch (err) {
+                    return null
+                }
+            }).isObject().withMessage('Location must be an object'),
+
+        body('location.latitude')
+            .exists().withMessage('Latitude is required')
+            .isFloat({ min: -90, max: 90 }).withMessage('Latitude must be a number between -90 and 90'),
+
+        body('location.longitude')
+            .exists().withMessage('Longitude is required')
+            .isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a number between -180 and 180')
     ],
     servicesProtectedController.createService
 );
 
 router.post('/:service_id(\\d+)/update-service-thumbnail',
     authenticateToken,
-    upload.single('thumbnail'),
+    uploadSingle('image'),
     [
         body('user_id').isInt().withMessage('User ID must be a valid integer'),
         param('service_id').isInt().withMessage('Service ID must be a valid integer'),

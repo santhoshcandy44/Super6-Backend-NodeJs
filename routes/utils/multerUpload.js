@@ -14,12 +14,11 @@ function uploadSingle(fieldName, options = {}) {
   };
 }
 
-function uploadMultiple(fieldName, maxCount = 5, options = {}) {
+function uploadFields(fields, options = {}) {
   const upload = multer({
     limits: { fileSize: options.maxSize || 2 * 1024 * 1024 },
     fileFilter: options.fileFilter,
-  }).array(fieldName, maxCount);
-
+  }).fields(fields);
   return function (req, res, next) {
     upload(req, res, (err) => {
       if (err) return next(err);
@@ -28,4 +27,6 @@ function uploadMultiple(fieldName, maxCount = 5, options = {}) {
   };
 }
 
-module.exports = { uploadSingle, uploadMultiple };
+
+
+module.exports = { uploadSingle, uploadMultiple, uploadFields };

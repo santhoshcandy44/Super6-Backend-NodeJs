@@ -2316,7 +2316,6 @@ END AS thumbnail,
 
     static async createService(user_id, title, short_description, long_description, industry, country, state, thumbnail, plans_json, files, locationJson) {
         let connection;
-
         const uploadedFiles = [];
 
         try {
@@ -2328,7 +2327,6 @@ END AS thumbnail,
                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [user_id, title, short_description, long_description, industry, country, state]
             );
-
 
             const insertedId = serviceResult.insertId;
 
@@ -2351,10 +2349,7 @@ END AS thumbnail,
 
             const image_urls = [];
 
-
             for (const file of files) {
-
-
                 const newFileName = `${uuidv4()}-${file.originalname}`;
                 const s3Key = `media/${media_id}/services/${service_id}/${newFileName}`;
 
@@ -2369,7 +2364,6 @@ END AS thumbnail,
                     size: file.size,
                     format: metadata.format,
                 });
-
             }
 
             const thumbnailFileName = `${uuidv4()}-${thumbnail.originalname}`;
@@ -2415,23 +2409,19 @@ END AS thumbnail,
                         plan.duration_unit]
                 );
             }
-
-            const decodedLocation = he.decode(locationJson);
-
-            if (decodedLocation) {
-                const location = JSON.parse(decodedLocation);
-                const insertLocationText = `
-                    INSERT INTO service_locations (service_id, longitude, latitude, geo, location_type)
-                    VALUES (?, ?, ?, ?, ?)
-                `;
-                await connection.execute(insertLocationText, [
-                    service_id,
-                    location.longitude,
-                    location.latitude,
-                    location.geo,
-                    location.locationType
-                ]);
-            }
+            
+            const location = locationJson;
+            const insertLocationText = `
+                INSERT INTO service_locations (service_id, longitude, latitude, geo, location_type)
+                VALUES (?, ?, ?, ?, ?)
+            `;
+            await connection.execute(insertLocationText, [
+                service_id,
+                location.longitude,
+                location.latitude,
+                location.geo,
+                location.locationType
+            ]);
 
             await connection.commit();
             return { success: true, service_id };
