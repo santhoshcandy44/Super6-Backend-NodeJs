@@ -560,7 +560,6 @@ router.post(
     },
     fileFilter: resumeFileFilter
   }).single('resume'),
-
   body('resume')
     .custom((value, { req }) => {
       if (!req.file || req.file.length === 0) {
@@ -582,18 +581,15 @@ const certificatesFileFilter = (req, file, cb) => {
   }
 };
 
-const certificatesUpload = multer({
-  limits: {
-    fileSize: 2 * 1024 * 1024,
-  },
-  fileFilter: certificatesFileFilter
-});
-
 router.post(
   '/update-applicant-certificate',
   authenticateToken,
-  certificatesUpload.any(),
-
+  multer({
+    limits: {
+      fileSize: 2 * 1024 * 1024,
+    },
+    fileFilter: certificatesFileFilter
+  }).any(),
   body('applicantCertificateInfo')
     .customSanitizer((value) => {
       try {

@@ -4,6 +4,7 @@ const authenticateToken = require('../middlewares/authMiddleware');
 const he = require('he');
 const multer = require('multer');
 const localJobsProtectedController = require('../controllers/localJobsProtectedController');
+const { uploadMultiple } = require('./utils/multerUpload');
 
 const router = express.Router();
 const upload = multer();
@@ -108,9 +109,7 @@ router.get('/published-local-jobs/:user_id(\\d+)',
 
 router.post('/create-or-update-local-job',
     authenticateToken,
-    upload.fields([
-        { name: 'images[]', maxCount: 10 }
-    ]),
+    uploadMultiple("images",10),
     [
         body('local_job_id').isInt().withMessage('Local Job ID must be a valid integer'),
 
