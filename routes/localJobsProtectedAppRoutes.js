@@ -1,7 +1,6 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const authenticateToken = require('../middlewares/authMiddleware');
-const he = require('he');
 const localJobsProtectedController = require('../controllers/localJobsProtectedController');
 const { uploadMultiple } = require('./utils/multerUpload');
 
