@@ -11,13 +11,13 @@ router.get('/services',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
             .trim()
-            .escape()
             .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
@@ -41,29 +41,25 @@ router.get('/guest-services',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
             .trim()
-            .escape()
             .isLength({ min: 0, max: 100 })
             .withMessage('Query string must be between 1 and 100 characters long'),
 
         query('latitude')
             .optional()
             .isFloat({ min: -90, max: 90 })
-            .withMessage('Latitude must be a valid float between -90 and 90')
-            .trim()
-            .escape(),
+            .withMessage('Latitude must be a valid float between -90 and 90'),
 
         query('longitude')
             .optional()
             .isFloat({ min: -180, max: 180 })
-            .withMessage('Longitude must be a valid float between -180 and 180')
-            .trim()
-            .escape(),
+            .withMessage('Longitude must be a valid float between -180 and 180'),
 
         query('industries')
             .optional()
@@ -76,13 +72,10 @@ router.get('/guest-services',
                 }
             })
             .isArray()
-            .withMessage('Industries must be an array of integers')
-            .custom(value => {
-                if (value.some(item => !Number.isInteger(item) || item <= 0)) {
-                    throw new Error('Each industry ID must be a positive integer');
-                }
-                return true;
-            }),
+            .withMessage('Industries must be an array of integers'),
+
+        query('industries.*')
+            .isInt({ gt: 0 }).withMessage('Each industry ID must be a positive integer'),
 
         query('page_size')
             .optional()
@@ -152,7 +145,8 @@ router.get('/published-services/:user_id(\\d+)',
     [
         query('user_id')
             .optional()
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         query('page_size')
             .optional()
@@ -173,15 +167,20 @@ router.get('/published-services/:user_id(\\d+)',
 router.patch('/:service_id(\\d+)/update-service-info',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
+        body('user_id')
+        .isInt()
+        .withMessage('User ID must be a valid integer')
+        .toInt(),
 
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
+        param('service_id')
+        .isInt()
+        .withMessage('Service ID must be a valid integer')
+        .toInt(),
 
         body('title')
             .isString()
             .withMessage('Title must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Title cannot be empty')
             .isLength({ min: 1, max: 100 })
@@ -191,7 +190,6 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .isString()
             .withMessage('Short Description must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Short Description cannot be empty')
             .isLength({ min: 1, max: 250 })
@@ -201,7 +199,6 @@ router.patch('/:service_id(\\d+)/update-service-info',
             .isString()
             .withMessage('Long Description must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Long Description cannot be empty')
             .isLength({ min: 1, max: 5000 })
@@ -214,9 +211,15 @@ router.patch('/:service_id(\\d+)/update-service-info',
 router.patch('/:service_id(\\d+)/update-service-plans',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
+        body('user_id')
+        .isInt()
+        .withMessage('User ID must be a valid integer')
+        .toInt(),
 
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
+        param('service_id')
+        .isInt()
+        .withMessage('Service ID must be a valid integer')
+        .toInt(),
 
         body('plans')
             .customSanitizer((value) => {
@@ -271,37 +274,35 @@ router.patch('/:service_id(\\d+)/update-service-plans',
 router.patch('/:service_id(\\d+)/update-service-location',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
+        body('user_id')
+        .isInt()
+        .withMessage('User ID must be a valid integer')
+        .toInt(),
 
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
+        param('service_id')
+        .isInt()
+        .withMessage('Service ID must be a valid integer')
+        .toInt(),
 
         body('latitude')
             .isFloat({ min: -90, max: 90 })
-            .withMessage('Latitude must be a valid float between -90 and 90')
-            .trim()
-            .escape(),
+            .withMessage('Latitude must be a valid float between -90 and 90'),
 
         body('longitude')
             .isFloat({ min: -180, max: 180 })
-            .withMessage('Longitude must be a valid float between -180 and 180')
-            .trim()
-            .escape(),
+            .withMessage('Longitude must be a valid float between -180 and 180'),
 
         body('geo')
             .isString()
             .withMessage('Geo must be a valid string')
             .notEmpty()
-            .withMessage('Geo cannot be empty')
-            .trim()
-            .escape(),
+            .withMessage('Geo cannot be empty'),
 
         body('location_type')
             .isString()
             .withMessage('Location type must be a valid string')
             .notEmpty()
             .withMessage('Location type cannot be empty')
-            .trim()
-            .escape()
     ],
     servicesProtectedController.updateServiceLocation
 );
@@ -309,9 +310,9 @@ router.patch('/:service_id(\\d+)/update-service-location',
 router.delete('/:service_id(\\d+)/delete-service-image',
     authenticateToken,
     [
-        query('user_id').isInt().withMessage('User ID must be a valid integer'),
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
-        query('image_id').isInt().withMessage('Image ID must be a valid integer')
+        query('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
+        param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
+        query('image_id').isInt().withMessage('Image ID must be a valid integer').toInt()
     ],
     servicesProtectedController.deleteServiceImage
 );
@@ -320,10 +321,9 @@ router.post('/:service_id(\\d+)/upload-service-image',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
-        body('image_id')
-            .isInt().withMessage('Image ID must be a valid integer'),
+        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
+        param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
+        body('image_id').isInt().withMessage('Image ID must be a valid integer'),
         body('image')
             .custom((value, { req }) => {
                 if (!req.file || req.file.length === 0) {
@@ -339,10 +339,9 @@ router.post('/:service_id(\\d+)/update-service-image',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
-        body('image_id')
-            .isInt().withMessage('Image ID must be a valid integer'),
+        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
+        param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
+        body('image_id').isInt().withMessage('Image ID must be a valid integer').toInt(),
         body('image')
             .custom((value, { req }) => {
                 if (!req.file || req.file.length === 0) {
@@ -365,7 +364,6 @@ router.post('/create-service',
             .isString()
             .withMessage('Title must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Title cannot be empty')
             .isLength({ min: 1, max: 100 })
@@ -375,7 +373,6 @@ router.post('/create-service',
             .isString()
             .withMessage('Short Description must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Short Description cannot be empty')
             .isLength({ min: 1, max: 250 })
@@ -385,7 +382,6 @@ router.post('/create-service',
             .isString()
             .withMessage('Long Description must be a valid string')
             .trim()
-            .escape()
             .notEmpty()
             .withMessage('Long Description cannot be empty')
             .isLength({ min: 1, max: 5000 })
@@ -440,7 +436,7 @@ router.post('/create-service',
                 return true;
             }),
 
-            body('plans')
+        body('plans')
             .customSanitizer((value) => {
                 try {
                     return JSON.parse(value);
@@ -511,10 +507,9 @@ router.post('/:service_id(\\d+)/update-service-thumbnail',
     authenticateToken,
     uploadSingle('image'),
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-        param('service_id').isInt().withMessage('Service ID must be a valid integer'),
-        body('image_id')
-            .isInt().withMessage('Image ID must be a valid integer'),
+        body('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
+        param('service_id').isInt().withMessage('Service ID must be a valid integer').toInt(),
+        body('image_id').isInt().withMessage('Image ID must be a valid integer').toInt(),
         body('thumbnail')
             .custom((value, { req }) => {
                 if (!req.file || req.file.length === 0) {
@@ -530,11 +525,8 @@ router.post(
     '/bookmark-service',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
-        body('service_id')
-            .isInt().withMessage('Invalid service id format'),
+        body('user_id').isInt().withMessage('Invalid user id format').toInt(),
+        body('service_id').isInt().withMessage('Invalid service id format').toInt(),
     ],
     servicesProtectedController.bookmarkService
 );
@@ -544,10 +536,12 @@ router.post(
     authenticateToken,
     [
         body('user_id')
-            .isInt().withMessage('Invalid user id format'),
+            .isInt().withMessage('Invalid user id format')
+            .toInt(),
 
         body('service_id')
             .isInt().withMessage('Invalid service id format')
+            .toInt()
     ],
     servicesProtectedController.removeBookmarkService
 );
@@ -556,7 +550,9 @@ router.get('/search-services-suggestions/:user_id(\\d+)',
     authenticateToken,
     [
         param('user_id')
-            .isInt().withMessage('Invalid user id format'),
+            .isInt()
+            .withMessage('Invalid user id format')
+            .toInt(),
 
         query('query')
             .isString().withMessage('Invalid user query format')
@@ -568,11 +564,16 @@ router.get('/search-services-suggestions/:user_id(\\d+)',
 router.get('/guest-services-search-suggestions/:user_id(\\d+)',
     [
         param('user_id')
-            .isInt().withMessage('Invalid user id format'),
+            .isInt()
+            .withMessage('Invalid user id format')
+            .toInt(),
 
         query('query')
-            .isString().withMessage('Invalid user query format')
-            .notEmpty().withMessage('Query cannot be empty'),
+            .isString()
+            .withMessage('Invalid user query format')
+            .notEmpty()
+            .withMessage('Query cannot be empty')
+            .toInt(),
     ],
     servicesProtectedController.searchSuggestions
 );
@@ -580,8 +581,14 @@ router.get('/guest-services-search-suggestions/:user_id(\\d+)',
 router.delete('/:service_id(\\d+)/delete-service',
     authenticateToken,
     [
-        param('service_id').isInt().withMessage('Invalid service id format').trim().escape(),
-        query('user_id').isInt().withMessage('Invalid user id format').trim().escape(),
+        param('service_id')
+        .isInt()
+        .withMessage('Invalid service id format')
+        .toInt(),
+        query('user_id')
+        .isInt()
+        .withMessage('Invalid user id format')
+        .toInt(),
     ],
     servicesProtectedController.deleteService
 );
