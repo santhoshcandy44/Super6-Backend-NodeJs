@@ -166,7 +166,7 @@ exports.updateServicePlans = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            const firstError = errors.array()[0].msg;
+            const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
