@@ -856,7 +856,7 @@ END AS thumbnail,
             previous_token: hasPreviousPage ? nextToken : null
         };
     }
-
+    
     static async getGuestServices(userId, queryParam,
         userCoordsData, industryIds,
         pageSize, nextToken, initialRadius = 50) {
