@@ -33,11 +33,7 @@ exports.getServices = async (req, res) => {
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
-        return sendJsonResponse(res, 200, "Services retrieved successfully", {
-            data:[],
-            next_token:null,
-            previous_token:null
-        });
+        return sendJsonResponse(res, 200, "Services retrieved successfully", result);
     } catch (error) {
         console.log(error)
         return sendErrorResponse(res, 500, "Internal Server Error", error.message);
