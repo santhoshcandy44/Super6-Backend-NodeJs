@@ -172,7 +172,6 @@ exports.updateServicePlans = async (req, res) => {
         const user_id = req.user.user_id;
         const { plans } = req.body;
         const { service_id } = req.params;
-        if(plans.)
         const result = await Service.updateServicePlans(service_id, plans);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to update plans");
