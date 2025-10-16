@@ -2,12 +2,10 @@ const express = require('express');
 const { body, param, query } = require('express-validator');
 const authenticateToken = require('../middlewares/authMiddleware');
 const he = require('he');
-const multer = require('multer');
 const localJobsProtectedController = require('../controllers/localJobsProtectedController');
 const { uploadMultiple } = require('./utils/multerUpload');
 
 const router = express.Router();
-const upload = multer();
 
 router.get('/local-jobs',
     authenticateToken,
