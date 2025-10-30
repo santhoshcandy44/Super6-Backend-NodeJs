@@ -10,11 +10,6 @@ const router = express.Router();
 router.get('/job-listings',
   authenticateToken,
   [
-    query('user_id')
-      .optional()
-      .isInt().withMessage('Invalid user id format')
-      .toInt(),
-
     query('s')
       .optional()
       .isString().withMessage('Query string must be a valid string format')
@@ -70,11 +65,6 @@ router.get('/job-listings',
 
 router.get('/guest-job-listings',
   [
-    query('user_id')
-      .optional()
-      .isInt().withMessage('Invalid user id format')
-      .toInt(),
-
     query('s')
       .optional()
       .isString().withMessage('Query string must be a valid string format')
@@ -175,8 +165,6 @@ router.post(
   '/bookmark-job',
   authenticateToken,
   [
-    body('user_id')
-      .isInt().withMessage('Invalid user id format'),
     body('job_id')
       .isInt().withMessage('Invalid local job id format')
   ],
@@ -187,21 +175,15 @@ router.post(
   '/remove-bookmark-job',
   authenticateToken,
   [
-    body('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     body('job_id')
       .isInt().withMessage('Invalid job id format')
   ],
   jobsProtectedController.removeBookmarkJob
 );
 
-router.get('/job-search-location-suggestions/:user_id(\\d+)',
+router.get('/job-search-location-suggestions',
   authenticateToken,
   [
-    param('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     query('query')
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
@@ -209,11 +191,8 @@ router.get('/job-search-location-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchLocationSuggestions
 );
 
-router.get('/guest-job-search-location-suggestions/:user_id(\\d+)',
+router.get('/guest-job-search-location-suggestions',
   [
-    param('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     query('query')
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
@@ -221,12 +200,9 @@ router.get('/guest-job-search-location-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchLocationSuggestions
 );
 
-router.get('/job-search-role-suggestions/:user_id(\\d+)',
+router.get('/job-search-role-suggestions',
   authenticateToken,
   [
-    param('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     query('query')
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
@@ -234,11 +210,8 @@ router.get('/job-search-role-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchRoleSuggestions
 );
 
-router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
+router.get('/guest-job-search-role-suggestions',
   [
-    param('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     query('query')
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
@@ -246,12 +219,9 @@ router.get('/guest-job-search-role-suggestions/:user_id(\\d+)',
   jobsProtectedController.searchRoleSuggestions
 );
 
-router.get('/applicant-profile-skills-search-suggestions/:user_id(\\d+)',
+router.get('/applicant-profile-skills-search-suggestions',
   authenticateToken,
   [
-    param('user_id')
-      .isInt().withMessage('Invalid user id format'),
-
     query('query')
       .isString().withMessage('Invalid user query format')
       .notEmpty().withMessage('Query cannot be empty'),
@@ -263,8 +233,6 @@ router.post(
   '/apply-job',
   authenticateToken,
   [
-    body('user_id')
-      .isInt().withMessage('Invalid user id format'),
     body('job_id')
       .isInt().withMessage('Invalid job id format')
   ],
@@ -272,12 +240,10 @@ router.post(
 );
 
 router.get(
-  '/applicant-profile/:user_id(\\d+)',
+  '/applicant-profile',
   authenticateToken,
-  [
-    param('user_id')
-      .isInt().withMessage('User ID must be a valid integer'),
-  ],
+  [ 
+   ],
   jobsProtectedController.getApplicantProfile
 );
 
@@ -633,11 +599,9 @@ router.post(
   jobsProtectedController.updateCertificate
 );
 
-router.get('/saved-jobs/:user_id(\\d+)',
+router.get('/saved-jobs',
   authenticateToken,
   [
-    param('user_id').isInt().withMessage('User ID must be a valid integer').toInt(),
-
     query('page_size')
       .optional()
       .isInt().withMessage('Invalid page size format')
@@ -658,18 +622,12 @@ router.get('/saved-jobs/:user_id(\\d+)',
 router.get('/job-industries',
   authenticateToken,
   [
-    query('user_id')
-      .isInt().withMessage('User id must be a valid integer')
-      .trim().escape(),
   ],
   jobsProtectedController.getIndustries
 );
 
 router.get('/guest-job-industries',
   [
-    query('user_id')
-      .isInt().withMessage('User id must be a valid integer')
-      .trim().escape(),
   ],
   jobsProtectedController.getGuestIndustries
 );
@@ -677,10 +635,6 @@ router.get('/guest-job-industries',
 router.put('/update-job-industries',
   authenticateToken,
   [
-    body('user_id')
-      .isInt().withMessage('User id must be a valid integer')
-      .trim().escape(),
-
     body('industries')
       .isString().withMessage('Industries must be a valid JSON string')
       .custom((value) => {

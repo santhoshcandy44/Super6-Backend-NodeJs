@@ -832,7 +832,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
     };
   }
 
-  static async getGuestJobPostings(userId,
+  static async getGuestJobPostings(
     queryParam,
     latitudeParam,
     longitudeParam,
@@ -1493,7 +1493,7 @@ CASE WHEN a.applicant_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_applied,
           radius += 30;
           await connection.release();
           await rootDbconnection.release();
-          return await this.getGuestJobPostings(userId,
+          return await this.getGuestJobPostings(
             queryParam,
             latitudeParam,
             longitudeParam,

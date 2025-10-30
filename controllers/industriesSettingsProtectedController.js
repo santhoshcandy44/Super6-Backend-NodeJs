@@ -10,7 +10,6 @@ exports.getIndustries = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id } = req.query;
         const userIdProtected = req.user.user_id;
         const userExists = await User.findUserById(userIdProtected);
         if (!userExists) {
@@ -29,7 +28,6 @@ exports.getGuestIndustries = async (req, res) => {
         if (!errors.isEmpty()) {
             return sendErrorResponse(res, 400, "User id is required", errors.array());
         }
-        const { user_id } = req.query; 
         const industries = await IndustriesModel.getGuestIndustries();
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
@@ -44,11 +42,9 @@ exports.updateIndustries = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array())
         }
-
-        const {user_id} = req.body;
-        const userIdProtected = req.user.user_id;
+        const user_id = req.user.user_id;
         const industriesArray = JSON.parse(req.body.industries); 
-        const userExists = await User.findUserById(userIdProtected);
+        const userExists = await User.findUserById(user_id);
                 if (!userExists) {
             return sendErrorResponse(res, 403, "User not exist");
         }

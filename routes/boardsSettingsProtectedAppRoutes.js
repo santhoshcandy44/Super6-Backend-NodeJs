@@ -7,18 +7,12 @@ const boardsSettingsProtectedController = require('../controllers/boardsSettings
 router.get('/boards',
     authenticateToken,
     [
-        query('user_id')
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
     ],
     boardsSettingsProtectedController.getBoards
 );
 
 router.get('/guest-boards',
     [
-        query('user_id')
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
     ],
     boardsSettingsProtectedController.getGuestBoards
 );
@@ -26,10 +20,6 @@ router.get('/guest-boards',
 router.put('/update-boards',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
-
         body('boards')
             .isString().withMessage('Boards must be a valid JSON string')
             .custom((value) => {

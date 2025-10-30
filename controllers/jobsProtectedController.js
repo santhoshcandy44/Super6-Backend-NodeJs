@@ -64,7 +64,7 @@ exports.getGuestJobListings = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
 
-        const { user_id, s, s_latitude, s_longitude, latitude, longitude, industries, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
+        const {s, s_latitude, s_longitude, latitude, longitude, industries, page_size, next_token, work_modes, salary_min, salary_max } = req.query;
 
         const querySearch = !s ? '' : s;
 
@@ -95,7 +95,7 @@ exports.getGuestJobListings = async (req, res) => {
         const salaryMax = salary_max !== undefined ? salary_max : -1;
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude != null && longitude != null ? { latitude, longitude } : null;
-        const result = await Job.getGuestJobPostings(user_id, decodedQuery, s_latitude, s_longitude, coordinates, queryIndustries, PAGE_SIZE, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
+        const result = await Job.getGuestJobPostings(decodedQuery, s_latitude, s_longitude, coordinates, queryIndustries, PAGE_SIZE, queryNextToken, normalizedWorkModes, salaryMin, salaryMax);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve jobs");
         }
@@ -257,11 +257,7 @@ exports.getApplicantProfile = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.params.user_id;
-        const user = req.user
-        if (userId != user.user_id) {
-            return sendErrorResponse(res, 400, 'Access forbidden');
-        }
+        const userId = req.user
         const result = await ApplicantProfile.getApplicantUserProfile(userId);
         if (!result) {
             return sendErrorResponse(res, 404, 'User profile not exist');
@@ -698,7 +694,6 @@ exports.getIndustries = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id } = req.query;
         const userIdProtected = req.user.user_id;
         const userExists = await User.findUserById(userIdProtected);
         if (!userExists) {
@@ -717,7 +712,6 @@ exports.getGuestIndustries = async (req, res) => {
         if (!errors.isEmpty()) {
             return sendErrorResponse(res, 400, "User id is required", errors.array());
         }
-        const { user_id } = req.query;
         const industries = await JobIndustries.getGuestIndustries();
         return sendJsonResponse(res, 200, "Industries retrived successfully", industries);
     } catch (error) {
@@ -734,10 +728,9 @@ exports.updateIndustries = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array())
         }
 
-        const { user_id } = req.body;
-        const userIdProtected = req.user.user_id;
+        const user_id = req.user.user_id;
         const industriesArray = JSON.parse(req.body.industries);
-        const userExists = await User.findUserById(userIdProtected);
+        const userExists = await User.findUserById(user_id);
         if (!userExists) {
             return sendErrorResponse(res, 403, "User not exist");
         }

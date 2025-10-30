@@ -30,11 +30,9 @@ router.post('/update-ee2ee-public-key',
   ],
   appProtectedController.updateE2EEPublicKey);
 
-router.get('/user-bookmarks/:user_id(\\d+)',
+router.get('/user-bookmarks',
   authenticateToken,
   [
-    param('user_id').isInt().withMessage('User ID must be a valid integer'),
-
     query('page_size')
       .optional()
       .isInt().withMessage('Invalid page size format')

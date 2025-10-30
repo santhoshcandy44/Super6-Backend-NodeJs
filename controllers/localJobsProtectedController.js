@@ -33,13 +33,13 @@ exports.getGuestLocalJobs = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id, s, latitude, longitude, next_token, page_size} = req.query;
+        const {s, latitude, longitude, next_token, page_size} = req.query;
         const querySearch = !s ? '' : s;
         const queryNextToken = !next_token ? null : next_token;
         const decodedQuery = decodeURIComponent(querySearch.replace(/\+/g, ' '));
         const PAGE_SIZE = page_size ? page_size : 20;
         const coordinates = latitude && longitude && latitude!=null && longitude!=null ? {latitude, longitude} : null
-        const result = await LocalJob.getGuestLocalJobs(user_id, decodedQuery, coordinates, PAGE_SIZE, queryNextToken);
+        const result = await LocalJob.getGuestLocalJobs(decodedQuery, coordinates, PAGE_SIZE, queryNextToken);
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve services");
         }
@@ -82,8 +82,6 @@ exports.getPublishedLocalJobs = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id; 
-        const { user_id: userId } = req.params;
-        if(userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve local jobs");
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;

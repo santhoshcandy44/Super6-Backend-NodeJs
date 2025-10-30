@@ -6,7 +6,6 @@ const UserLocation = require('../models/UserLocation');
 const { uploadToS3 } = require("../config/awsS3.js")
 const { PROFILE_BASE_URL } = require('../config/config');
 const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
-const App = require('../models/App');
 
 exports.getUserProfile = async (req, res) => {
     try {
@@ -15,7 +14,7 @@ exports.getUserProfile = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const userId = req.params.user_id;
+        const userId = req.user.user_id;
         const result = await User.getUserProfile(userId);
         if (!result) {
             return sendErrorResponse(res, 400, "User not exist");

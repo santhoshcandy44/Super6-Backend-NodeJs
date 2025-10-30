@@ -113,14 +113,9 @@ router.get('/guest-feed-user-published-used-product-listings/:user_id(\\d+)',
     usedProductsProtectedController.getGuestFeedUserPublishedUsedProductListings
 );
 
-router.get('/published-used-product-listings/:user_id(\\d+)',
+router.get('/published-used-product-listings',
     authenticateToken,
     [
-        param('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         query('page_size')
             .optional()
             .isInt().withMessage('Invalid page size format')

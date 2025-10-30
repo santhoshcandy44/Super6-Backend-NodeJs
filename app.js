@@ -101,7 +101,6 @@ app.use('/api/app/serve', protectedAppRoutes);
 app.use('/api/app/serve/account-settings', accountSettingsProtectedRoutes); 
 app.use('/api/app/serve/industries-settings', industriesSettingsProtectedRoutes);
 app.use('/api/app/serve/boards-settings', boardsSettingsProtectedRoutes);
-app.use('/api/app/serve/chat', chatProtectedAppRoutes); 
 
 app.get('/media/:folder/services/*', async (req, res) => {
     const { folder } = req.params;

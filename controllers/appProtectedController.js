@@ -58,8 +58,6 @@ exports.getBookmarks = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const user_id = req.user.user_id;
-        const { user_id: userId } = req.params;
-        if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to bookmarks");
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;

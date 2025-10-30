@@ -7,9 +7,6 @@ const router = express.Router();
 router.get('/get-industries',
     authenticateToken, 
     [
-        query('user_id')
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
     ],
     industriesSettingsProtectedController.getIndustries
 );
@@ -17,18 +14,12 @@ router.get('/get-industries',
 router.get('/get-industries',
     authenticateToken, 
     [
-        query('user_id') 
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
     ],
     industriesSettingsProtectedController.getIndustries
 );
 
 router.get('/get-guest-industries',
     [
-        query('user_id') 
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
     ],
     industriesSettingsProtectedController.getGuestIndustries
 );
@@ -36,10 +27,6 @@ router.get('/get-guest-industries',
 router.put('/update-industries',
     authenticateToken,
     [
-        body('user_id') 
-            .isInt().withMessage('User id must be a valid integer')
-            .trim().escape(),
-
         body('industries')
             .isString().withMessage('Industries must be a valid JSON string')
             .custom((value) => {

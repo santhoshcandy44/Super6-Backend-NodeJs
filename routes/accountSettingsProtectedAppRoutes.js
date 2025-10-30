@@ -7,8 +7,6 @@ const { changePassword, forgotPassword, forgotPasswordVerifyOTP, resetPassword, 
 router.patch('/update-account-type',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('account_type')
             .notEmpty().withMessage('Account type is required')
             .isString().withMessage('Account type must be a string')
@@ -22,8 +20,6 @@ router.patch('/update-account-type',
 router.put('/change-password',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('current_password')
             .notEmpty().withMessage('Current password is required')
             .isString().withMessage('Current password must be a string')
@@ -43,8 +39,6 @@ router.put('/change-password',
 router.post('/forgot-password',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
@@ -55,8 +49,6 @@ router.post('/forgot-password',
 router.post('/forgot-password-verify-otp',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('otp')
             .notEmpty().withMessage('OTP is required')
             .isString().withMessage('OTP must be a string')
@@ -76,8 +68,6 @@ router.post('/forgot-password-verify-otp',
 router.post('/reset-password',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('auth_token')
             .isString().withMessage('Token must be a valid string')
             .trim(),

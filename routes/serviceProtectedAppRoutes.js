@@ -130,14 +130,9 @@ router.get('/feed-user-published-services/:user_id(\\d+)',
     servicesProtectedController.getFeedUserPublishedServices
 );
 
-router.get('/published-services/:user_id(\\d+)',
+router.get('/published-services',
     authenticateToken,
     [
-        param('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         query('page_size')
             .optional()
             .isInt().withMessage('Invalid page size format')

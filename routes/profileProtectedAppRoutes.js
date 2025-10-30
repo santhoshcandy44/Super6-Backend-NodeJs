@@ -14,19 +14,14 @@ const he = require('he');
 const router = express.Router();
 
 router.get(
-    '/:user_id(\\d+)',
+    '/',
     authenticateToken,
-    [
-        param('user_id')
-            .isInt().withMessage('User ID must be a valid integer'),
-    ],
     getUserProfile 
 );
 
 router.patch('/update-first-name',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
         body('first_name')
             .notEmpty().withMessage('First name is required')
             .isString().withMessage('First name must be a string')
@@ -36,7 +31,6 @@ router.patch('/update-first-name',
             .withMessage('First name must be between 1 and 70 characters long'),
     ],
     (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
         req.body.first_name = he.decode(req.body.first_name);
         next();
     },
@@ -46,8 +40,6 @@ router.patch('/update-first-name',
 router.patch('/update-last-name',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('last_name')
             .notEmpty().withMessage('Last name is required')
             .isString().withMessage('Last name must be a string')
@@ -57,7 +49,6 @@ router.patch('/update-last-name',
             .withMessage('Last name must be between 1 and 50 characters long'),
     ],
     (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
         req.body.last_name = he.decode(req.body.last_name);
         next();
     },
@@ -67,8 +58,6 @@ router.patch('/update-last-name',
 router.patch('/update-about',
     authenticateToken, 
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('about')
             .notEmpty().withMessage('Last name is required')
             .isString().withMessage('Last name must be a string')
@@ -78,7 +67,6 @@ router.patch('/update-about',
             .withMessage('Last name must be between 1 and 160 characters long'),
     ],
     (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
         req.body.about = he.decode(req.body.about);
         next();
     },
@@ -99,7 +87,6 @@ router.patch('/update-profile-pic',
     authenticateToken, 
     upload.single('profile_pic'), 
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
     ],
     updateProfilePic 
 );
@@ -107,14 +94,12 @@ router.patch('/update-profile-pic',
 router.patch('/update-email',
     authenticateToken, 
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
             .normalizeEmail(),
     ],
     (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
         req.body.email = he.decode(req.body.email);
         next();
     },
@@ -124,8 +109,6 @@ router.patch('/update-email',
 router.patch('/update-email-verify-otp',
     authenticateToken,
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
@@ -139,7 +122,6 @@ router.patch('/update-email-verify-otp',
             .matches(/^\d{6}$/).withMessage('OTP must be exactly 6 digits and contain only numbers'),
     ],
     (req, res, next) => {
-        req.body.user_id = he.decode(req.body.user_id);
         req.body.otp = he.decode(req.body.otp);
         next();
     },
@@ -149,8 +131,6 @@ router.patch('/update-email-verify-otp',
 router.put('/update-location',
     authenticateToken, 
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
-
         body('latitude')
             .isFloat().withMessage('Latitude must be a valid float')
             .trim()
@@ -180,7 +160,6 @@ router.put('/update-location',
 router.post('/logout',
     authenticateToken, 
     [
-        body('user_id').isInt().withMessage('User ID must be a valid integer'),
     ],
     logOut
 );

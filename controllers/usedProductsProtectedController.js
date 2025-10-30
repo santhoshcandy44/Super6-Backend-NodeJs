@@ -103,13 +103,11 @@ exports.getPublishedUsedProductListings = async (req, res) => {
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
         const userId = req.user.user_id;
-        const { user_id } = req.params;
-        if (userId != user_id) return sendErrorResponse(res, 400, "Access forbidden to retrieve used product listings");
         const { page_size, next_token } = req.query;
         const queryNextToken = next_token ? next_token : null;
         const PAGE_SIZE = page_size ? page_size : 20;
 
-        const result = await UsedProductListing.getPublishedUsedProductListings(user_id, PAGE_SIZE, queryNextToken)
+        const result = await UsedProductListing.getPublishedUsedProductListings(userId, PAGE_SIZE, queryNextToken)
         if (!result) {
             return sendErrorResponse(res, 400, "Failed to retrieve used product listings");
         }

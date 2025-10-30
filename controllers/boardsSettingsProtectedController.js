@@ -10,13 +10,12 @@ exports.getBoards = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id } = req.query; 
-        const userIdProtected = req.user.user_id;
-        const userExists = await User.findUserById(userIdProtected);
+        const userId = req.user.user_id;
+        const userExists = await User.findUserById(userId);
         if (!userExists) {
             return sendErrorResponse(res, 403, "User not exist");
         }
-        const boards = await BoardsModel.getBoards(userIdProtected);
+        const boards = await BoardsModel.getBoards(userId);
         return sendJsonResponse(res, 200, "Boards retrived successfully", boards);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal server error", error);
@@ -30,9 +29,7 @@ exports.getGuestBoards = async (req, res) => {
             const firstError = errors.array()[0];
             return sendErrorResponse(res, 400, firstError.msg, errors.array());
         }
-        const { user_id } = req.query; 
         const boards = await BoardsModel.getGuestBoards();
-        console.log(boards);
         return sendJsonResponse(res, 200, "Boards retrived successfully", boards);
     } catch (error) {
         console.log(error);
@@ -47,14 +44,13 @@ exports.updateBoards = async (req, res) => {
             const firstError = errors.array()[0]; 
             return sendErrorResponse(res, 400, firstError.msg, errors.array())
         }
-        const {user_id} = req.body;
-        const userIdProtected = req.user.user_id;
+        const userId = req.user.user_id;
         const boardsArray = JSON.parse(req.body.boards);
-        const userExists = await User.findUserById(userIdProtected);        
+        const userExists = await User.findUserById(userId);        
         if (!userExists) {
             return sendErrorResponse(res, 403, "User not exist");
         }
-        const boards = await BoardsModel.updateBoards(user_id, boardsArray);
+        const boards = await BoardsModel.updateBoards(userId, boardsArray);
         return sendJsonResponse(res, 200, "Boards updated successfully", boards);
     } catch (error) {
         return sendErrorResponse(res, 500, "Internal server error", error);

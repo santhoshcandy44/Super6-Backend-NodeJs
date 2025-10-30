@@ -9,10 +9,6 @@ const router = express.Router();
 router.get('/local-jobs',
     authenticateToken,
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format'),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -39,10 +35,6 @@ router.get('/local-jobs',
 
 router.get('/guest-local-jobs',
     [
-        query('user_id')
-            .optional()
-            .isInt().withMessage('Invalid user id format'),
-
         query('s')
             .optional()
             .isString().withMessage('Query string must be a valid string format')
@@ -81,13 +73,9 @@ router.get('/guest-local-jobs',
     localJobsProtectedController.getGuestLocalJobs
 );
 
-router.get('/published-local-jobs/:user_id(\\d+)',
+router.get('/published-local-jobs',
     authenticateToken,
     [
-        param('user_id')
-            .isInt().withMessage('Invalid user id format')
-            .toInt(),
-
         query('page_size')
             .optional()
             .isInt().withMessage('Invalid page size format')
@@ -268,8 +256,6 @@ router.post(
     '/apply-local-job',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format')
     ],
@@ -304,8 +290,6 @@ router.post(
     '/mark-as-reviewed-local-job',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format'),
         body('applicant_id')
@@ -318,8 +302,6 @@ router.post(
     '/unmark-reviewed-local-job',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format'),
         body('applicant_id')
@@ -332,8 +314,6 @@ router.post(
     '/bookmark-local-job',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format')
     ],
@@ -344,21 +324,15 @@ router.post(
     '/remove-bookmark-local-job',
     authenticateToken,
     [
-        body('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         body('local_job_id')
             .isInt().withMessage('Invalid local job id format')
     ],
     localJobsProtectedController.removeBookmarkLocalJob
 );
 
-router.get('/local-job-search-suggestions/:user_id(\\d+)',
+router.get('/local-job-search-suggestions',
     authenticateToken,
     [
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty')
@@ -366,11 +340,8 @@ router.get('/local-job-search-suggestions/:user_id(\\d+)',
     localJobsProtectedController.localJobsSearchQueries
 );
 
-router.get('/guest-local-job-search-suggestions/:user_id(\\d+)',
+router.get('/guest-local-job-search-suggestions',
     [
-        param('user_id')
-            .isInt().withMessage('Invalid user id format'),
-
         query('query')
             .isString().withMessage('Invalid user query format')
             .notEmpty().withMessage('Query cannot be empty'),
@@ -381,8 +352,7 @@ router.get('/guest-local-job-search-suggestions/:user_id(\\d+)',
 router.delete('/:local_job_id(\\d+)/delete-local-job',
     authenticateToken,
     [
-        param('local_job_id').isInt().withMessage('Invalid product id format').trim().escape(),
-        query('user_id').isInt().withMessage('Invalid user id format').trim().escape(),
+        param('local_job_id').isInt().withMessage('Invalid product id format').toInt(),
     ],
     localJobsProtectedController.deleteLocalJob
 );
