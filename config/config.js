@@ -32,5 +32,8 @@ module.exports = {
     SMTP_USER:process.env.SMTP_USER,
     SMTP_PASSWORD:process.env.SMTP_PASSWORD,
 
+    SESSION_SECRET: process.env.SESSION_SECRET,
+    NODE_ENV: process.env.NODE_ENV,
+    
     APP_NAME: process.env.APP_NAME
 };

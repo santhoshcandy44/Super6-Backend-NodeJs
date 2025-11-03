@@ -18,17 +18,18 @@ const boardsSettingsProtectedRoutes = require('./routes/boardsSettingsProtectedA
 
 const mediaStreamingRoutes = require('./routes/media/mediaStreaming')
 const imagesStreamingRoutes = require('./routes/media/imagesStreaming')
-const uploadsStreamingRoutes = require('./routes/media/uploadsStreaming')
+const uploadsStreamingRoutes = require('./routes/media/uploadsStreaming');
+const { SESSION_SECRET, NODE_ENV} = require('./config/config.js');
 
 const app = express();
 const port = 3000;
 
 app.use(session({
-    secret: 'your-secret-key',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: NODE_ENV === 'production',
         httpOnly: true
     }
 }));
