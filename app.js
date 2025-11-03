@@ -19,6 +19,7 @@ const boardsSettingsProtectedRoutes = require('./routes/boardsSettingsProtectedA
 const mediaStreamingRoutes = require('./routes/media/mediaStreaming')
 const imagesStreamingRoutes = require('./routes/media/imagesStreaming')
 const uploadsStreamingRoutes = require('./routes/media/uploadsStreaming');
+
 const { SESSION_SECRET, NODE_ENV} = require('./config/config.js');
 
 const app = express();
@@ -75,7 +76,7 @@ app.use('/uploads', uploadsStreamingRoutes)
 
 
 app.get('/', (req, res) => {
-    res.send('Lts360 API Gateway');
+    res.status(403).send('Access forbidden');
 });
 
 app.listen(port, async () => {
