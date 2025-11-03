@@ -7,16 +7,15 @@ const { updateFirstName, updateLastName, updateAbout,
     getUserProfile,
     updateLocation,
     logOut
-} = require('../controllers/ProfileProtectedController'); 
-const { body, param } = require('express-validator');
-const multer = require('multer');
-const he = require('he');
+} = require('../controllers/profileProtectedController');
+const { body } = require('express-validator');
+const { uploadSingle } = require('./utils/multerUpload');
 const router = express.Router();
 
 router.get(
     '/',
     authenticateToken,
-    getUserProfile 
+    getUserProfile
 );
 
 router.patch('/update-first-name',
@@ -26,14 +25,9 @@ router.patch('/update-first-name',
             .notEmpty().withMessage('First name is required')
             .isString().withMessage('First name must be a string')
             .trim()
-            .escape()
             .isLength({ min: 1, max: 70 })
             .withMessage('First name must be between 1 and 70 characters long'),
     ],
-    (req, res, next) => {
-        req.body.first_name = he.decode(req.body.first_name);
-        next();
-    },
     updateFirstName
 );
 
@@ -44,65 +38,49 @@ router.patch('/update-last-name',
             .notEmpty().withMessage('Last name is required')
             .isString().withMessage('Last name must be a string')
             .trim()
-            .escape()
             .isLength({ min: 1, max: 50 })
             .withMessage('Last name must be between 1 and 50 characters long'),
     ],
-    (req, res, next) => {
-        req.body.last_name = he.decode(req.body.last_name);
-        next();
-    },
     updateLastName
 );
 
 router.patch('/update-about',
-    authenticateToken, 
+    authenticateToken,
     [
         body('about')
             .notEmpty().withMessage('Last name is required')
             .isString().withMessage('Last name must be a string')
             .trim()
-            .escape()
             .isLength({ min: 1, max: 160 })
             .withMessage('Last name must be between 1 and 160 characters long'),
     ],
-    (req, res, next) => {
-        req.body.about = he.decode(req.body.about);
-        next();
-    },
     updateAbout
 );
 
-const upload = multer({
-    limits: { fileSize: 5 * 1024 * 1024 }, 
-    fileFilter(req, file, cb) {
-        if (!file.mimetype.startsWith('image/')) {
-            return cb(new Error('Only image files are allowed!'));
-        }
-        cb(null, true);
-    }
-});
-
 router.patch('/update-profile-pic',
-    authenticateToken, 
-    upload.single('profile_pic'), 
-    [
-    ],
+    authenticateToken,
+    uploadSingle('profile_pic', {
+        maxSize:  5 * 1024 * 1024 ,
+        fileFilter: (req, file, cb) => {
+            if(!file.mimetype.startsWith('image/')) {
+                return cb(new Error('Only image files are allowed!'));
+            }
+            cb(null, true);
+        }
+    }),
+    [],
     updateProfilePic 
 );
 
+
 router.patch('/update-email',
-    authenticateToken, 
+    authenticateToken,
     [
         body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Valid email is required')
             .normalizeEmail(),
     ],
-    (req, res, next) => {
-        req.body.email = he.decode(req.body.email);
-        next();
-    },
     updateEmail
 );
 
@@ -118,18 +96,13 @@ router.patch('/update-email-verify-otp',
             .notEmpty().withMessage('OTP is required')
             .isString().withMessage('OTP must be a string')
             .trim()
-            .escape()
             .matches(/^\d{6}$/).withMessage('OTP must be exactly 6 digits and contain only numbers'),
     ],
-    (req, res, next) => {
-        req.body.otp = he.decode(req.body.otp);
-        next();
-    },
     updateEmailVerifyOTP
 );
 
 router.put('/update-location',
-    authenticateToken, 
+    authenticateToken,
     [
         body('latitude')
             .isFloat().withMessage('Latitude must be a valid float')
@@ -158,7 +131,7 @@ router.put('/update-location',
 
 
 router.post('/logout',
-    authenticateToken, 
+    authenticateToken,
     [
     ],
     logOut

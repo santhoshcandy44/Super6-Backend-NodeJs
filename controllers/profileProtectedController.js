@@ -1,11 +1,11 @@
 const { validationResult } = require('express-validator');
-const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper');
+const { sendJsonResponse, sendErrorResponse } = require('../helpers/responseHelper.js');
 const sharp = require('sharp');
-const User = require('../models/User');
-const UserLocation = require('../models/UserLocation');
+const User = require('../models/User.js');
+const UserLocation = require('../models/UserLocation.js');
 const { uploadToS3 } = require("../config/awsS3.js")
-const { PROFILE_BASE_URL } = require('../config/config');
-const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils');
+const { PROFILE_BASE_URL } = require('../config/config.js');
+const { sendOtpEmail, generateTokens, generateShortEncryptedUrl } = require('../utils/authUtils.js');
 
 exports.getUserProfile = async (req, res) => {
     try {

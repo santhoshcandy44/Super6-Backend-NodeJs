@@ -1,6 +1,5 @@
 const db = require('../config/database.js')
 const sharp = require('sharp');
-const he = require('he');
 const { uploadToS3, deleteFromS3, deleteDirectoryFromS3 } = require('../config/awsS3.js')
 const { v4: uuidv4 } = require('uuid');
 const { sendLocalJobApplicantAppliedNotificationToKafka } = require('../kafka/notificationServiceProducer.js');
@@ -1319,8 +1318,6 @@ WHERE
         };
     }
 
-
-
     static async generateUnique11DigitLocalJobId() {
         let id, exists = true;
         while (exists) {
@@ -1894,7 +1891,6 @@ GROUP BY l.local_job_id;
         );
         return result;
     }
-
 
     static async generateUniqueApplicationId() {
         let id, exists = true;

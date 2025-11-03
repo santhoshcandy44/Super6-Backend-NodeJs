@@ -1,6 +1,6 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authMiddleware');
-const { body, query } = require('express-validator');
+const { body } = require('express-validator');
 const router = express.Router();
 const boardsSettingsProtectedController = require('../controllers/boardsSettingsProtectedController')
 

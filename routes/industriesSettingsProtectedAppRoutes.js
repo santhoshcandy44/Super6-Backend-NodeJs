@@ -1,6 +1,6 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authMiddleware'); 
-const { body, query } = require('express-validator');
+const { body } = require('express-validator');
 const industriesSettingsProtectedController = require('../controllers/industriesSettingsProtectedController')
 const router = express.Router();
 
