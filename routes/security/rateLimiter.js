@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { sendJsonResponse } = require('./helpers/responseHelper.js');
 const rateLimit = require('express-rate-limit');
-const fetch = require('node-fetch');
 const { sendErrorResponse } = require('./helpers/responseHelper');
 
 
