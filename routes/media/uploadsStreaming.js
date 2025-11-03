@@ -36,3 +36,5 @@ router.get('/:folder/*', (req, res, next) => {
         });
     });
 });
+
+module.exports = router;
